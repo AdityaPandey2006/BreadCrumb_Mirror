@@ -193,6 +193,7 @@ UPROGS=\
 	_hello_test\
 	_spectest\
 	_spfiletest\
+	_spcommit\
 
 ifeq ($(SHADOW_TEST),1)
 UPROGS += _shadowtest

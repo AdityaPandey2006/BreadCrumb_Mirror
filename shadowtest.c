@@ -64,7 +64,7 @@ basic(void)
         "private update can be read back");
   check(test(ST_ORIGINAL, 0, 0) == original[0], "original cache block unchanged");
   check(xcommit() == -1 && test(ST_READ, 0, 0) == value,
-        "nonempty commit rejected without losing private work");
+        "commit of raw test blocks (no owning file) rejected, work kept");
   for(i = 1; i < NSHADOW; i++)
     if(test(ST_WRITE, i, i) != 1)
       ok = 0;

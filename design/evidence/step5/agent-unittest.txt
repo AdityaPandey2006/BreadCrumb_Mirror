@@ -1,0 +1,20 @@
+test_demo_text_cannot_inject_commands (test_agent.ValidationTests.test_demo_text_cannot_inject_commands) ... ok
+test_effect_requires_demo (test_agent.ValidationTests.test_effect_requires_demo) ... ok
+test_guest_path_escape_and_shell_syntax (test_agent.ValidationTests.test_guest_path_escape_and_shell_syntax) ... ok
+test_read_only_requests (test_agent.ValidationTests.test_read_only_requests) ... ok
+test_schema (test_agent.ValidationTests.test_schema) ... ok
+test_incomplete_response_cannot_execute (test_llm.AdapterTests.test_incomplete_response_cannot_execute) ... ok
+test_missing_key (test_llm.AdapterTests.test_missing_key) ... ok
+test_rate_limit_is_not_retried (test_llm.AdapterTests.test_rate_limit_is_not_retried) ... ok
+test_rest_contract (test_llm.AdapterTests.test_rest_contract) ... ok
+test_batch_rejected_before_any_execution (test_llm.LoopTests.test_batch_rejected_before_any_execution) ... ok
+test_effects_require_explicit_mode (test_llm.LoopTests.test_effects_require_explicit_mode) ... ok
+test_observation_and_signature_return_to_model (test_llm.LoopTests.test_observation_and_signature_return_to_model) ... ok
+test_path_escape_rejected (test_llm.LoopTests.test_path_escape_rejected) ... ok
+test_step_limit (test_llm.LoopTests.test_step_limit) ... ok
+test_unknown_tool_rejected_in_effect_mode (test_llm.LoopTests.test_unknown_tool_rejected_in_effect_mode) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.031s
+
+OK

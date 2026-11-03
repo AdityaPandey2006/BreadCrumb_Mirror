@@ -1,0 +1,143 @@
+== M1: any group commit clears the exclusive flag (the bug found in development)
+      5 SPCOMMIT TESTS PASSED
+== M2: inode locks released before installing (no live-reader isolation)
+      1 FAIL: reader saw all-new bytes, never a partial or undurable view
+      1 SPCOMMIT TESTS FAILED: 1
+== M3: no commit-time validation (D24 off)
+      1 FAIL: A's changes published
+      1 FAIL: abort-only speculation can still abort
+      1 FAIL: none of B's changes published (not even block 6)
+      1 FAIL: second committer (B) gets -1 twice (abort-only), view kept
+      1 SPCOMMIT TESTS FAILED: 4
+== M4: no last kill check (D23 off)
+      1 FAIL: killed before the point of no return: no public change
+      1 SPCOMMIT TESTS FAILED: 1
+MUTATIONS DONE
+== test build (SHADOW_TEST=1)
+build=0
+      1 PASS: commit after a refused block and a short write (D25)
+      1 PASS: commit completed after the pause
+      1 PASS: commit of raw test blocks (no owning file) rejected, work kept
+      1 PASS: commit published
+      1 PASS: commit succeeds
+      1 PASS: commit succeeds after child exit
+      1 PASS: committer paused after installing the first block
+      2 PASS: committer reached the hold point
+      1 PASS: lifecycle abort succeeds
+      1 PASS: no log_write() (dirty public buffer) by any speculative process
+      1 PASS: no log_write() by a speculative process outside its own publication
+      1 PASS: shadow, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/shadow-cpu1.txt
+      1 SHADOW TESTS PASSED
+      1 SPCOMMIT TESTS PASSED
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS PASSED
+      3 PASS: commit after a refused block and a short write (D25)
+      3 PASS: commit completed after the pause
+      3 PASS: commit of raw test blocks (no owning file) rejected, work kept
+      3 PASS: commit published
+      3 PASS: commit succeeds
+      3 PASS: commit succeeds after child exit
+      3 PASS: committer paused after installing the first block
+      6 PASS: committer reached the hold point
+      1 PASS: lifecycle abort succeeds
+      3 PASS: no log_write() (dirty public buffer) by any speculative process
+      3 PASS: no log_write() by a speculative process outside its own publication
+      1 PASS: shadow, 3 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/shadow-cpu3-repeat3.txt
+      3 SHADOW TESTS PASSED
+      3 SPCOMMIT TESTS PASSED
+      1 SPEC TESTS PASSED
+      3 SPFILE TESTS PASSED
+      5 PASS: commit after a refused block and a short write (D25)
+      5 PASS: commit completed after the pause
+      5 PASS: commit published
+      5 PASS: commit succeeds
+      5 PASS: commit succeeds after child exit
+      1 PASS: commit, 2 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/commit-cpu2-repeat5.txt
+      5 PASS: committer paused after installing the first block
+     10 PASS: committer reached the hold point
+      5 PASS: no log_write() by a speculative process outside its own publication
+      5 SPCOMMIT TESTS PASSED
+      5 PASS: commit after a refused block and a short write (D25)
+      5 PASS: commit completed after the pause
+      5 PASS: commit published
+      5 PASS: commit succeeds
+      5 PASS: commit succeeds after child exit
+      1 PASS: commit, 4 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/commit-cpu4-repeat5.txt
+      5 PASS: committer paused after installing the first block
+     10 PASS: committer reached the hold point
+      5 PASS: no log_write() by a speculative process outside its own publication
+      5 SPCOMMIT TESTS PASSED
+      1 PASS: files, 4 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/files-cpu4-repeat3.txt
+      3 PASS: no log_write() (dirty public buffer) by any speculative process
+      3 SPFILE TESTS PASSED
+      1 PASS crash point 1: recovered complete old state
+      1 PASS crash point 2: recovered complete old state
+      1 PASS crash point 3: recovered complete new state
+      1 PASS crash point 4: recovered complete new state
+      1 PASS: crash, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/crash-cpu1.txt
+      4 PASS: filesystem usable after recovery
+      2 RECOVERED cra=[NN] crb=[ON] (expected all new)
+      2 RECOVERED cra=[OO] crb=[OO] (expected all old)
+      1 guest halted at crash point 1; caller received a reply: no
+      1 guest halted at crash point 2; caller received a reply: no
+      1 guest halted at crash point 3; caller received a reply: no
+      1 guest halted at crash point 4; caller received a reply: no
+      2 PASS crash point 1: recovered complete old state
+      2 PASS crash point 2: recovered complete old state
+      2 PASS crash point 3: recovered complete new state
+      2 PASS crash point 4: recovered complete new state
+      1 PASS: crash, 3 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/crash-cpu3-repeat2.txt
+      8 PASS: filesystem usable after recovery
+      4 RECOVERED cra=[NN] crb=[ON] (expected all new)
+      4 RECOVERED cra=[OO] crb=[OO] (expected all old)
+      2 guest halted at crash point 1; caller received a reply: no
+      2 guest halted at crash point 2; caller received a reply: no
+      2 guest halted at crash point 3; caller received a reply: no
+      2 guest halted at crash point 4; caller received a reply: no
+== normal build
+build=2
+test-only kernel symbols: 0
+      1     raise RuntimeError(f"{command} failed; inspect {self.logpath}")
+      1     run("spfiletest", "SPFILE TESTS PASSED")
+      1 FAIL: allocation failure before any byte returns -1
+      1 FAIL: allocation failure part-way returns bytes written (12)
+      1 FAIL: failed write left no private change
+      1 FAIL: no log_write() (dirty public buffer) by any speculative process
+      1 FAIL: partial private view matches the returned count
+      1 PASS: lifecycle abort succeeds
+      1 RuntimeError: spfiletest failed; inspect /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/normal-lifecycle-cpu1.txt
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS FAILED: 5
+      1     raise RuntimeError(f"{command} failed; inspect {self.logpath}")
+      1     run("spfiletest", "SPFILE TESTS PASSED")
+      1 FAIL: allocation failure before any byte returns -1
+      1 FAIL: allocation failure part-way returns bytes written (12)
+      1 FAIL: failed write left no private change
+      1 FAIL: no log_write() (dirty public buffer) by any speculative process
+      1 FAIL: partial private view matches the returned count
+      1 PASS: lifecycle abort succeeds
+      1 RuntimeError: spfiletest failed; inspect /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/normal-lifecycle-cpu3.txt
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS FAILED: 5
+      1     raise RuntimeError(f"{command} failed; inspect {self.logpath}")
+      1     run("spcommit", "SPCOMMIT TESTS PASSED")
+      1 FAIL: committer paused after installing the first block
+      2 FAIL: committer reached the hold point
+      1 FAIL: killed before the point of no return: no public change
+      1 FAIL: no log_write() by a speculative process outside its own publication
+      1 PASS: commit after a refused block and a short write (D25)
+      1 PASS: commit completed after the pause
+      1 PASS: commit published
+      1 PASS: commit succeeds
+      1 PASS: commit succeeds after child exit
+      1 RuntimeError: spcommit failed; inspect /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/normal-commit-cpu3-repeat3.txt
+      1 SPCOMMIT TESTS FAILED: 5
+      1 ALL TESTS PASSED
+      1 PASS: usertests, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/usertests-cpu1.txt
+      1 ALL TESTS PASSED
+      1 PASS: usertests, 2 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/usertests-cpu2.txt
+== agent tests
+Ran 15 tests in 0.031s
+
+OK
+DONE

@@ -42,10 +42,19 @@ struct log {
   int size;
   int outstanding; // how many FS sys calls are executing.
   int committing;  // in commit(), please wait.
+  int exclusive;   // Step 5 (D26): EXCL_NONE, EXCL_WAITING or EXCL_OWNED
   int dev;
   struct logheader lh;
 };
 struct log log;
+
+// log.exclusive states. WAITING closes admission while a publisher waits for
+// the current group to drain; OWNED means the publisher's transaction is the
+// only one in the log. Only the OWNED transaction's own commit releases it:
+// a group commit that finishes while a publisher is WAITING must not.
+#define EXCL_NONE    0
+#define EXCL_WAITING 1
+#define EXCL_OWNED   2
 
 static void recover_from_log(void);
 static void commit();
@@ -78,6 +87,10 @@ install_trans(void)
     bwrite(dbuf);  // write dst to disk
     brelse(lbuf);
     brelse(dbuf);
+#ifdef SHADOW_TEST
+    if(log.exclusive == EXCL_OWNED && tail == 0 && log.lh.n > 1)
+      shadow_crash_point(SPC_MID_INSTALL);
+#endif
   }
 }
 
@@ -127,7 +140,8 @@ begin_op(void)
 {
   acquire(&log.lock);
   while(1){
-    if(log.committing){
+    if(log.committing || log.exclusive){
+      // exclusive: a speculative publication is waiting for or owns the log.
       sleep(&log, &log.lock);
     } else if(log.lh.n + (log.outstanding+1)*MAXOPBLOCKS > LOGSIZE){
       // this op might exhaust log space; wait for commit.
@@ -168,9 +182,34 @@ end_op(void)
     commit();
     acquire(&log.lock);
     log.committing = 0;
+    if(log.exclusive == EXCL_OWNED)
+      log.exclusive = EXCL_NONE;  // the publication's own commit is done
     wakeup(&log);
     release(&log.lock);
   }
+}
+
+// Step 5: begin a transaction that is the only one in its log group, for
+// publishing a speculation (decision D26). It closes admission to new
+// operations, waits for every outstanding operation and any running commit
+// to finish, then reserves the log alone. The matching end_op() is
+// therefore the last one, and it runs commit() itself: when that end_op()
+// returns, this transaction's commit record (write_head) is on disk. The
+// caller must hold no inode or buffer locks when calling this.
+void
+begin_op_exclusive(void)
+{
+  acquire(&log.lock);
+  while(log.exclusive != EXCL_NONE)    // one publication at a time
+    sleep(&log, &log.lock);
+  log.exclusive = EXCL_WAITING;        // begin_op() now waits
+  while(log.outstanding > 0 || log.committing)
+    sleep(&log, &log.lock);
+  if(log.lh.n != 0)
+    panic("begin_op_exclusive: log not empty");
+  log.exclusive = EXCL_OWNED;
+  log.outstanding = 1;
+  release(&log.lock);
 }
 
 // Copy modified blocks from cache to log.
@@ -193,8 +232,20 @@ static void
 commit()
 {
   if (log.lh.n > 0) {
+#ifdef SHADOW_TEST
+    if(log.exclusive == EXCL_OWNED)
+      shadow_crash_point(SPC_BEFORE_LOG);
+#endif
     write_log();     // Write modified blocks from cache to log
+#ifdef SHADOW_TEST
+    if(log.exclusive == EXCL_OWNED)
+      shadow_crash_point(SPC_BEFORE_HEAD);
+#endif
     write_head();    // Write header to disk -- the real commit
+#ifdef SHADOW_TEST
+    if(log.exclusive == EXCL_OWNED)
+      shadow_crash_point(SPC_AFTER_HEAD);
+#endif
     install_trans(); // Now install writes to home locations
     log.lh.n = 0;
     write_head();    // Erase the transaction from the log
@@ -219,10 +270,14 @@ log_write(struct buf *b)
     panic("too big a transaction");
   if (log.outstanding < 1)
     panic("log_write outside of trans");
+  // Step 5 invariant: a publication's transaction is alone in the log.
+  if (log.exclusive == EXCL_OWNED && log.outstanding != 1)
+    panic("log_write: exclusive publication shared");
 #ifdef SHADOW_TEST
   // Step-4 evidence: a speculative process must never dirty a public buffer
-  // (data, inode, bitmap or indirect block) or add it to the log.
-  if(spec_current() != 0)
+  // (data, inode, bitmap or indirect block) or add it to the log, except
+  // in its own exclusive publication transaction (Step 5 commit).
+  if(spec_current() != 0 && log.exclusive != EXCL_OWNED)
     shadow_note_public_write();
 #endif
 

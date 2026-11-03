@@ -19,6 +19,7 @@ static struct spec_context spectable[NSPEC];
 static uint nextspecid = 1;
 
 static void spec_context_free_locked(struct spec_context *sc);
+static void spec_commit_durable(struct spec_context *sc);
 
 static struct proc *initproc;
 
@@ -136,6 +137,7 @@ spec_context_free_locked(struct spec_context *sc)
     panic("spec resources still attached");
   sc->id = 0;
   sc->owner_pid = 0;
+  sc->abort_only = 0;
   sc->state = SPEC_FREE;
   sc->members = 0;
   sc->refs = 0;
@@ -221,6 +223,7 @@ spec_begin(void)
   sc->members = 1;
   sc->refs = 1;
   sc->resources = 0;
+  sc->abort_only = 0;
   p->spec = id;
   release(&ptable.lock);
   return 0;
@@ -243,6 +246,11 @@ spec_complete(int commit)
     release(&ptable.lock);
     return -1;
   }
+  // D24: a speculation that lost a commit-time conflict can only abort.
+  if(commit && sc->abort_only){
+    release(&ptable.lock);
+    return -1;
+  }
   if(commit)
     spec_commit_context_locked(sc);
   else
@@ -250,16 +258,28 @@ spec_complete(int commit)
   sc->refs++;  // exclusive completion reference across unlocked resource work
   release(&ptable.lock);
 
-  // Step 3 cannot publish private blocks. Do not silently discard them and
-  // report a successful commit. Keep the attempt available for xabort instead.
-  if(commit && shadow_count(sc) != 0){
-    acquire(&ptable.lock);
-    sc->state = SPEC_ACTIVE;
-    if(p->killed)
-      spec_cancel_locked(sc);
-    release(&ptable.lock);
-    spec_unpin(sc);
-    return -1;
+  // Step 5 commit state machine (see design/step5-implementation.md):
+  //   1. reserved above: ACTIVE -> COMMITTING, sole member, extra reference;
+  //      new pins are refused, so no resource operation is in flight.
+  //   2. shadow_publish(): exclusive log transaction, inode locks, D24
+  //      validation, D23 last kill check (point of no return), install,
+  //      own commit (durable at write_head), unlock. No spinlock is held.
+  //   3. below: discard private copies, detach the owner, release.
+  // Failure before the point of no return leaves no public change.
+  if(commit){
+    int r = shadow_publish(sc);
+    if(r != SP_OK){
+      acquire(&ptable.lock);
+      sc->state = SPEC_ACTIVE;     // attempt retained...
+      if(r == SP_CONFLICT)
+        sc->abort_only = 1;        // ...but may only be aborted (D24)
+      if(p->killed)
+        spec_cancel_locked(sc);    // D23: killed before publication
+      release(&ptable.lock);
+      spec_unpin(sc);
+      return -1;
+    }
+    spec_commit_durable(sc);
   }
   shadow_discard(sc);
   acquire(&ptable.lock);
@@ -267,6 +287,17 @@ spec_complete(int commit)
   release(&ptable.lock);
   spec_unpin(sc);
   return 0;
+}
+
+// Step 5 completion point: the speculation's file changes are durable on disk
+// (its own log commit record has been written) and visible to every process.
+// Later stages release held console/pipe output here (Steps 7-8); nothing is
+// held yet. Called once per successful nonempty or empty commit, before the
+// private copies are freed and the owner is detached.
+static void
+spec_commit_durable(struct spec_context *sc)
+{
+  (void)sc;
 }
 
 // Like sleep(chan, resource_lock), but cancellation/killed checks and sleeping

@@ -1,6 +1,6 @@
 EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES
 Questions, explanations, and decisions before implementation
-Updated: 3 November 2026
+Updated: 3 November 2026 (Step 5)
 
 HOW TO READ THIS RECORD
 =======================
@@ -789,3 +789,81 @@ Next stage: Step 5, abort then commit (publish private blocks in one log
 transaction). Open for discussion: O02 (same block copied by two
 speculations at commit), O05 (cancellation during publication), and R03
 (whether a short write should make a speculation abort-only).
+
+BEFORE STEP 5: ABORT, THEN DURABLE COMMIT
+=========================================
+1. Plain-language plan requested
+--------------------------------
+User asked for the Step-5 work to be listed in simple words before coding.
+The assistant audited log.c/bio.c: MAXOPBLOCKS=10, LOGSIZE=30, NBUF=30. The
+Step-4 publication footprint is at most 8 data blocks and 0 metadata blocks,
+so it fits one ordinary 10-block reservation. A normal end_op() commits only
+when every outstanding operation has ended, so returning from it does not
+prove durability. Plan: exclusive log transaction for publication; hold the
+affected inode locks from before the first public change until after the
+durable commit record, so live readers see all-old or all-new; test-only
+crash points with reboot of the same image.
+
+Decisions raised (options and recommendations):
+A. Owner killed during commit. A1 kill wins until publication starts, then
+   commit wins (recommended); A2 commit wins once COMMITTING; A3 kill wins
+   until durable (not possible without un-logging buffers in xv6).
+B. Two speculations copied the same block (O02). B1 first committer wins,
+   validated by comparing saved original bytes at commit (recommended); B2
+   block ownership at copy time (changes Step-4 behaviour); B3 refuse commit
+   while others hold copies (can deadlock).
+C. Short write makes speculation abort-only? (R03) C1 no (recommended); C2 yes.
+D. Crash meaning (O05): before commit record -> old and speculation gone;
+   after -> new even without a reply (recommended to accept and document).
+E. Offsets after abort: leave as they are (recommended).
+
+2. Decisions accepted
+---------------------
+User:
+"all reccomended choices are fine just make sure to document the design
+descisions in the design folder clearly so that if i even gav e to make change
+you can refer to that and include these design decisions in the summary pdf as
+well as well in the spreadsheet
+otherwise safe to continue"
+
+Outcome: recorded as spreadsheet rows D23 (A1), D24 (B1), D25 (C1, resolves
+R03), D26 (D, part of O05) and D27 (E). O02 and O05 are marked partly
+decided; their remaining parts stay open. Step 5 implementation authorized.
+Each decision is also documented in step5-implementation.md with the reason,
+the code location and how to change it.
+
+
+STEP 5 POST-IMPLEMENTATION CLARIFICATIONS AND CURRENT BOUNDARY
+===============================================================
+These are implementation choices made while coding Step 5. The agreed
+Step-5 policies are D23-D27; step5-implementation.md explains each one,
+gives its code location and says how to change it.
+
+- Publication uses begin_op_exclusive(): close admission, wait for the
+  current log group to drain, then own the log alone. The publisher's own
+  end_op() therefore runs commit(), and the durable point is its
+  write_head().
+- Inode locks of the affected files are held from before the first public
+  change until after the commit record is on disk. Live readers see
+  all-old or all-new data and never undurable bytes. Ordinary file
+  operations and console writes wait for the short publication window.
+- D24 validation stores the original bytes beside each private copy (one
+  page still holds an entry) and compares them at commit.
+- Development bug found by the tests: the first version cleared the
+  exclusive flag after any commit, including a group commit that finished
+  while a publisher was still waiting, so ordinary operations could join
+  the publication transaction. The test-build counter of stray speculative
+  log_write() calls caught it intermittently. Fixed with three states
+  (NONE, WAITING, OWNED), an all-builds invariant panic, and a new
+  concurrent ordinary-writer test. Raw logs: evidence/step5/development/.
+  A candidate for the handout's GDB bug session.
+- Raw test blocks (Step-3 shadowtest, no owning file) are never published;
+  commit of such a context returns -1 and keeps the attempt.
+- Crash tests halt the guest at four commit points and reboot the same
+  fs.img copy: complete old state before the commit record, complete new
+  state after it; the caller never received a reply in any case.
+
+Next stage: Step 6, isolating file extension, creation and deletion
+(private inode, size, bitmap and directory changes counted toward the
+eight-block cap). Open: O02 broader conflicts, O05 output delivery at crash,
+O03 exec/descriptor rules, O04 output buffer sizes.

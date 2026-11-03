@@ -271,6 +271,14 @@ iget(uint dev, uint inum)
   return ip;
 }
 
+// Reference an inode by number (Step 5 publication). The caller must later
+// iput() it inside a transaction.
+struct inode*
+iget_ref(uint dev, uint inum)
+{
+  return iget(dev, inum);
+}
+
 // Increment reference count for ip.
 // Returns ip to enable ip = idup(ip1) idiom.
 struct inode*

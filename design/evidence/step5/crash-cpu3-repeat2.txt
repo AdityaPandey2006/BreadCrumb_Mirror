@@ -1,0 +1,248 @@
+
+===== HARNESS: crash point 1 (before any log block is written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONEb441be98
+CRASHSETUP OK
+TESTDONEb441be98
+$ spcommit crash 1
+CALLER: calling xcommit (3 blocks, 2 files, crash point 1)
+SPEC CRASH POINT 1
+lapicid 0: panic: spec crash point (test-only)
+ 80105974 80103422 80105c9d 801046fe 80106959 80107b7d 801078d4 0 0 0
+===== HARNESS: guest halted at crash point 1; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify old; echo TESTDONE9444657c
+RECOVERED cra=[OO] crb=[OO] (expected all old)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK old
+TESTDONE9444657c
+$ 
+===== HARNESS: PASS crash point 1: recovered complete old state =====
+
+===== HARNESS: crash point 2 (log blocks written, commit record (log header) not written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE73360747
+CRASHSETUP OK
+TESTDONE73360747
+$ spcommit crash 2
+CALLER: calling xcommit (3 blocks, 2 files, crash point 2)
+SPEC CRASH POINT 2
+lapicid 0: panic: spec crash point (test-only)
+ 80105974 80103462 80105c9d 801046fe 80106959 80107b7d 801078d4 0 0 0
+===== HARNESS: guest halted at crash point 2; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify old; echo TESTDONE3e5366c9
+RECOVERED cra=[OO] crb=[OO] (expected all old)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK old
+TESTDONE3e5366c9
+$ 
+===== HARNESS: PASS crash point 2: recovered complete old state =====
+
+===== HARNESS: crash point 3 (commit record written, nothing installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE61d2c1f3
+CRASHSETUP OK
+TESTDONE61d2c1f3
+$ spcommit crash 3
+CALLER: calling xcommit (3 blocks, 2 files, crash point 3)
+SPEC CRASH POINT 3
+lapicid 0: panic: spec crash point (test-only)
+ 80105974 8010344a 80105c9d 801046fe 80106959 80107b7d 801078d4 0 0 0
+===== HARNESS: guest halted at crash point 3; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify new; echo TESTDONEc4dd36fb
+RECOVERED cra=[NN] crb=[ON] (expected all new)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK new
+TESTDONEc4dd36fb
+$ 
+===== HARNESS: PASS crash point 3: recovered complete new state =====
+
+===== HARNESS: crash point 4 (first of three blocks installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONEba8f8c09
+CRASHSETUP OK
+TESTDONEba8f8c09
+$ spcommit crash 4
+CALLER: calling xcommit (3 blocks, 2 files, crash point 4)
+SPEC CRASH POINT 4
+lapicid 0: panic: spec crash point (test-only)
+ 80105974 8010318a 801033af 80105c9d 801046fe 80106959 80107b7d 801078d4 0 0
+===== HARNESS: guest halted at crash point 4; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify new; echo TESTDONE8c475d55
+RECOVERED cra=[NN] crb=[ON] (expected all new)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK new
+TESTDONE8c475d55
+$ 
+===== HARNESS: PASS crash point 4: recovered complete new state =====
+
+===== HARNESS: crash point 1 (before any log block is written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE5639f8f5
+CRASHSETUP OK
+TESTDONE5639f8f5
+$ spcommit crash 1
+CALLER: calling xcommit (3 blocks, 2 files, crash point 1)
+SPEC CRASH POINT 1
+lapicid 0: panic: spec crash point (test-only)
+ 80105974 80103422 80105c9d 801046fe 80106959 80107b7d 801078d4 0 0 0
+===== HARNESS: guest halted at crash point 1; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify old; echo TESTDONE5f399d7d
+RECOVERED cra=[OO] crb=[OO] (expected all old)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK old
+TESTDONE5f399d7d
+$ 
+===== HARNESS: PASS crash point 1: recovered complete old state =====
+
+===== HARNESS: crash point 2 (log blocks written, commit record (log header) not written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE97d6d83a
+CRASHSETUP OK
+TESTDONE97d6d83a
+$ spcommit crash 2
+CALLER: calling xcommit (3 blocks, 2 files, crash point 2)
+SPEC CRASH POINT 2
+lapicid 0: panic: spec crash point (test-only)
+ 80105974 80103462 80105c9d 801046fe 80106959 80107b7d 801078d4 0 0 0
+===== HARNESS: guest halted at crash point 2; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify old; echo TESTDONEdf1e282c
+RECOVERED cra=[OO] crb=[OO] (expected all old)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK old
+TESTDONEdf1e282c
+$ 
+===== HARNESS: PASS crash point 2: recovered complete old state =====
+
+===== HARNESS: crash point 3 (commit record written, nothing installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE93a20b1b
+CRASHSETUP OK
+TESTDONE93a20b1b
+$ spcommit crash 3
+CALLER: calling xcommit (3 blocks, 2 files, crash point 3)
+SPEC CRASH POINT 3
+lapicid 0: panic: spec crash point (test-only)
+ 80105974 8010344a 80105c9d 801046fe 80106959 80107b7d 801078d4 0 0 0
+===== HARNESS: guest halted at crash point 3; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify new; echo TESTDONE75ba1eb1
+RECOVERED cra=[NN] crb=[ON] (expected all new)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK new
+TESTDONE75ba1eb1
+$ 
+===== HARNESS: PASS crash point 3: recovered complete new state =====
+
+===== HARNESS: crash point 4 (first of three blocks installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE7072a96e
+CRASHSETUP OK
+TESTDONE7072a96e
+$ spcommit crash 4
+CALLER: calling xcommit (3 blocks, 2 files, crash point 4)
+SPEC CRASH POINT 4
+lapicid 0: panic: spec crash point (test-only)
+ 80105974 8010318a 801033af 80105c9d 801046fe 80106959 80107b7d 801078d4 0 0
+===== HARNESS: guest halted at crash point 4; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify new; echo TESTDONE84586645
+RECOVERED cra=[NN] crb=[ON] (expected all new)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK new
+TESTDONE84586645
+$ 
+===== HARNESS: PASS crash point 4: recovered complete new state =====

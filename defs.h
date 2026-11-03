@@ -52,6 +52,7 @@ int             namecmp(const char*, const char*);
 struct inode*   namei(char*);
 struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
+struct inode*   iget_ref(uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
 
@@ -87,6 +88,7 @@ void            microdelay(int);
 void            initlog(int dev);
 void            log_write(struct buf*);
 void            begin_op();
+void            begin_op_exclusive(void);
 void            end_op();
 
 // mp.c
@@ -138,11 +140,22 @@ int             shadow_read(int, uint, uint, uint, void*, uint);
 int             shadow_write(int, uint, uint, uint, uint, const void*, uint);
 int             shadow_block_busy(uint, uint);
 int             shadow_inode_busy(uint, uint);
+// shadow_publish() results (Step 5 commit)
+#define SP_OK          0   // published durably (or nothing to publish)
+#define SP_UNSUPPORTED (-1) // private state that commit cannot publish
+#define SP_CONFLICT    (-2) // D24: a public block changed since it was copied
+#define SP_KILLED      (-3) // D23: owner killed before the point of no return
+int             shadow_publish(struct spec_context*);
 int             shadow_count(struct spec_context*);
 void            shadow_discard(struct spec_context*);
 #ifdef SHADOW_TEST
 int             shadow_test(int, int, int);
 void            shadow_note_public_write(void);
+void            shadow_crash_point(int);
+#define SPC_BEFORE_LOG   1  // commit(): nothing written to the log yet
+#define SPC_BEFORE_HEAD  2  // log blocks written, commit record not yet
+#define SPC_AFTER_HEAD   3  // commit record written, not installed
+#define SPC_MID_INSTALL  4  // first of several blocks installed home
 #endif
 
 // swtch.S

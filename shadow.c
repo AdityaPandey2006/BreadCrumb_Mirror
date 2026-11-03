@@ -8,6 +8,8 @@
 #include "fs.h"
 #include "sleeplock.h"
 #include "buf.h"
+#include "stat.h"
+#include "file.h"
 
 enum shadowstate { SH_LOADING, SH_READY };
 
@@ -21,7 +23,8 @@ struct shadow {
   uint blockno;
   uint inum;                    // owning inode, or 0 for raw test blocks
   enum shadowstate state;
-  uchar data[BSIZE];
+  uchar data[BSIZE];            // private bytes
+  uchar orig[BSIZE];            // public bytes at first copy (D24 validation)
 };
 typedef char shadow_fits_page[(sizeof(struct shadow) <= PGSIZE) ? 1 : -1];
 
@@ -100,11 +103,43 @@ static volatile uint hold_loader;
 static volatile uint waiting;
 static volatile uint pages;
 static volatile uint pubwrites;
+static volatile uint pubhold;     // ST_PUBHOLD: hold point to pause at
+static volatile uint pubheld;     // hold point a committer is paused at
+static volatile uint crashpoint;  // ST_CRASH: SPC_* point to halt at
 
 void
 shadow_note_public_write(void)
 {
   __sync_fetch_and_add(&pubwrites, 1);
+}
+
+// Test-only crash injection for the speculation's own exclusive commit.
+// Halts the machine; disk writes already issued are complete (bwrite is
+// synchronous). The harness then reboots the SAME disk image.
+void
+shadow_crash_point(int where)
+{
+  if(__sync_val_compare_and_swap(&crashpoint, where, 0) != (uint)where)
+    return;
+  cprintf("SPEC CRASH POINT %d\n", where);
+  panic("spec crash point (test-only)");
+}
+
+// Test-only pause inside publication. A kill also ends the pause, so tests
+// can kill the owner deterministically on either side of the point of no
+// return. While paused the committer holds the exclusive log and the
+// affected inode locks: other processes' begin_op()/console writes wait.
+static void
+pub_hold_point(uint where)
+{
+  if(__sync_val_compare_and_swap(&pubhold, where, where) != where)
+    return;
+  __sync_lock_test_and_set(&pubheld, where);
+  while(__sync_val_compare_and_swap(&pubhold, where, where) == where &&
+        !myproc()->killed)
+    yield();
+  __sync_lock_test_and_set(&pubhold, 0);
+  __sync_lock_test_and_set(&pubheld, 0);
 }
 #endif
 
@@ -263,6 +298,7 @@ access(int id, uint dev, uint blockno, uint inum, uint off, void *data, uint n,
     // Never call while holding resource_lock or a source buffer lock.
     b = bread_original(dev, blockno);
     memmove(s->data, b->data, BSIZE);
+    memmove(s->orig, b->data, BSIZE);
     brelse(b);
     // A pin keeps memory alive but is not permission to admit work after abort.
     active = spec_pin(id);
@@ -297,6 +333,101 @@ out:
   return result;
 }
 
+// Step 5: publish a COMMITTING context's private blocks in one exclusive,
+// durable log transaction. Called by spec_complete() with the context's
+// exclusive completion reference, no spinlock held, and no member or
+// resource operation in flight (so the entry list cannot change).
+//
+//   begin_op_exclusive()                 the transaction is alone in the log
+//   iget + ilock every affected inode    in inode-number order (all T_FILE)
+//   validate: each public block == the bytes it was copied from     (D24)
+//   last kill check                      (D23) -- point of no return after it
+//   install: bread_original, copy, log_write, brelse, per block
+//   end_op()                             runs commit(): durable at write_head
+//   iunlock all; iput all in a separate ordinary transaction
+//
+// The inode locks are held from before the first public change until after
+// the commit record is on disk, so a live reader (readi holds the inode lock)
+// sees all-old or all-new contents and never sees undurable bytes. Holding
+// them across end_op() is safe only because the transaction is exclusive:
+// no other operation in it can be waiting for these locks.
+// Returns SP_OK, SP_UNSUPPORTED, SP_CONFLICT or SP_KILLED (defs.h).
+int
+shadow_publish(struct spec_context *sc)
+{
+  struct shadow *e[NSHADOW], *s;
+  struct inode *ip[NSHADOW];
+  uint inums[NSHADOW], t;
+  struct buf *b;
+  int n = 0, ni = 0, i, j, r = SP_OK;
+
+  acquire(&sc->resource_lock);
+  for(s = sc->resources; s; s = s->next){
+    // Raw test blocks (inum 0) have no owning file and are never published.
+    if(n == NSHADOW || s->state != SH_READY || s->inum == 0 || s->dev != ROOTDEV){
+      release(&sc->resource_lock);
+      return SP_UNSUPPORTED;
+    }
+    e[n++] = s;
+  }
+  release(&sc->resource_lock);
+  if(n == 0)
+    return SP_OK;                  // empty commit: nothing to make durable
+
+  // Distinct owning inodes, sorted: the inode lock order for publication.
+  for(i = 0; i < n; i++){
+    for(j = 0; j < ni && inums[j] != e[i]->inum; j++)
+      ;
+    if(j == ni)
+      inums[ni++] = e[i]->inum;
+  }
+  for(i = 1; i < ni; i++)
+    for(j = i; j > 0 && inums[j-1] > inums[j]; j--){
+      t = inums[j]; inums[j] = inums[j-1]; inums[j-1] = t;
+    }
+
+  begin_op_exclusive();
+  for(i = 0; i < ni; i++){
+    ip[i] = iget_ref(ROOTDEV, inums[i]);
+    ilock(ip[i]);
+    if(ip[i]->type != T_FILE || ip[i]->nlink < 1)
+      r = SP_CONFLICT;
+  }
+  for(i = 0; i < n && r == SP_OK; i++){
+    b = bread_original(e[i]->dev, e[i]->blockno);
+    if(memcmp(b->data, e[i]->orig, BSIZE) != 0)
+      r = SP_CONFLICT;             // first committer already changed it
+    brelse(b);
+  }
+#ifdef SHADOW_TEST
+  if(r == SP_OK)
+    pub_hold_point(1);
+#endif
+  if(r == SP_OK && myproc()->killed)
+    r = SP_KILLED;
+  if(r == SP_OK){
+    // ---- point of no return (D23): public buffers change from here on ----
+    for(i = 0; i < n; i++){
+      b = bread_original(e[i]->dev, e[i]->blockno);
+      memmove(b->data, e[i]->data, BSIZE);
+      log_write(b);
+      brelse(b);
+#ifdef SHADOW_TEST
+      if(i == 0)
+        pub_hold_point(2);
+#endif
+    }
+  }
+  end_op();      // exclusive: commits this transaction now (nothing if r != OK)
+  for(i = 0; i < ni; i++)
+    iunlock(ip[i]);
+  begin_op();
+  for(i = 0; i < ni; i++)
+    iput(ip[i]);
+  end_op();
+  return r;
+}
+
 int
 shadow_read(int id, uint dev, uint blockno, uint off, void *dst, uint n)
 {
@@ -328,6 +459,16 @@ shadow_test(int op, int slot, int value)
     return __sync_val_compare_and_swap(&waiting, 0, 0);
   if(op == ST_PUBWRITES)
     return __sync_val_compare_and_swap(&pubwrites, 0, 0);
+  if(op == ST_PUBHOLD){
+    __sync_lock_test_and_set(&pubhold, value);
+    return 0;
+  }
+  if(op == ST_PUBHELD)
+    return __sync_val_compare_and_swap(&pubheld, 0, 0);
+  if(op == ST_CRASH){
+    __sync_lock_test_and_set(&crashpoint, value);
+    return 0;
+  }
   if(op == ST_FAIL){
     __sync_lock_test_and_set(&fail_alloc, 1);
     return 0;

@@ -1,0 +1,55 @@
+== M1 (faithful): original boolean exclusive flag, cleared by any commit, never re-set
+cpus=1:
+      1 FAIL: no log_write() by a speculative process outside its own publication
+      1 SPCOMMIT TESTS FAILED: 1
+cpus=3:
+      1 FAIL: no log_write() by a speculative process outside its own publication
+      1 SPCOMMIT TESTS FAILED: 1
+== test build sanity rerun (spcommit.c changed only under #ifdef)
+      1 PASS: commit after a refused block and a short write (D25)
+      1 PASS: commit completed after the pause
+      1 PASS: commit of raw test blocks (no owning file) rejected, work kept
+      1 PASS: commit published
+      1 PASS: commit succeeds
+      1 PASS: commit succeeds after child exit
+      1 PASS: committer paused after installing the first block
+      2 PASS: committer reached the hold point
+      1 PASS: lifecycle abort succeeds
+      1 PASS: no log_write() (dirty public buffer) by any speculative process
+      1 PASS: no log_write() by a speculative process outside its own publication
+      1 PASS: shadow, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/shadow-cpu1.txt
+      1 SHADOW TESTS PASSED
+      1 SPCOMMIT TESTS PASSED
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS PASSED
+== normal build
+test-only kernel symbols: 0
+      1 PASS: commit after a refused block and a short write (D25)
+      1 PASS: commit published
+      1 PASS: commit succeeds
+      1 PASS: commit succeeds after child exit
+      1 PASS: lifecycle abort succeeds
+      1 PASS: lifecycle, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/normal-lifecycle-cpu1.txt
+      1 SPCOMMIT TESTS PASSED
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS PASSED
+      1 PASS: commit after a refused block and a short write (D25)
+      1 PASS: commit published
+      1 PASS: commit succeeds
+      1 PASS: commit succeeds after child exit
+      1 PASS: lifecycle abort succeeds
+      1 PASS: lifecycle, 3 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/normal-lifecycle-cpu3.txt
+      1 SPCOMMIT TESTS PASSED
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS PASSED
+      3 PASS: commit after a refused block and a short write (D25)
+      3 PASS: commit published
+      3 PASS: commit succeeds
+      3 PASS: commit succeeds after child exit
+      1 PASS: commit, 3 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/normal-commit-cpu3-repeat3.txt
+      3 SPCOMMIT TESTS PASSED
+      1 ALL TESTS PASSED
+      1 PASS: usertests, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/usertests-cpu1.txt
+      1 ALL TESTS PASSED
+      1 PASS: usertests, 2 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step5/usertests-cpu2.txt
+DONE

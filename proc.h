@@ -49,6 +49,7 @@ struct spec_context {
   uint refs;
   struct spinlock resource_lock;
   void *resources;              // linked shadow entries, owned by shadow.c
+  int abort_only;               // D24: lost a commit-time conflict (ptable.lock)
 };
 
 // Per-process state

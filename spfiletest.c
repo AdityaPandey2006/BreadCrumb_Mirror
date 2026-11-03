@@ -201,7 +201,7 @@ test_outsider_isolation(void)
   check(expect_at(5*BSIZE + 3, "OK") && expect_at(BSIZE, "ZZZZ"),
         "speculation sees outsider writes to uncopied blocks (no snapshot)");
   check(expect_at(0, "WORLD"), "private bytes survive outsider activity");
-  check(xcommit() == -1, "nonempty commit still unsupported in Step 4");
+  // Step 5 made nonempty commit work; spcommit covers it. This test aborts.
   check(xabort() == 0, "abort succeeds");
   check(expect_pattern(0, BSIZE) && expect_pattern(2*BSIZE, BSIZE),
         "abort preserves the original public bytes");

@@ -20,7 +20,7 @@ def main():
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--qemu", default=str(ROOT.parent / "build/qemu-system-i386"))
     parser.add_argument("--log", type=Path, required=True)
-    parser.add_argument("--suite", choices=("shadow", "lifecycle", "usertests"), default="shadow")
+    parser.add_argument("--suite", choices=("shadow", "lifecycle", "files", "usertests"), default="shadow")
     args = parser.parse_args()
     if args.repeat < 1:
         parser.error("--repeat must be positive")
@@ -75,12 +75,17 @@ def main():
             if args.suite == "shadow":
                 for _ in range(args.repeat):
                     run("shadowtest", "SHADOW TESTS PASSED")
+                    run("spfiletest", "SPFILE TESTS PASSED")
                 run("spectest", "SPEC TESTS PASSED")
             elif args.suite == "lifecycle":
                 run("spectest", "SPEC TESTS PASSED")
+                run("spfiletest", "SPFILE TESTS PASSED")
                 run("addtest", "add(3, 4) = 7")
                 run("hello_test", "hello() returned 0")
                 run("mytest", "Hey, I am trying xv6")
+            elif args.suite == "files":
+                for _ in range(args.repeat):
+                    run("spfiletest", "SPFILE TESTS PASSED")
             else:
                 run("usertests", "ALL TESTS PASSED")
             print(f"PASS: {args.suite}, {args.cpus} CPU(s); raw log: {args.log}")

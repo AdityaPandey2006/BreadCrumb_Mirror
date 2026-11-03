@@ -399,6 +399,26 @@ bmap(struct inode *ip, uint bn)
   panic("bmap: out of range");
 }
 
+// Like bmap, but never allocates or writes: returns 0 if the block (or its
+// indirect block) is absent. Speculative paths use this so a private write
+// can never allocate a public block or log_write() an indirect block.
+static uint
+bmap_existing(struct inode *ip, uint bn)
+{
+  uint addr;
+  struct buf *bp;
+
+  if(bn < NDIRECT)
+    return ip->addrs[bn];
+  bn -= NDIRECT;
+  if(bn >= NINDIRECT || (addr = ip->addrs[NDIRECT]) == 0)
+    return 0;
+  bp = bread(ip->dev, addr);
+  addr = ((uint*)bp->data)[bn];
+  brelse(bp);
+  return addr;
+}
+
 // Truncate inode (discard contents).
 // Only called when the inode has no links
 // to it (no directory entries referring to it)
@@ -452,7 +472,8 @@ stati(struct inode *ip, struct stat *st)
 int
 readi(struct inode *ip, char *dst, uint off, uint n)
 {
-  uint tot, m;
+  uint tot, m, addr;
+  int id, r;
   struct buf *bp;
 
   if(ip->type == T_DEV){
@@ -465,6 +486,28 @@ readi(struct inode *ip, char *dst, uint off, uint n)
     return -1;
   if(off + n > ip->size)
     n = ip->size - off;
+
+  // Speculative view of regular-file data (Step 4). Directories never have
+  // private blocks in this stage and are always read from the public view.
+  if(ip->type == T_FILE && (id = spec_current()) != 0){
+    for(tot=0; tot<n; tot+=m, off+=m, dst+=m){
+      m = min(n - tot, BSIZE - off%BSIZE);
+      addr = bmap_existing(ip, off/BSIZE);
+      // 1 = private bytes copied; 0 = no private copy; -1 = invalid or
+      // cancelled. Never treat -1 as "no shadow" and fall back to public.
+      r = addr ? shadow_read(id, ip->dev, addr, off%BSIZE, dst, m) : -1;
+      if(r < 0)
+        return tot > 0 ? tot : -1;
+      if(r == 0){
+        // No private copy. Safe without a gap: every first-copy of this
+        // inode's blocks holds ip->lock, which our caller holds.
+        bp = bread(ip->dev, addr);
+        memmove(dst, bp->data + off%BSIZE, m);
+        brelse(bp);
+      }
+    }
+    return n;
+  }
 
   for(tot=0; tot<n; tot+=m, off+=m, dst+=m){
     bp = bread(ip->dev, bmap(ip, off/BSIZE));
@@ -481,9 +524,12 @@ readi(struct inode *ip, char *dst, uint off, uint n)
 int
 writei(struct inode *ip, char *src, uint off, uint n)
 {
-  uint tot, m;
+  uint tot, m, addr;
+  int id;
   struct buf *bp;
 
+  // Console/devices keep their ordinary effects, even for speculative
+  // callers: output buffering is a later stage.
   if(ip->type == T_DEV){
     if(ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].write)
       return -1;
@@ -495,18 +541,46 @@ writei(struct inode *ip, char *src, uint off, uint n)
   if(off + n > MAXFILE*BSIZE)
     return -1;
 
+  // Speculative write (Step 4 subset): only already-allocated bytes of a
+  // linked regular file. Never extends, allocates, log_write()s, bwrite()s or
+  // iupdate()s: the inode and every public buffer stay clean. Rejecting
+  // nlink==0 keeps private copies off blocks that the last iput() may free.
+  // A failure part-way returns the bytes privately written (decision D22).
+  if((id = spec_current()) != 0){
+    if(ip->type != T_FILE || ip->nlink < 1 || off + n > ip->size)
+      return -1;
+    for(tot=0; tot<n; tot+=m, off+=m, src+=m){
+      m = min(n - tot, BSIZE - off%BSIZE);
+      addr = bmap_existing(ip, off/BSIZE);
+      if(addr == 0 ||
+         shadow_write(id, ip->dev, addr, ip->inum, off%BSIZE, src, m) != 1)
+        return tot > 0 ? tot : -1;
+    }
+    return n;
+  }
+
+  // Public write. An outside write to a block privately copied by any
+  // speculation is refused (decision D20). The check runs while holding the
+  // block's buffer lock, so a concurrent first-copy either is already
+  // indexed (refused here) or copies only after this write completes.
   for(tot=0; tot<n; tot+=m, off+=m, src+=m){
     bp = bread(ip->dev, bmap(ip, off/BSIZE));
+    if(ip->type == T_FILE && shadow_block_busy(ip->dev, bp->blockno)){
+      brelse(bp);
+      break;
+    }
     m = min(n - tot, BSIZE - off%BSIZE);
     memmove(bp->data + off%BSIZE, src, m);
     log_write(bp);
     brelse(bp);
   }
 
-  if(n > 0 && off > ip->size){
+  if(tot > 0 && off > ip->size){
     ip->size = off;
     iupdate(ip);
   }
+  if(tot < n)
+    return tot > 0 ? tot : -1;   // xv6 short-write convention
   return n;
 }
 

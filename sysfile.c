@@ -123,6 +123,8 @@ sys_link(void)
 
   if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
     return -1;
+  if(spec_current() != 0)
+    return -1;   // Step 4: namespace mutation is not isolated yet
 
   begin_op();
   if((ip = namei(old)) == 0){
@@ -191,6 +193,8 @@ sys_unlink(void)
 
   if(argstr(0, &path) < 0)
     return -1;
+  if(spec_current() != 0)
+    return -1;   // Step 4: namespace mutation is not isolated yet
 
   begin_op();
   if((dp = nameiparent(path, name)) == 0){
@@ -210,6 +214,13 @@ sys_unlink(void)
 
   if(ip->nlink < 1)
     panic("unlink: nlink < 1");
+  // D20: an outside unlink of a file with privately copied blocks is refused,
+  // so those blocks can never be freed and reused while a speculation holds
+  // them. Every first-copy holds ip->lock, as we do here.
+  if(ip->type == T_FILE && shadow_inode_busy(ip->dev, ip->inum)){
+    iunlockput(ip);
+    goto bad;
+  }
   if(ip->type == T_DIR && !isdirempty(ip)){
     iunlockput(ip);
     goto bad;
@@ -295,7 +306,20 @@ sys_open(void)
 
   begin_op();
 
-  if(omode & O_CREATE){
+  if((omode & O_CREATE) && spec_current() != 0){
+    // Step 4: a speculation may "create" only an existing regular file,
+    // which create() would return unchanged. Never allocate an inode.
+    if((ip = namei(path)) == 0){
+      end_op();
+      return -1;
+    }
+    ilock(ip);
+    if(ip->type != T_FILE){
+      iunlockput(ip);
+      end_op();
+      return -1;
+    }
+  } else if(omode & O_CREATE){
     ip = create(path, T_FILE, 0, 0);
     if(ip == 0){
       end_op();
@@ -329,6 +353,7 @@ sys_open(void)
   f->off = 0;
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+  f->spec = spec_current();   // D21: tag with the opening speculation
   return fd;
 }
 
@@ -338,6 +363,8 @@ sys_mkdir(void)
   char *path;
   struct inode *ip;
 
+  if(spec_current() != 0)
+    return -1;   // Step 4: namespace mutation is not isolated yet
   begin_op();
   if(argstr(0, &path) < 0 || (ip = create(path, T_DIR, 0, 0)) == 0){
     end_op();
@@ -355,6 +382,8 @@ sys_mknod(void)
   char *path;
   int major, minor;
 
+  if(spec_current() != 0)
+    return -1;   // Step 4: namespace mutation is not isolated yet
   begin_op();
   if((argstr(0, &path)) < 0 ||
      argint(1, &major) < 0 ||

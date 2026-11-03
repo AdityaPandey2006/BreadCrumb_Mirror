@@ -192,6 +192,7 @@ UPROGS=\
 	_addtest\
 	_hello_test\
 	_spectest\
+	_spfiletest\
 
 ifeq ($(SHADOW_TEST),1)
 UPROGS += _shadowtest

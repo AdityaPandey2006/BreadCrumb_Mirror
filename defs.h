@@ -14,6 +14,7 @@ struct superblock;
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
+struct buf*     bread_original(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
 
@@ -116,6 +117,7 @@ struct spec_context* spec_pin(int);
 struct spec_context* spec_pin_cleanup(int);
 void            spec_unpin(struct spec_context*);
 int             spec_wait(struct spec_context*, void*, struct spinlock*);
+int             spec_current(void);
 struct cpu*     mycpu(void);
 struct proc*    myproc();
 void            pinit(void);
@@ -129,13 +131,18 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 
-// shadow.c: kernel buffers only; caller holds no cache buffer or spinlock.
+// shadow.c: read/write take kernel or argptr-validated user addresses; the
+// caller holds no cache buffer or spinlock (an inode sleeplock is allowed).
+void            shadowinit(void);
 int             shadow_read(int, uint, uint, uint, void*, uint);
-int             shadow_write(int, uint, uint, uint, const void*, uint);
+int             shadow_write(int, uint, uint, uint, uint, const void*, uint);
+int             shadow_block_busy(uint, uint);
+int             shadow_inode_busy(uint, uint);
 int             shadow_count(struct spec_context*);
 void            shadow_discard(struct spec_context*);
 #ifdef SHADOW_TEST
 int             shadow_test(int, int, int);
+void            shadow_note_public_write(void);
 #endif
 
 // swtch.S

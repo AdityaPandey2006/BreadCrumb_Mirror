@@ -105,6 +105,18 @@ bread(uint dev, uint blockno)
   return b;
 }
 
+// Explicit original (public) view of a block, for shadow first-copy and later
+// commit/recovery. The buffer cache never performs speculative lookup:
+// redirection happens above it in readi()/writei(), so this is identical to
+// bread(). The separate name makes its callers auditable; it is NOT a path
+// for speculative writes, and the returned buffer must never be log_write()n
+// on behalf of a speculation.
+struct buf*
+bread_original(uint dev, uint blockno)
+{
+  return bread(dev, blockno);
+}
+
 // Write b's contents to disk.  Must be locked.
 void
 bwrite(struct buf *b)

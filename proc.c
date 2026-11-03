@@ -295,6 +295,17 @@ spec_wait(struct spec_context *sc, void *chan, struct spinlock *lk)
   return ok ? 0 : -1;
 }
 
+// Speculation ID of the current process, or 0 for ordinary execution and for
+// kernel paths that run before the first process exists. A process reads only
+// its own spec field; it changes only in that process's own xbegin/complete
+// or exit, so no lock is needed for this snapshot.
+int
+spec_current(void)
+{
+  struct proc *p = myproc();
+  return p ? p->spec : 0;
+}
+
 int
 spec_commit(void)
 {

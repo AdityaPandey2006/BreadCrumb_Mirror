@@ -1,0 +1,15 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfiletest; echo TESTDONE1f57a229
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: speculation begins
+lapicid 0: panic: log_write outside of trans
+ 80103409 80101ef4 8010128f 80106629 801062f9 8010753d 80107274 0 0 0

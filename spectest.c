@@ -393,33 +393,44 @@ test_failed_fork_and_slot_reuse(void)
   check(1, "repeated begin/complete and process-slot reuse");
 }
 
+static int
+bytes_equal(char *a, char *b, int n)
+{
+  while(n-- > 0)
+    if(*a++ != *b++)
+      return 0;
+  return 1;
+}
+
+// Step 2 deliberately asserted that a speculative write stayed visible after
+// xabort. Step 4 isolates overwrites of existing files, so the expectation is
+// now reversed: abort preserves the original bytes. Creating a new file inside
+// a speculation is rejected in Step 4 (see spfiletest for full coverage).
 static void
 test_ordinary_file_effects(void)
 {
-  int fd;
+  int fd, n;
   char in[8];
 
-  check(xbegin() == 0, "ordinary-effects example begins");
   fd = open("specleak", O_CREATE|O_RDWR);
-  if(fd >= 0){
-    write(fd, "visible", 7);
+  check(fd >= 0 && write(fd, "visible", 7) == 7, "isolation example file prepared");
+  if(fd >= 0)
     close(fd);
-  }
+  check(xbegin() == 0, "isolation example begins");
+  check(open("specnew", O_CREATE|O_RDWR) < 0,
+        "speculative creation of a new file is rejected (Step 4)");
+  fd = open("specleak", O_RDWR);
+  check(fd >= 0 && write(fd, "private", 7) == 7, "speculative overwrite accepted");
+  if(fd >= 0)
+    close(fd);
   check(xabort() == 0, "lifecycle abort succeeds");
   fd = open("specleak", O_RDONLY);
-  if(fd >= 0){
-    int n = read(fd, in, sizeof(in));
-    int same = n == 7;
-    int i;
+  n = fd >= 0 ? read(fd, in, sizeof(in)) : -1;
+  if(fd >= 0)
     close(fd);
-    for(i = 0; i < 7 && same; i++)
-      if(in[i] != "visible"[i])
-        same = 0;
-    check(same,
-          "ordinary file write remains visible after xabort (expected Step 2)");
-  } else {
-    check(0, "ordinary file write remains visible after xabort (expected Step 2)");
-  }
+  check(n == 7 && bytes_equal(in, "visible", 7),
+        "speculative overwrite discarded by xabort (Step 4 isolation)");
+  check(open("specnew", O_RDONLY) < 0, "rejected creation left no public file");
   unlink("specleak");
 }
 

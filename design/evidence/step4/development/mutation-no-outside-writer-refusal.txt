@@ -1,0 +1,130 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfiletest; echo TESTDONE79fd0fef
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: speculation begins
+PASS: speculative overwrite of block 0
+PASS: speculative overwrite of block 2
+PASS: speculation reads its own private bytes
+PASS: rest of private block keeps original bytes
+PASS: stat size unchanged by non-extending write
+PASS: outsider reads original bytes
+FAIL: outsider write to a privately copied block returns -1
+FAIL: refused outsider write left the public block unchanged
+PASS: outsider unlink of a file with private copies returns -1
+FAIL: outsider write stops short at a copied block (512 bytes)
+FAIL: copied block untouched by the short outsider write
+PASS: outsider may write an uncopied block
+PASS: speculation sees outsider writes to uncopied blocks (no snapshot)
+PASS: private bytes survive outsider activity
+PASS: nonempty commit still unsupported in Step 4
+PASS: abort succeeds
+FAIL: abort preserves the original public bytes
+PASS: outside write allowed again after abort
+PASS: outside unlink allowed again after abort
+-- parent and child share private updates
+PASS: speculation begins
+PASS: parent writes privately
+PASS: member child forked
+PASS: child sees the parent's private bytes
+PASS: child writes privately
+PASS: parent sees the child's private bytes
+PASS: abort succeeds
+PASS: abort discards both members' changes
+-- independent speculations do not see each other
+PASS: speculation A writes block 0 privately
+PASS: speculation B sees original bytes, then its own
+PASS: outsider still sees original bytes
+PASS: each speculation keeps only its own private bytes
+PASS: each speculation keeps only its own private bytes
+PASS: both aborts preserve the original
+-- reads without copies, cross-block, reuse, cap, partial write
+PASS: speculation begins
+PASS: reads without private copies return originals
+PASS: cross-block write (blocks 0 and 1)
+PASS: cross-block bytes read back
+PASS: bytes around the cross-block write unchanged
+PASS: 20 repeated writes inside block 0
+PASS: distinct blocks up to the cap (repeated writes reused entries)
+PASS: private write through an indirect block
+PASS: write needing a ninth block returns -1
+PASS: rejected block unchanged in private view
+PASS: write spanning into a ninth block is partial (12)
+PASS: file offset advanced by exactly the bytes written
+PASS: partial write left a documented private view
+PASS: stat size unchanged
+PASS: abort succeeds
+PASS: abort restores every original byte
+-- allocation failure (SHADOW_TEST build)
+PASS: speculation begins
+PASS: allocation failure before any byte returns -1
+PASS: failed write left no private change
+PASS: write after the failure succeeds
+PASS: allocation failure part-way returns bytes written (12)
+PASS: partial private view matches the returned count
+PASS: abort succeeds
+PASS: public file unchanged after allocation failures
+PASS: no shadow pages leaked
+-- owner exit discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+FAIL: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- owner kill discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+FAIL: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- unsupported mutations rejected without public change
+PASS: speculation begins
+PASS: creating a new file returns -1
+PASS: O_CREATE of an existing file opens it unchanged
+PASS: extending write at EOF returns -1
+PASS: write straddling EOF returns -1
+PASS: straddling write changed nothing
+PASS: size unchanged
+PASS: unlink returns -1
+PASS: link returns -1
+PASS: mkdir returns -1
+PASS: mknod returns -1
+PASS: reading a directory opened in the speculation works
+PASS: abort succeeds
+PASS: no rejected name reached the public namespace
+PASS: file intact after rejections
+-- descriptor rule: only files opened in the same speculation
+PASS: speculation begins
+PASS: read through a pre-xbegin descriptor returns -1
+PASS: write through a pre-xbegin descriptor returns -1
+PASS: fstat of a pre-xbegin descriptor works
+PASS: pipes keep ordinary behaviour (buffering is a later step)
+PASS: descriptor opened in the speculation works
+PASS: member child may use the speculation's descriptor
+PASS: shared offset among members only
+PASS: abort succeeds
+PASS: pre-xbegin descriptor usable again, offset untouched
+PASS: new speculation begins
+PASS: descriptor from an earlier speculation returns -1
+PASS: abort succeeds
+PASS: original preserved
+PASS: no log_write() (dirty public buffer) by any speculative process
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+SPFILE TESTS FAILED: 7
+TESTDONE79fd0fef
+$ 

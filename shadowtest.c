@@ -1,4 +1,5 @@
-// Built only with SHADOW_TEST=1. No normal filesystem write is shadowed yet.
+// Built only with SHADOW_TEST=1. Exercises the kernel shadow API directly on
+// raw test blocks; spfiletest covers ordinary file reads/writes (Step 4).
 #include "types.h"
 #include "stat.h"
 #include "user.h"

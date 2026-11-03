@@ -1,6 +1,6 @@
 EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES
 Questions, explanations, and decisions before implementation
-Updated: 1 November 2026
+Updated: 3 November 2026
 
 HOW TO READ THIS RECORD
 =======================
@@ -643,3 +643,149 @@ additional statements that were agreed before coding:
 Next stage: discuss Step-4 filesystem routing, original-cache access and cached
 inode/shared-descriptor semantics before implementation. Full commit, file
 creation/deletion, output buffering, conflicts and performance remain later work.
+
+BEFORE STEP 4: FILESYSTEM INTEGRATION DECISIONS
+===============================================
+Step 4 routes ordinary read()/write() on existing regular files through the
+Step-3 shadow storage. Supported subset: speculative reads, and writes that do
+not extend an existing regular file. Extension, create, O_TRUNC, unlink, link,
+mkdir and mknod by a speculating process are to be rejected before any public
+change. Console and pipe output keep their ordinary effects until later steps.
+
+1. Plain-language plan requested
+--------------------------------
+User asked for the Step-4 work to be listed in simple words before coding.
+The assistant listed: verify the Step-3 base; trace sys_write -> filewrite ->
+writei -> bmap -> bread -> log_write and the read path; enforce the supported
+subset; keep bread() as the explicit original-block path by intercepting at
+readi/writei; private reads and writes; inode/descriptor handling; partial-
+failure handling; outside-writer handling; end-to-end guest tests on 1 and 3
+CPUs; documentation and summary updates. Three decisions were raised.
+
+2. Detailed alternatives requested
+----------------------------------
+User:
+"ok for thr design decision to be taken can you more elboreately explain thr
+problem ans tell me what happens if i take differen alternate decisions the
+disadvantages and advantages all"
+
+A. Outside writers. Example: speculation S copies block 42 (Hello) and
+privately writes World; ordinary process P then writes Howdy to block 42. A
+later commit of S would silently overwrite Howdy (last-writer-wins). Worse:
+if P deletes or truncates the file, block 42 is freed and may be reused by
+another file, which a later commit of S would corrupt.
+  A1 Refuse the outsider with -1: simple, no waiting, no lost updates; but
+     ordinary programs can fail because a speculation is running.
+  A2 Make the outsider wait: no errors, but can hang forever or deadlock
+     (e.g. S waits on a pipe for P), and sleeps holding inode/log resources.
+  A3 Let the outsider proceed and mark S abort-only: ordinary programs never
+     fail or wait; but S's view becomes stale, freed-block reuse must still be
+     caught reliably, and it pre-selects part of the open conflict policy.
+  A4 Do nothing and document: forbidden by the instructions; can corrupt.
+  Also discussed: reads are not a snapshot; two speculations writing the same
+  block do not conflict until a Step-5 commit.
+
+B. Shared file offsets. Example: A opens log.txt, forks C, then calls
+xbegin. A and C share one file object and offset. A's private 100-byte write
+moves C's offset to 100, a visible outside effect that survives abort.
+  B1 Only file objects opened during the same speculation (console exempt):
+     real guarantee, little code; files must be reopened after xbegin and
+     shell-redirected descriptors are refused.
+  B2 Refuse only if actually shared with an outsider: xv6 counts references
+     but does not record holders; costly scanning for little gain.
+  B3 Allow and document the leak: no work, weak isolation.
+  B4 Private per-speculation offsets: full isolation, too large for Step 4.
+
+C. Partial failure. Example: 7 of 8 shadow slots used, then a three-block
+write; the second block exceeds the cap.
+  C1 Return bytes privately written (-1 if none): xv6/Unix convention,
+     truthful; program must check short writes.
+  C2 Up-front check, all-or-nothing: not reliable without reservations or
+     rollback because other members can take slots concurrently.
+  C3 Return -1 and mark abort-only: safe, but -1 with a partial private
+     change is what the instructions warn against.
+
+3. Decisions accepted
+---------------------
+User:
+"go with A3 ,B1 and C1"
+
+Initially recorded as spreadsheet rows D20 (A3), D21 (B1) and D22 (C1).
+
+The assistant then raised an A3 follow-up: what may a conflicted speculation
+still do? If an outsider frees block 42 and a new file reuses it, the
+speculation's private copy of block 42 would be returned when it reads the new
+file. Options were: fail further speculative file I/O, drop only affected
+shadows, or kill all members.
+
+4. A3 revised to A1
+-------------------
+User:
+"wait roll back i feel instead of implementing A3 do A1 for the outsider write
+the one you recommended forst abort the normal process ans let thr speculative
+process coninue"
+
+Outcome: D20 now records A1. The outside operation is refused with -1 and the
+public file is unchanged; the speculation continues unaffected. Interpreted
+as failing the outsider's operation, not killing the outsider process. The
+assistant's recommended granularity was adopted with A1: block level for
+outside writes (shadowed READY or LOADING blocks), file level for outside
+unlink/O_TRUNC of a file with any shadowed block, so shadowed blocks can never
+be freed and reused. The A3 follow-up question is no longer needed. D21 (B1)
+and D22 (C1) are unchanged. D20 is scoped to Step 4; O02 remains open, and
+R03/O05 remain open for whether a short write should make a speculation
+abort-only.
+
+5. Implementation authorized
+----------------------------
+User:
+"yeah so let the outsider process return -1 if a sepculative process is
+runnign on outsider write problem
+and sicne now the decision made a re clear start on doinf the rwst of steps of
+step 4"
+
+Outcome: confirmed A1 as recorded in D20 (the outsider's operation returns
+-1; it is not killed). Step 4 was then implemented.
+
+
+STEP 4 POST-IMPLEMENTATION CLARIFICATIONS AND CURRENT BOUNDARY
+===============================================================
+These are implementation choices made while coding Step 4. They are NOT
+additional agreed policies; the agreed Step-4 policies are D20, D21 and D22.
+
+- Redirection happens in readi()/writei() for T_FILE inodes only, so the
+  buffer cache stays the original view. bread_original() names that path;
+  its callers are shadow first-copy and test-only raw inspection.
+- Speculative writes require nlink >= 1 and off+n <= size. They never call
+  begin_op, log_write, bwrite, balloc or iupdate. A test-only counter in
+  log_write() confirms that speculative processes made no public-buffer
+  writes during the tests.
+- D20 is enforced through a global index of all shadow entries under a new
+  leaf spinlock (shadowmap.lock), not by pinning contexts. Pinning would
+  raise a context's reference count and make a concurrent owner
+  xcommit/xabort fail. The outside-writer check runs while holding the target
+  block's buffer lock; the unlink check runs while holding the inode lock.
+  Shadow entries now record the owning inode number.
+- Reads are not a snapshot: outside writes to uncopied blocks are visible to
+  the speculation. Two speculations writing the same block do not conflict
+  until a Step-5 commit.
+- The public filewrite no longer panics on a short write; it follows the
+  xv6 short-write convention. That case is reachable only through D20.
+- FSSIZE was raised from 1000 to 2000 blocks. The new spfiletest binary left
+  97 free blocks, while the usertests big-file test needs about 142 and
+  panicked with "balloc: out of blocks". This is a disk-size change only;
+  NSHADOW, LOGSIZE and MAXOPBLOCKS are unchanged.
+- Known residual effect: if an outsider unlinks a file before the
+  speculation copies any of its blocks, the member that drops the last
+  reference frees it publicly, as in ordinary xv6.
+- Build/test environment: the Windows checkout uses CRLF (core.autocrlf), so
+  builds ran in a synced LF copy inside WSL. Raw logs are under
+  design/evidence/step4/.
+- Nonempty xcommit still returns -1. Console and pipe output are not
+  buffered. Details and results: step4-implementation.md and
+  step4-verification.md.
+
+Next stage: Step 5, abort then commit (publish private blocks in one log
+transaction). Open for discussion: O02 (same block copied by two
+speculations at commit), O05 (cancellation during publication), and R03
+(whether a short write should make a speculation abort-only).

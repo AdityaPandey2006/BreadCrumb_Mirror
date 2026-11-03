@@ -8,4 +8,5 @@
 #define ST_FAIL      7
 #define ST_HOLD      8
 #define ST_WAITERS   9
+#define ST_PUBWRITES 10  // log_write() calls made by speculative processes
 #define ST_ABSENT  256

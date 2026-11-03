@@ -6,6 +6,7 @@ struct file {
   struct pipe *pipe;
   struct inode *ip;
   uint off;
+  int spec;  // speculation ID that opened an FD_INODE file, or 0 (D21)
 };
 
 

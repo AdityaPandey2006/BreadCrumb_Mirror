@@ -1,4 +1,5 @@
-// Private block storage only: ordinary filesystem paths are NOT redirected.
+// Private block storage. Step 4: readi()/writei() route speculative regular-
+// file data through this module; it never writes the public cache or log.
 #include "types.h"
 #include "defs.h"
 #include "param.h"
@@ -12,20 +13,99 @@ enum shadowstate { SH_LOADING, SH_READY };
 
 // One kalloc page per entry. Unlinked/free entries are FREE implicitly.
 // Linked allocation avoids a fixed pointer array and keeps wait channels stable.
+// dev, blockno and inum are immutable while the entry is linked anywhere.
 struct shadow {
-  struct shadow *next;
+  struct shadow *next;          // per-context list, under resource_lock
+  struct shadow *gnext;         // global index, under shadowmap.lock
   uint dev;
   uint blockno;
+  uint inum;                    // owning inode, or 0 for raw test blocks
   enum shadowstate state;
   uchar data[BSIZE];
 };
 typedef char shadow_fits_page[(sizeof(struct shadow) <= PGSIZE) ? 1 : -1];
+
+// Global index of every linked entry (LOADING or READY) in every context, used
+// only for the Step-4 outside-writer refusal (decision D20). The lock is a
+// leaf: it is taken after resource_lock, or alone, and nothing is acquired
+// while it is held. Checking it never pins a context, so it cannot make an
+// owner's xcommit()/xabort() fail its sole-reference test.
+static struct {
+  struct spinlock lock;
+  struct shadow *head;
+} shadowmap;
+
+void
+shadowinit(void)
+{
+  initlock(&shadowmap.lock, "shadowmap");
+}
+
+static void
+index_add(struct shadow *s)
+{
+  acquire(&shadowmap.lock);
+  s->gnext = shadowmap.head;
+  shadowmap.head = s;
+  release(&shadowmap.lock);
+}
+
+static void
+index_remove(struct shadow *s)
+{
+  struct shadow **link;
+  acquire(&shadowmap.lock);
+  for(link = &shadowmap.head; *link && *link != s; link = &(*link)->gnext)
+    ;
+  if(*link == 0)
+    panic("shadow index");
+  *link = s->gnext;
+  release(&shadowmap.lock);
+}
+
+static int
+index_busy(uint dev, uint key, int byinum)
+{
+  struct shadow *s;
+  int busy = 0;
+  acquire(&shadowmap.lock);
+  for(s = shadowmap.head; s && !busy; s = s->gnext)
+    if(s->dev == dev && (byinum ? s->inum == key : s->blockno == key))
+      busy = 1;
+  release(&shadowmap.lock);
+  return busy;
+}
+
+// Does any speculation hold a private copy (LOADING or READY) of this block?
+// May be called while holding that block's buffer lock: it takes only the
+// leaf shadowmap.lock and never sleeps. The public writer must hold the
+// buffer lock across check-and-write so first-copy cannot interleave.
+int
+shadow_block_busy(uint dev, uint blockno)
+{
+  return index_busy(dev, blockno, 0);
+}
+
+// Does any speculation hold a private copy of any data block of this inode?
+// Caller holds the inode lock, which every first-copy of a file block holds.
+int
+shadow_inode_busy(uint dev, uint inum)
+{
+  return inum != 0 && index_busy(dev, inum, 1);
+}
 
 #ifdef SHADOW_TEST
 static volatile uint fail_alloc;
 static volatile uint hold_loader;
 static volatile uint waiting;
 static volatile uint pages;
+static volatile uint pubwrites;
+
+void
+shadow_note_public_write(void)
+{
+  __sync_fetch_and_add(&pubwrites, 1);
+}
 #endif
 
 static struct shadow*
@@ -89,14 +169,18 @@ shadow_discard(struct spec_context *sc)
   release(&sc->resource_lock);
   for(; s; s = next){
     next = s->next;
+    index_remove(s);
     entry_free(s);
   }
 }
 
 // Return 1 if copied/updated, 0 for a read with no private version, -1 on
 // invalid input, capacity/allocation failure, or cancellation. Never public-write.
+// data may be a user address already validated by argptr() (as readi/writei
+// already accept): xv6 maps all user memory, so the copy cannot fault.
 static int
-access(int id, uint dev, uint blockno, uint off, void *data, uint n, int write)
+access(int id, uint dev, uint blockno, uint inum, uint off, void *data, uint n,
+       int write)
 {
   struct spec_context *sc, *active;
   struct shadow *s, *candidate = 0;
@@ -162,18 +246,22 @@ access(int id, uint dev, uint blockno, uint off, void *data, uint n, int write)
     candidate = 0;
     s->dev = dev;
     s->blockno = blockno;
+    s->inum = inum;
     s->state = SH_LOADING;
     s->next = sc->resources;
     sc->resources = s;
+    // Indexed before the source read: a public writer holding this block's
+    // buffer lock either sees the reservation, or finishes before we copy.
+    index_add(s);
     release(&sc->resource_lock);
 
 #ifdef SHADOW_TEST
     while(__sync_val_compare_and_swap(&hold_loader, 0, 0) && !myproc()->killed)
       yield();
 #endif
-    // This remains the original cache path in Step 3. Never call while holding
-    // resource_lock or a source buffer lock. Step 4 must preserve a raw path.
-    b = bread(dev, blockno);
+    // Explicit original view: bypasses speculative lookup by construction.
+    // Never call while holding resource_lock or a source buffer lock.
+    b = bread_original(dev, blockno);
     memmove(s->data, b->data, BSIZE);
     brelse(b);
     // A pin keeps memory alive but is not permission to admit work after abort.
@@ -185,6 +273,7 @@ access(int id, uint dev, uint blockno, uint off, void *data, uint n, int write)
         ;
       *link = s->next;
       release(&sc->resource_lock);
+      index_remove(s);
       entry_free(s);
       wakeup(sc);
       if(active)
@@ -211,13 +300,15 @@ out:
 int
 shadow_read(int id, uint dev, uint blockno, uint off, void *dst, uint n)
 {
-  return access(id, dev, blockno, off, dst, n, 0);
+  return access(id, dev, blockno, 0, off, dst, n, 0);
 }
 
+// inum records the owning inode on first copy (0 for raw test blocks).
 int
-shadow_write(int id, uint dev, uint blockno, uint off, const void *src, uint n)
+shadow_write(int id, uint dev, uint blockno, uint inum, uint off,
+             const void *src, uint n)
 {
-  return access(id, dev, blockno, off, (void*)src, n, 1);
+  return access(id, dev, blockno, inum, off, (void*)src, n, 1);
 }
 
 #ifdef SHADOW_TEST
@@ -235,6 +326,8 @@ shadow_test(int op, int slot, int value)
     return __sync_val_compare_and_swap(&pages, 0, 0);
   if(op == ST_WAITERS)
     return __sync_val_compare_and_swap(&waiting, 0, 0);
+  if(op == ST_PUBWRITES)
+    return __sync_val_compare_and_swap(&pubwrites, 0, 0);
   if(op == ST_FAIL){
     __sync_lock_test_and_set(&fail_alloc, 1);
     return 0;
@@ -247,7 +340,7 @@ shadow_test(int op, int slot, int value)
     return -1;
   block = FSSIZE-NSHADOW-4+slot;
   if(op == ST_ORIGINAL){
-    b = bread(ROOTDEV, block);
+    b = bread_original(ROOTDEV, block);
     r = b->data[0];
     brelse(b);
     return r;
@@ -262,17 +355,17 @@ shadow_test(int op, int slot, int value)
   }
   byte = value;
   if(op == ST_WRITE)
-    return shadow_write(myproc()->spec, ROOTDEV, block, 0, &byte, 1);
+    return shadow_write(myproc()->spec, ROOTDEV, block, 0, 0, &byte, 1);
   if(op == ST_READ){
     r = shadow_read(myproc()->spec, ROOTDEV, block, 0, &byte, 1);
     return r == 1 ? byte : (r == 0 ? ST_ABSENT : -1);
   }
   if(op == ST_COPY){
     // No-op modification at byte 511 verifies first-copy preserves byte zero.
-    b = bread(ROOTDEV, block);
+    b = bread_original(ROOTDEV, block);
     byte = b->data[BSIZE-1];
     brelse(b);
-    return shadow_write(myproc()->spec, ROOTDEV, block, BSIZE-1, &byte, 1);
+    return shadow_write(myproc()->spec, ROOTDEV, block, 0, BSIZE-1, &byte, 1);
   }
   return -1;
 }

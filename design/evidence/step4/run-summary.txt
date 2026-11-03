@@ -1,0 +1,72 @@
+== M1: speculative write path disabled
+lapicid 0: panic: log_write outside of trans
+== M2: outside-writer refusal disabled
+FAIL: outsider write to a privately copied block returns -1
+FAIL: refused outsider write left the public block unchanged
+FAIL: outsider write stops short at a copied block (512 bytes)
+FAIL: copied block untouched by the short outsider write
+FAIL: abort preserves the original public bytes
+FAIL: outsider write refused while copies exist
+FAIL: outsider write refused while copies exist
+SPFILE TESTS FAILED: 7
+== M3: speculative read path disabled (reads public view)
+FAIL: speculation reads its own private bytes
+FAIL: private bytes survive outsider activity
+FAIL: child sees the parent's private bytes
+FAIL: parent sees the child's private bytes
+FAIL: speculation B sees original bytes, then its own
+FAIL: each speculation keeps only its own private bytes
+FAIL: each speculation keeps only its own private bytes
+FAIL: cross-block bytes read back
+FAIL: private write through an indirect block
+FAIL: partial write left a documented private view
+FAIL: partial private view matches the returned count
+FAIL: shared offset among members only
+== FSSIZE 1000 (pre-Step-4 size) with the new test binary
+balloc: first 903 blocks have been allocated
+lapicid 0: panic: balloc: out of blocks
+DONE
+== test build (SHADOW_TEST=1)
+build=0
+      1 PASS: lifecycle abort succeeds
+      1 PASS: no log_write() (dirty public buffer) by any speculative process
+      1 PASS: shadow, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/shadow-cpu1.txt
+      1 SHADOW TESTS PASSED
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS PASSED
+      1 PASS: lifecycle abort succeeds
+      5 PASS: no log_write() (dirty public buffer) by any speculative process
+      1 PASS: shadow, 3 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/shadow-cpu3-repeat5.txt
+      5 SHADOW TESTS PASSED
+      1 SPEC TESTS PASSED
+      5 SPFILE TESTS PASSED
+      1 PASS: files, 2 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/files-cpu2-repeat10.txt
+     10 PASS: no log_write() (dirty public buffer) by any speculative process
+     10 SPFILE TESTS PASSED
+      1 PASS: files, 4 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/files-cpu4-repeat10.txt
+     10 PASS: no log_write() (dirty public buffer) by any speculative process
+     10 SPFILE TESTS PASSED
+== normal build
+build=0
+test-only kernel symbols: 0
+      1 PASS: lifecycle abort succeeds
+      1 PASS: lifecycle, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/normal-lifecycle-cpu1.txt
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS PASSED
+      1 PASS: lifecycle abort succeeds
+      1 PASS: lifecycle, 3 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/normal-lifecycle-cpu3.txt
+      1 SPEC TESTS PASSED
+      1 SPFILE TESTS PASSED
+      1 PASS: files, 3 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/normal-files-cpu3-repeat3.txt
+      3 SPFILE TESTS PASSED
+      1 ALL TESTS PASSED
+      1 PASS: usertests, 1 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/usertests-cpu1.txt
+      1 ALL TESTS PASSED
+      1 PASS: usertests, 2 CPU(s); raw log: /mnt/c/Users/Ishaan/OneDrive/Documents/GitHub/BreadCrumb/design/evidence/step4/usertests-cpu2.txt
+== agent tests
+Ran 15 tests in 0.026s
+
+OK
+DONE
+
+[exited with code 0]

@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><title>Project Summary - Externalization Barriers</title><style>@page {size: A4; margin: 12mm 14mm 12mm 14mm;} body {font-family: "Liberation Sans", Arial, sans-serif; font-size: 9pt; line-height: 1.08; color:#182631;} section {page-break-before: always;} section:first-child {page-break-before: auto;} h1 {font-size:19pt; color:#163b56; margin:8pt 0 12pt;} h2 {font-size:12pt; color:#1b536f; margin:8pt 0 4pt;} p {margin:4pt 0 5pt;} ul,ol {margin:5pt 0 8pt; padding-left:18pt;} li {margin-bottom:3pt;} .eyebrow {font-size:8pt; color:#526f80; letter-spacing:0.5pt;} .lead {font-size:10pt;} .note {background:#edf3f6; padding:7pt; border-left:3pt solid #3c7896;} code,pre {font-family: "Liberation Mono", monospace; font-size:8.5pt;} pre {background:#f1f4f6; padding:8pt; white-space:pre-wrap;} table {border-collapse:collapse; width:100%; font-size:9pt;} th,td {border:1px solid #bdcdd5; padding:3pt; text-align:left; vertical-align:top;} th {background:#e8f0f4;}</style></head><body><div><h1 style="page-break-before:auto">1. Project context and present status</h1><div class="eyebrow">EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES · TEAM HANDOFF</div>
-<p class="lead">Current team handoff and project history, updated <strong>10 November 2026</strong>. Steps 1-7 are implemented at their stated scope. Step 8, pipe handling, is next. Read this alongside the decision spreadsheet and questions_asked.txt.</p>
+<p class="lead">Current team handoff and project history, updated <strong>10 November 2026</strong>. Steps 1-9 are implemented and verified at their stated scope. Step 10, failure measurements and evaluation, is next. Read this alongside the decision spreadsheet and questions_asked.txt.</p>
 <h2>Project and environment</h2>
 <ul><li>Four-member team. The user will distribute work; the teammate implemented Step 2 and the user implemented Step 3 locally with Codex. Remaining assignments are controlled by the user.</li>
 <li>Project: <strong>Externalization barriers for speculative processes</strong>, problem 5 in the project handout.</li>
@@ -126,10 +126,10 @@ python3 agent/llm_agent.py --demo-effects "Create /demo/draft.txt containing Hi.
 <h2>7. Console buffering - COMPLETE</h2>
 <p>Hold speculative console output; discard on abort and release only after filesystem commit completes. Distinguish external observation from internal inspection. Dedicated 4096-byte page buffer per context, Unix short writes on overflow, no physical spillover.</p>
 <p><strong>Checkpoint:</strong> aborted output never reaches the external observer; committed output is released after durable file publication.</p>
-<h2>8. Pipe handling</h2>
+<h2>8. Pipe handling - COMPLETE</h2>
 <p>Distinguish readers inside the same speculation from outside readers. Internal communication must proceed normally; outgoing speculative bytes must remain held until commit. Handle shared/inherited descriptors and endpoint membership explicitly.</p>
 <p><strong>Checkpoint:</strong> internal pipelines make progress; external readers receive no speculative bytes before commit and none after abort. Test blocking/wakeup and finite-buffer behavior.</p>
-<h2>9. Complete conflict handling and concurrency</h2>
+<h2>9. Complete conflict handling and concurrency - COMPLETE</h2>
 <p>Finalize the conflict rule and broaden race tests: participants operating together, outside writers, owner death, and simultaneous lifecycle operations. Locking belongs in every earlier stage; it is not deferred until here.</p>
 <p><strong>Checkpoint:</strong> overlapping work produces the documented outcome without silent lost updates, state leaks, deadlocks, or use-after-free. Include metadata-block conflicts, not just shared file data.</p>
 <h2>10. Failure testing, measurements, and graphs</h2>
@@ -259,6 +259,31 @@ python3 tests/run-spec-tests.py --suite namespace-crash --cpus 3 --log /tmp/nscr
 make -B xv6.img fs.img
 python3 tests/run-spec-tests.py --suite usertests --cpus 1 --log /tmp/usertests.txt
 python3 -m unittest discover -s agent</pre>
-<h2>Limits and Step 9 handoff</h2><p>Step 8 is complete. Step 9 will address broader conflict policies and concurrency serialization between concurrent speculations and outside filesystem operations. Step 10 will perform detailed performance benchmarks and evaluation.</p>
+<h2>Limits and Step 9 handoff</h2><p>Step 8 is complete. Step 9 is now completed in sections 21-22.</p>
 <p>The single-page pipe limit (4096 bytes), coarse filesystem gate, savepoint memory overhead, metadata false conflicts, and non-rollbackable external input consumption remain documented limitations. Terminal input echo and input consumption remain unisolated driver effects.</p>
-<p>Current discussion history is in questions_asked.txt; see step8-implementation.md and step8-verification.md before proceeding with Step 9.</p></div></body></html>
+<p>Current discussion history is in questions_asked.txt; see step8-implementation.md and step8-verification.md.</p></div>
+
+<div><h1 style="page-break-before:always">21. Step 9 completed: conflict handling and concurrency validation</h1><div class="eyebrow">EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES · TEAM HANDOFF</div>
+<h2>Consistency contract and conflict policy</h2><p>Step 9 formalizes the supported consistency contract: <strong>write isolation with first-committer-wins validation and non-snapshot reads</strong>. Speculative reads from unshadowed blocks read the live public buffer cache; reads do not record a read-set or snapshot disk blocks. No snapshot isolation, read-set validation, or serializability is claimed. Two speculations modifying the same block both proceed privately; at commit time, the first committer publishes durably, while the second committer detects a byte mismatch against its saved original image (s->orig) and fails with SP_CONFLICT. The losing context becomes abort-only (sc->abort_only = 1) and xcommit returns -1.</p>
+<p>Outside writes to shadowed blocks return short write or -1 (D20); outside unlinks of shadowed files return -1 (D20/D33). Metadata false conflicts occur at 512-byte block boundaries when independent speculations modify different files whose dinodes share an inode block (8 per block) or root directory entries. The second committer safely detects the block change and aborts, preserving filesystem integrity without fine-grained multi-lock restructuring.</p>
+<h2>Synchronization, gate coverage and drain order</h2><p>The coarse sleeping filesystem gate (fs_enter/fs_leave) is retained as the correctness baseline. Inode and file descriptor closing in exit() and free_embryo() are protected under fs_enter(), eliminating races between asynchronous process exit, cache view reloading, and active filesystem mutations. In spec_commit_durable(), staged external pipe records are drained strictly before console output, fulfilling Decision D42.</p>
+<p>Failed commit validation publishes zero blocks, leaves public data untouched, and withholds all staged console and pipe output. Discard on abort or exit frees held buffers via kfree() with zero leakage to screens, serial ports, or external pipe readers.</p></div>
+
+<div><h1 style="page-break-before:always">22. Step 9 verification and Step 10 handoff</h1><div class="eyebrow">EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES · TEAM HANDOFF</div>
+<h2>Verification on 10 November 2026</h2><ul><li>Instrumented (SHADOW_TEST=1) and normal builds compiled with zero warnings under -Werror.</li><li>Dedicated deterministic concurrency test suite (spconflict) verified on 1 CPU and 3 CPUs (3 repeats), validating: data conflict first-committer-wins and abort-only loser; metadata false conflicts (directory and dinode sharing); outside writer and unlink refusals; concurrent participants in shared speculations; commit and abort rejection with live child peers; owner kill cancellation; repeated context reuse (30 cycles); pending output zero-leakage on conflict; and multi-process concurrency stress without deadlock.</li><li>Strict host-side observer assertions in tests/run-spec-tests.py verified zero leakage of LEAK_CONFLICT_CONSOLE_555 and LEAK_CONFLICT_PIPE_444.</li><li>Full shadow suite regression on 3 CPUs (2 repeats) passed all 7 sub-suites (shadowtest, spfiletest, spcommit, spconsoletest, sppipetest, spconflict, spectest).</li><li>Dedicated console and pipe isolation suites passed on 3 CPUs (2 repeats).</li><li>Namespace suite passed on 3 CPUs (2 repeats); crash and namespace-crash suites passed all four commit crash points.</li><li>Full standard xv6 usertests passed on 1 CPU (ALL TESTS PASSED); all 15 host Python agent tests passed.</li></ul>
+<p>Raw logs are preserved in design/evidence/step9/ (conflict-cpu1.txt, conflict-cpu3-repeat3.txt, shadow-cpu3.txt, console-cpu3.txt, pipe-cpu3.txt, namespace-cpu3.txt, crash-cpu3.txt, namespace-crash-cpu3.txt, usertests-cpu1.txt, lifecycle-cpu3.txt).</p>
+<h2>Reproduce</h2><pre>make -B SHADOW_TEST=1 xv6.img fs.img
+python3 tests/run-spec-tests.py --suite conflict --cpus 3 --repeat 3 --log /tmp/conflict3.txt
+python3 tests/run-spec-tests.py --suite shadow --cpus 3 --repeat 2 --log /tmp/shadow3.txt
+python3 tests/run-spec-tests.py --suite console --cpus 3 --repeat 2 --log /tmp/console3.txt
+python3 tests/run-spec-tests.py --suite pipe --cpus 3 --repeat 2 --log /tmp/pipe3.txt
+python3 tests/run-spec-tests.py --suite namespace --cpus 3 --repeat 2 --log /tmp/ns3.txt
+python3 tests/run-spec-tests.py --suite crash --cpus 3 --log /tmp/crash3.txt
+python3 tests/run-spec-tests.py --suite namespace-crash --cpus 3 --log /tmp/nscrash3.txt
+make -B xv6.img fs.img
+python3 tests/run-spec-tests.py --suite usertests --cpus 1 --log /tmp/usertests.txt
+python3 tests/run-spec-tests.py --suite lifecycle --cpus 3 --log /tmp/lifecycle3.txt
+python3 -m unittest discover -s agent</pre>
+<h2>Limits and Step 10 handoff</h2><p>Step 9 is complete. Step 10 will perform systematic performance benchmarking (1 KiB–64 KiB write costs inside/outside speculation, concurrency scaling, capacity cliff) and evaluation graphs.</p>
+<p>The global filesystem gate serialization cost, metadata false conflicts, 8-block shadow table limit, and non-rollbackable external input consumption remain documented limitations.</p>
+<p>Current discussion history is in questions_asked.txt; see step9-implementation.md and step9-verification.md.</p></div></body></html>

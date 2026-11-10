@@ -1044,3 +1044,83 @@ User: "ok go for it"
 Action: Implemented Step 8 pipe isolation in pipe.c, proc.c, proc.h, defs.h; created
 sppipetest test suite; updated test synchronization in existing tests; validated
 across pipe, console, shadow, namespace, crash, namespace-crash, and usertests.
+
+
+STEP 9: CONFLICT HANDLING AND CONCURRENCY VALIDATION
+====================================================
+
+1. Existing conflict policy and synchronization audit
+----------------------------------------------------
+User: "We are implementing the academic xv6 project “Externalization barriers for
+speculative processes”. Steps 1–8 have been implemented and merged. Implement Step 9:
+complete conflict handling and concurrency validation... Before coding:
+1. Explain the existing conflict policy and synchronization.
+2. Present an ordered breakdown of remaining Step-9 work.
+3. Separate correctness gaps from optional concurrency improvements.
+4. Identify unresolved decisions, recommend choices, and wait for my signal."
+
+Assistant explanation & audit:
+- Conflict detection and first-committer-wins policy:
+  Independent speculations may both privately modify the same block. Both record
+  the saved original bytes (s->orig) when the shadow is first loaded.
+  At commit time (shadow_publish), under the coarse filesystem gate and exclusive
+  log transaction, each shadowed block is compared against public disk data
+  (memcmp(b->data, s->orig, BSIZE) == 0).
+  First committer succeeds and publishes durably; second committer detects mismatch,
+  fails with SP_CONFLICT, sets sc->abort_only = 1, and xcommit returns -1.
+  The loser cannot retry commit; it can only xabort() or exit.
+- Outside operations and refusals:
+  Outside writes to blocks held in shadowmap (LOADING or READY) are refused with
+  short-write / -1 (D20).
+  Outside unlinks of inodes with shadowed blocks or open speculative descriptors
+  are refused with -1 (D20/D33).
+  Outside directory/metadata changes proceed publicly; if they modify a block
+  privately touched by a speculation, commit validation detects the conflict and
+  first-committer-wins safely protects the public filesystem.
+- Consistency contract boundaries:
+  Write isolation with first-committer-wins validation.
+  Speculative reads of unshadowed blocks read the live public buffer cache; reads
+  do NOT provide snapshot isolation, read-set validation, or serializability.
+  Metadata false conflicts occur when different files share a 512-byte dinode block
+  (8 dinodes per block), directory block, or allocation bitmap block.
+- Synchronization & lock hierarchy:
+  1. gate.lock (spinlock)
+  2. Filesystem Gate (fs_enter/fs_leave, sleeping lock)
+  3. Inode sleep-lock (ip->lock)
+  4. Exclusive log transaction (begin_op_exclusive, log.lock)
+  5. Buffer sleep-lock (bp->lock)
+  6. Process table & context lifecycle (ptable.lock, spinlock)
+  7. Context private resources (sc->resource_lock, spinlock)
+  8. Shadow index (shadowmap.lock, leaf spinlock)
+  9. Pipe ring buffer (p->lock, spinlock)
+  10. Console hardware (cons.lock, spinlock)
+  No spinlock is held across disk I/O, sleep, or allocation.
+  The sleep handoff in spec_wait() temporarily acquires ptable.lock before releasing
+  sc->resource_lock, preventing lock inversion and missed wakeups.
+
+2. Correctness gaps vs optional improvements (D45–D48)
+------------------------------------------------------
+- Commit drain ordering (D48): spec_commit_durable(sc) corrected to drain staged
+  external pipe buffers strictly before console buffers, matching D42.
+- Filesystem gate on exit/abort cleanup (D47): Wrapped descriptor closing and cwd
+  iput in exit() and free_embryo() with fs_enter() ... fs_leave(), eliminating
+  races between asynchronous process termination and cached inode view reloading.
+- Conflict detection and resolution (D45): Finalized first-committer-wins at
+  whole-speculation granularity based on 512-byte original-image validation.
+  Losing committer is marked abort-only; staged console and pipe output remain held
+  and are discarded on abort/exit with zero leakage.
+- Supported consistency contract (D46): Documented write isolation, non-snapshot
+  reads, and metadata false conflicts as explicit accepted properties.
+
+3. Execution authorization
+--------------------------
+User: "go for it"
+Action:
+- Fixed commit drain ordering in proc.c (pipe before console).
+- Protected exit() and free_embryo() file/cwd cleanup under fs_enter().
+- Created comprehensive concurrency and conflict test suite spconflict.c (9 tests).
+- Added conflict suite to test runner with strict host-side assertions against leakage
+  of LEAK_CONFLICT_CONSOLE_555 and LEAK_CONFLICT_PIPE_444.
+- Verified 1 CPU and 3 CPUs (3 repeats) on spconflict with 100% pass rate.
+- Passed full shadow, console, pipe, namespace, crash, namespace-crash, usertests,
+  and Python rule agent regressions.

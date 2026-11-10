@@ -132,7 +132,7 @@ def main():
     parser.add_argument("--qemu", default=str(ROOT.parent / "build/qemu-system-i386"))
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--suite", default="shadow",
-                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "pipe", "usertests"))
+                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "pipe", "conflict", "usertests"))
     args = parser.parse_args()
     if args.repeat < 1:
         parser.error("--repeat must be positive")
@@ -165,7 +165,20 @@ def main():
                         raise RuntimeError("leak detected: LEAK_ABORT_PIPE_SECRET_777 appeared in output")
                     if "LEAK_KILL_PIPE_SECRET_666" in out_pipe:
                         raise RuntimeError("leak detected: LEAK_KILL_PIPE_SECRET_666 appeared in output")
+                    out_conf = run("spconflict", "SPCONFLICT: ALL TESTS PASSED")
+                    if "LEAK_CONFLICT_CONSOLE_555" in out_conf:
+                        raise RuntimeError("leak detected: LEAK_CONFLICT_CONSOLE_555 appeared in output")
+                    if "LEAK_CONFLICT_PIPE_444" in out_conf:
+                        raise RuntimeError("leak detected: LEAK_CONFLICT_PIPE_444 appeared in output")
                 run("spectest", "SPEC TESTS PASSED")
+            elif args.suite == "conflict":
+                for _ in range(args.repeat):
+                    out = run("spconflict", "SPCONFLICT: ALL TESTS PASSED")
+                    if "LEAK_CONFLICT_CONSOLE_555" in out:
+                        raise RuntimeError("FAIL: LEAK_CONFLICT_CONSOLE_555 leaked to console on conflict!")
+                    if "LEAK_CONFLICT_PIPE_444" in out:
+                        raise RuntimeError("FAIL: LEAK_CONFLICT_PIPE_444 leaked to external pipe on conflict!")
+                    print("Conflict handling and concurrency checks passed: first-committer-wins, abort-only, zero leakage confirmed.")
             elif args.suite == "pipe":
                 for _ in range(args.repeat):
                     out = run("sppipetest", "SPPIPETEST: ALL TESTS PASSED")

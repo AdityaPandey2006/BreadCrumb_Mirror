@@ -1,0 +1,108 @@
+
+===== HARNESS: crash point 1 (before any log block is written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE9785d104
+NSSETUP OK
+TESTDONE9785d104
+$ spnamespace crash 1
+SPEC CRASH POINT 1
+lapicid 0: panic: spec crash point (test-only)
+ 80107174 80104472 801075bb 80105db8 80108228 801093bd 80109114 0 0 0
+===== HARNESS: guest halted at crash point 1; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify old; echo TESTDONE3e7ac1f5
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONE3e7ac1f5
+$ 
+===== HARNESS: PASS crash point 1: recovered complete old state =====
+
+===== HARNESS: crash point 2 (log blocks written, commit record (log header) not written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE7d60aa22
+NSSETUP OK
+TESTDONE7d60aa22
+$ spnamespace crash 2
+SPEC CRASH POINT 2
+lapicid 0: panic: spec crash point (test-only)
+ 80107174 801044b2 801075bb 80105db8 80108228 801093bd 80109114 0 0 0
+===== HARNESS: guest halted at crash point 2; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify old; echo TESTDONE1afe2e8c
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONE1afe2e8c
+$ 
+===== HARNESS: PASS crash point 2: recovered complete old state =====
+
+===== HARNESS: crash point 3 (commit record written, nothing installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE4f7772e3
+NSSETUP OK
+TESTDONE4f7772e3
+$ spnamespace crash 3
+SPEC CRASH POINT 3
+lapicid 0: panic: spec crash point (test-only)
+ 80107174 8010449a 801075bb 80105db8 80108228 801093bd 80109114 0 0 0
+===== HARNESS: guest halted at crash point 3; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify new; echo TESTDONEca329093
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONEca329093
+$ 
+===== HARNESS: PASS crash point 3: recovered complete new state =====
+
+===== HARNESS: crash point 4 (first of three blocks installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE31dda4b5
+NSSETUP OK
+TESTDONE31dda4b5
+$ spnamespace crash 4
+SPEC CRASH POINT 4
+lapicid 0: panic: spec crash point (test-only)
+ 80107174 8010418a 801043ef 801075bb 80105db8 80108228 801093bd 80109114 0 
+===== HARNESS: guest halted at crash point 4; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify new; echo TESTDONE9e20092d
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONE9e20092d
+$ 
+===== HARNESS: PASS crash point 4: recovered complete new state =====

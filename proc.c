@@ -329,8 +329,8 @@ spec_complete(int commit)
 static void
 spec_commit_durable(struct spec_context *sc)
 {
-  spec_console_drain(sc);
   spec_pipe_drain(sc);
+  spec_console_drain(sc);
 }
 
 // Like sleep(chan, resource_lock), but cancellation/killed checks and sleeping
@@ -550,6 +550,7 @@ free_embryo(struct proc *p)
 {
   int fd;
 
+  fs_enter();
   for(fd = 0; fd < NOFILE; fd++){
     if(p->ofile[fd]){
       fileclose(p->ofile[fd]);
@@ -562,6 +563,7 @@ free_embryo(struct proc *p)
     end_op();
     p->cwd = 0;
   }
+  fs_leave();
   if(p->pgdir){
     freevm(p->pgdir);
     p->pgdir = 0;
@@ -730,7 +732,8 @@ exit(void)
   }
   release(&ptable.lock);
 
-  // Close all open files.
+  // Close all open files and release cwd under the filesystem gate.
+  fs_enter();
   for(fd = 0; fd < NOFILE; fd++){
     if(curproc->ofile[fd]){
       fileclose(curproc->ofile[fd]);
@@ -742,6 +745,7 @@ exit(void)
   iput(curproc->cwd);
   end_op();
   curproc->cwd = 0;
+  fs_leave();
 
   // Detach/reclaim before zombie publication. Resource freeing is outside
   // ptable.lock; other pinned members keep shared shadows alive until safe.

@@ -417,8 +417,9 @@ test_ordinary_file_effects(void)
   if(fd >= 0)
     close(fd);
   check(xbegin() == 0, "isolation example begins");
-  check(open("specnew", O_CREATE|O_RDWR) < 0,
-        "speculative creation of a new file is rejected (Step 4)");
+  fd = open("specnew", O_CREATE|O_RDWR);
+  check(fd >= 0, "speculative creation is private (Step 6)");
+  if(fd >= 0) close(fd);
   fd = open("specleak", O_RDWR);
   check(fd >= 0 && write(fd, "private", 7) == 7, "speculative overwrite accepted");
   if(fd >= 0)

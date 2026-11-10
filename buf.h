@@ -2,6 +2,8 @@ struct buf {
   int flags;
   uint dev;
   uint blockno;
+  int spec;           // nonzero only for an ephemeral private filesystem buffer
+  uint inum;          // owner for private data; SH_META for metadata
   struct sleeplock lock;
   uint refcnt;
   struct buf *prev; // LRU cache list

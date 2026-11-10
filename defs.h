@@ -10,6 +10,7 @@ struct sleeplock;
 struct spec_context;
 struct stat;
 struct superblock;
+struct shadow_save;
 
 // bio.c
 void            binit(void);
@@ -17,6 +18,18 @@ struct buf*     bread(uint, uint);
 struct buf*     bread_original(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
+struct buf*     fs_bread(uint, uint);
+void            fs_brelse(struct buf*);
+int             fs_log_write(struct buf*);
+void            fs_enter(void);
+void            fsviewinit(void);
+void            fs_leave(void);
+int             fs_failed(void);
+void            fs_fail(void);
+void            inode_invalidate(void);
+int             file_spec_busy(struct inode*);
+void            fs_finish(struct spec_context*, int);
+int             fs_syscall(int, int (*)(void));
 
 // console.c
 void            consoleinit(void);
@@ -115,6 +128,7 @@ int             kill(int);
 int             spec_begin(void);
 int             spec_commit(void);
 int             spec_abort(void);
+void            spec_abort_only(void);
 struct spec_context* spec_pin(int);
 struct spec_context* spec_pin_cleanup(int);
 void            spec_unpin(struct spec_context*);
@@ -148,6 +162,11 @@ int             shadow_inode_busy(uint, uint);
 int             shadow_publish(struct spec_context*);
 int             shadow_count(struct spec_context*);
 void            shadow_discard(struct spec_context*);
+#define SH_META 0xffffffffU
+struct shadow_save* shadow_savepoint(void);
+void            shadow_restore(struct shadow_save*);
+void            shadow_save_free(struct shadow_save*);
+int             shadow_inode_new(struct spec_context*, uint);
 #ifdef SHADOW_TEST
 int             shadow_test(int, int, int);
 void            shadow_note_public_write(void);

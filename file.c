@@ -10,12 +10,29 @@
 #include "spinlock.h"
 #include "sleeplock.h"
 #include "file.h"
+#include "mmu.h"
+#include "proc.h"
 
 struct devsw devsw[NDEV];
 struct {
   struct spinlock lock;
   struct file file[NFILE];
 } ftable;
+
+// An outside unlink cannot retire an inode held by a speculative descriptor,
+// even before its first write. The shared cache reference protects its identity.
+int
+file_spec_busy(struct inode *ip)
+{
+  struct file *f;
+  int busy = 0, id = spec_current();
+  acquire(&ftable.lock);
+  for(f = ftable.file; f < &ftable.file[NFILE]; f++)
+    if(f->ref && f->type == FD_INODE && f->ip == ip && f->spec && f->spec != id)
+      busy = 1;
+  release(&ftable.lock);
+  return busy;
+}
 
 void
 fileinit(void)
@@ -75,8 +92,26 @@ fileclose(struct file *f)
   if(ff.type == FD_PIPE)
     pipeclose(ff.pipe, ff.writable);
   else if(ff.type == FD_INODE){
+    struct shadow_save *save = 0;
+    struct spec_context *sc = 0;
+    int unlinked = 0;
     begin_op();
+    if(spec_current() && (sc = spec_pin(spec_current())) != 0){
+      ilock(ff.ip);
+      unlinked = !fs_failed() && ff.ip->nlink == 0;
+      iunlock(ff.ip);
+      if(unlinked){
+        save = shadow_savepoint();
+        if(!save) fs_fail();
+      }
+      spec_unpin(sc);
+    }
     iput(ff.ip);
+    if(unlinked && fs_failed()){
+      if(save){ shadow_restore(save); inode_invalidate(); }
+      spec_abort_only();
+    }
+    if(save) shadow_save_free(save);
     end_op();
   }
 }
@@ -86,9 +121,11 @@ int
 filestat(struct file *f, struct stat *st)
 {
   if(f->type == FD_INODE){
+    fs_enter();
     ilock(f->ip);
     stati(f->ip, st);
     iunlock(f->ip);
+    fs_leave();
     return 0;
   }
   return -1;
@@ -117,14 +154,18 @@ fileread(struct file *f, char *addr, int n)
   if(f->type == FD_PIPE)
     return piperead(f->pipe, addr, n);
   if(f->type == FD_INODE){
+    int gated = f->ip->type != T_DEV;
+    if(gated) fs_enter();
     ilock(f->ip);
     if(!spec_file_ok(f)){
       iunlock(f->ip);
+      if(gated) fs_leave();
       return -1;
     }
     if((r = readi(f->ip, addr, f->off, n)) > 0)
       f->off += r;
     iunlock(f->ip);
+    if(gated) fs_leave();
     return r;
   }
   panic("fileread");
@@ -154,14 +195,17 @@ filewrite(struct file *f, char *addr, int n)
     // A speculative write never enters the log, so it needs no transaction
     // or chunking. Partial private writes return the byte count (D22).
     if(spec_current() != 0){
+      fs_enter();
       ilock(f->ip);
       if(!spec_file_ok(f)){
         iunlock(f->ip);
+        fs_leave();
         return -1;
       }
       if((r = writei(f->ip, addr, f->off, n)) > 0)
         f->off += r;
       iunlock(f->ip);
+      fs_leave();
       return r;
     }
 

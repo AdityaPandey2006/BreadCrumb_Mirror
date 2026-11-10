@@ -30,6 +30,7 @@ main(void)
   tvinit();        // trap vectors
   binit();         // buffer cache
   shadowinit();    // global private-block index
+  fsviewinit();    // serialization for cached inode views and publication
   fileinit();      // file table
   ideinit();       // disk 
   startothers();   // start other processors

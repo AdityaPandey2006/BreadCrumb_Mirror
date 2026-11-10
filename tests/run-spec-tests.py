@@ -95,7 +95,7 @@ def note(log, text):
     print(text, flush=True)
 
 
-def crash_suite(args, folder, log):
+def crash_suite(args, folder, log, namespace=False):
     for point, expect, meaning in CRASH_POINTS:
         for name in ("xv6.img", "fs.img"):
             shutil.copyfile(ROOT / name, folder / name)
@@ -103,8 +103,9 @@ def crash_suite(args, folder, log):
         guest = Guest(args, folder, log)
         try:
             guest.until(rb"\$ ")
-            guest.run("spcommit crashsetup", "CRASHSETUP OK")
-            guest.type(f"spcommit crash {point}")
+            program = "spnamespace" if namespace else "spcommit"
+            guest.run(f"{program} crashsetup", "NSSETUP OK" if namespace else "CRASHSETUP OK")
+            guest.type(f"{program} crash {point}")
             out = guest.until(rb"SPEC CRASH POINT " + str(point).encode() + rb"\r?\n", timeout=120)
             guest.until(rb"panic: spec crash point", timeout=30)
             replied = "xcommit returned" in out
@@ -118,7 +119,7 @@ def crash_suite(args, folder, log):
         guest = Guest(args, folder, log)
         try:
             guest.until(rb"\$ ")
-            guest.run(f"spcommit crashverify {expect}", f"CRASHVERIFY OK {expect}")
+            guest.run(f"{program} crashverify {expect}", "NSVERIFY OK" if namespace else f"CRASHVERIFY OK {expect}")
         finally:
             guest.stop()
         note(log, f"PASS crash point {point}: recovered complete {expect} state")
@@ -131,16 +132,16 @@ def main():
     parser.add_argument("--qemu", default=str(ROOT.parent / "build/qemu-system-i386"))
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--suite", default="shadow",
-                        choices=("shadow", "lifecycle", "files", "commit", "crash", "usertests"))
+                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "usertests"))
     args = parser.parse_args()
     if args.repeat < 1:
         parser.error("--repeat must be positive")
     args.log.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="xv6-spec-tests-") as tmp, args.log.open("wb") as log:
         folder = Path(tmp)
-        if args.suite == "crash":
+        if args.suite in ("crash", "namespace-crash"):
             for _ in range(args.repeat):
-                crash_suite(args, folder, log)
+                crash_suite(args, folder, log, args.suite == "namespace-crash")
             print(f"PASS: crash, {args.cpus} CPU(s); raw log: {args.log}")
             return
         for name in ("xv6.img", "fs.img"):
@@ -168,6 +169,9 @@ def main():
             elif args.suite == "commit":
                 for _ in range(args.repeat):
                     run("spcommit", "SPCOMMIT TESTS PASSED")
+            elif args.suite == "namespace":
+                for _ in range(args.repeat):
+                    run("spnamespace", "NAMESPACE TESTS PASSED")
             else:
                 run("usertests", "ALL TESTS PASSED")
             print(f"PASS: {args.suite}, {args.cpus} CPU(s); raw log: {args.log}")

@@ -1,6 +1,6 @@
 EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES
 Questions, explanations, and decisions before implementation
-Updated: 3 November 2026 (Step 5)
+Updated: 10 November 2026 (Step 6)
 
 HOW TO READ THIS RECORD
 =======================
@@ -867,3 +867,35 @@ Next stage: Step 6, isolating file extension, creation and deletion
 (private inode, size, bitmap and directory changes counted toward the
 eight-block cap). Open: O02 broader conflicts, O05 output delivery at crash,
 O03 exec/descriptor rules, O04 output buffer sizes.
+
+
+STEP 6 IMPLEMENTATION AND DOCUMENTATION REQUEST
+==============================================
+User: "alright list down the parts that have to be done in the step 6, then
+begin the implementation"
+
+Parts listed: private file-size/extension changes; allocation bitmaps and
+indirect blocks; inode allocation/metadata; directory creation/deletion;
+commit/abort/conflicts; outside-reader, failure and recovery tests.
+
+Implementation choices: a coarse reentrant sleeping filesystem gate protects
+cached inode views and live publication. Metadata and data share the existing
+eight-block cap. Namespace failures restore operation-local savepoints; extension
+restores the incomplete chunk and preserves the successful prefix. These are
+internal rollback records, not nested xbegin.
+
+Abort retains existing-file offsets, closes aliases of newly allocated files,
+and moves a newly allocated cwd back to root. If last-close cleanup of an
+unlinked inode fails, restore cleanup and mark the attempt abort-only because
+the descriptor was removed. Ordinary short writes remain committable. Public
+allocation/unlink reservations are conservatively extended.
+
+Costs: per-operation filesystem serialization, metadata false conflicts, and
+transient memory for savepoints/candidates. Console/pipe output remains
+unbuffered. See D28-D33 and step6-implementation.md.
+
+User: "alright update the design decisions and summary and then push the changes"
+
+Action: update the spreadsheet/CSV, PDF/editable source, implementation and
+verification notes, retain raw evidence, then commit/push the feature branch
+to the team and mirror. Main is left for pull-request review.

@@ -155,6 +155,8 @@ spec_detach_locked(struct proc *p)
   if(sc == 0 || sc->members < 1 || sc->refs < 1)
     panic("spec detach invariant");
   p->spec = 0;
+  p->fs_error = 0;
+  p->fs_publication = 0;
   sc->members--;
   sc->refs--;
   if(sc->members == 0 && sc->refs == 0){
@@ -235,20 +237,24 @@ spec_complete(int commit)
   struct proc *p = myproc();
   struct spec_context *sc;
 
+  fs_enter();
   acquire(&ptable.lock);
   if(p->spec == 0 || p->killed){
     release(&ptable.lock);
+    fs_leave();
     return -1;
   }
   sc = spec_lookup_locked(p->spec);
   if(sc == 0 || sc->state != SPEC_ACTIVE || sc->owner_pid != p->pid ||
      sc->members != 1 || sc->refs != 1){
     release(&ptable.lock);
+    fs_leave();
     return -1;
   }
   // D24: a speculation that lost a commit-time conflict can only abort.
   if(commit && sc->abort_only){
     release(&ptable.lock);
+    fs_leave();
     return -1;
   }
   if(commit)
@@ -277,15 +283,18 @@ spec_complete(int commit)
         spec_cancel_locked(sc);    // D23: killed before publication
       release(&ptable.lock);
       spec_unpin(sc);
+      fs_leave();
       return -1;
     }
     spec_commit_durable(sc);
   }
+  fs_finish(sc, commit);
   shadow_discard(sc);
   acquire(&ptable.lock);
   spec_detach_locked(p);
   release(&ptable.lock);
   spec_unpin(sc);
+  fs_leave();
   return 0;
 }
 
@@ -347,6 +356,19 @@ int
 spec_abort(void)
 {
   return spec_complete(0);
+}
+
+// An irreversible descriptor close whose private inode cleanup failed cannot
+// leave an orphaned partial view committable. Namespace calls instead roll back.
+void
+spec_abort_only(void)
+{
+  struct spec_context *sc;
+  acquire(&ptable.lock);
+  sc = spec_lookup_locked(myproc()->spec);
+  if(sc && sc->state == SPEC_ACTIVE)
+    sc->abort_only = 1;
+  release(&ptable.lock);
 }
 
 void
@@ -429,6 +451,8 @@ found:
   p->killed = 0;
   p->spec = 0;
   p->cwd = 0;
+  p->fs_error = 0;
+  p->fs_publication = 0;
   p->name[0] = 0;
   memset(p->ofile, 0, sizeof(p->ofile));
 

@@ -11,6 +11,8 @@
 #include "stat.h"
 #include "file.h"
 
+extern struct superblock sb;
+
 enum shadowstate { SH_LOADING, SH_READY };
 
 // One kalloc page per entry. Unlinked/free entries are FREE implicitly.
@@ -94,7 +96,8 @@ shadow_block_busy(uint dev, uint blockno)
 int
 shadow_inode_busy(uint dev, uint inum)
 {
-  return inum != 0 && index_busy(dev, inum, 1);
+  return inum != 0 && (index_busy(dev, inum, 1) ||
+                       index_busy(dev, IBLOCK(inum, sb), 0));
 }
 
 #ifdef SHADOW_TEST
@@ -207,6 +210,76 @@ shadow_discard(struct spec_context *sc)
     index_remove(s);
     entry_free(s);
   }
+}
+
+struct shadow_save {
+  struct spec_context *sc;
+  struct shadow *head;
+};
+
+// Operation-local savepoints, not nested user speculations. The filesystem gate
+// excludes other filesystem users while an operation copies/restores its view.
+struct shadow_save*
+shadow_savepoint(void)
+{
+  struct shadow_save *save;
+  struct shadow *s, *copy;
+  struct spec_context *sc = spec_pin(spec_current());
+  if(!sc)
+    return 0;
+  save = (struct shadow_save*)kalloc();
+  if(!save){ spec_unpin(sc); return 0; }
+  save->sc = sc;
+  save->head = 0;
+  for(s = sc->resources; s; s = s->next){
+    if(s->state != SH_READY || (copy = (struct shadow*)entry_alloc()) == 0){
+      shadow_save_free(save);
+      return 0;
+    }
+    memmove(copy, s, sizeof(*copy));
+    copy->next = save->head;
+    save->head = copy;
+  }
+  return save;
+}
+
+void
+shadow_save_free(struct shadow_save *save)
+{
+  struct shadow *s, *next;
+  for(s = save->head; s; s = next){
+    next = s->next;
+    entry_free(s);
+  }
+  spec_unpin(save->sc);
+  kfree((char*)save);
+}
+
+void
+shadow_restore(struct shadow_save *save)
+{
+  struct shadow *s;
+  shadow_discard(save->sc);
+  acquire(&save->sc->resource_lock);
+  save->sc->resources = save->head;
+  save->head = 0;
+  for(s = save->sc->resources; s; s = s->next)
+    index_add(s);
+  release(&save->sc->resource_lock);
+  myproc()->fs_error = 0;
+}
+
+int
+shadow_inode_new(struct spec_context *sc, uint inum)
+{
+  struct shadow *s;
+  int fresh = 0;
+  acquire(&sc->resource_lock);
+  s = find(sc, ROOTDEV, IBLOCK(inum, sb));
+  if(s && s->state == SH_READY)
+    fresh = ((struct dinode*)s->orig)[inum % IPB].type == 0;
+  release(&sc->resource_lock);
+  return fresh;
 }
 
 // Return 1 if copied/updated, 0 for a read with no private version, -1 on
@@ -356,14 +429,11 @@ int
 shadow_publish(struct spec_context *sc)
 {
   struct shadow *e[NSHADOW], *s;
-  struct inode *ip[NSHADOW];
-  uint inums[NSHADOW], t;
   struct buf *b;
-  int n = 0, ni = 0, i, j, r = SP_OK;
+  int n = 0, i, r = SP_OK;
 
   acquire(&sc->resource_lock);
   for(s = sc->resources; s; s = s->next){
-    // Raw test blocks (inum 0) have no owning file and are never published.
     if(n == NSHADOW || s->state != SH_READY || s->inum == 0 || s->dev != ROOTDEV){
       release(&sc->resource_lock);
       return SP_UNSUPPORTED;
@@ -371,60 +441,35 @@ shadow_publish(struct spec_context *sc)
     e[n++] = s;
   }
   release(&sc->resource_lock);
-  if(n == 0)
-    return SP_OK;                  // empty commit: nothing to make durable
+  if(n == 0) return SP_OK;
 
-  // Distinct owning inodes, sorted: the inode lock order for publication.
-  for(i = 0; i < n; i++){
-    for(j = 0; j < ni && inums[j] != e[i]->inum; j++)
-      ;
-    if(j == ni)
-      inums[ni++] = e[i]->inum;
-  }
-  for(i = 1; i < ni; i++)
-    for(j = i; j > 0 && inums[j-1] > inums[j]; j--){
-      t = inums[j]; inums[j] = inums[j-1]; inums[j-1] = t;
-    }
-
+  // spec_complete holds the filesystem gate: readers, namespace lookups and
+  // ordinary mutation cannot observe a partially published metadata/data view.
   begin_op_exclusive();
-  for(i = 0; i < ni; i++){
-    ip[i] = iget_ref(ROOTDEV, inums[i]);
-    ilock(ip[i]);
-    if(ip[i]->type != T_FILE || ip[i]->nlink < 1)
-      r = SP_CONFLICT;
-  }
   for(i = 0; i < n && r == SP_OK; i++){
     b = bread_original(e[i]->dev, e[i]->blockno);
     if(memcmp(b->data, e[i]->orig, BSIZE) != 0)
-      r = SP_CONFLICT;             // first committer already changed it
+      r = SP_CONFLICT;
     brelse(b);
   }
 #ifdef SHADOW_TEST
-  if(r == SP_OK)
-    pub_hold_point(1);
+  if(r == SP_OK) pub_hold_point(1);
 #endif
-  if(r == SP_OK && myproc()->killed)
-    r = SP_KILLED;
+  if(r == SP_OK && myproc()->killed) r = SP_KILLED;
   if(r == SP_OK){
-    // ---- point of no return (D23): public buffers change from here on ----
+    // D23 point of no return; metadata and data share this one transaction.
     for(i = 0; i < n; i++){
       b = bread_original(e[i]->dev, e[i]->blockno);
       memmove(b->data, e[i]->data, BSIZE);
       log_write(b);
       brelse(b);
 #ifdef SHADOW_TEST
-      if(i == 0)
-        pub_hold_point(2);
+      if(i == 0) pub_hold_point(2);
 #endif
     }
   }
-  end_op();      // exclusive: commits this transaction now (nothing if r != OK)
-  for(i = 0; i < ni; i++)
-    iunlock(ip[i]);
-  begin_op();
-  for(i = 0; i < ni; i++)
-    iput(ip[i]);
   end_op();
+  inode_invalidate();
   return r;
 }
 

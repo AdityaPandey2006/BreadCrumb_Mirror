@@ -4,6 +4,7 @@ OBJS = \
 	exec.o\
 	file.o\
 	fs.o\
+	fsview.o\
 	ide.o\
 	ioapic.o\
 	kalloc.o\
@@ -194,6 +195,7 @@ UPROGS=\
 	_spectest\
 	_spfiletest\
 	_spcommit\
+	_spnamespace\
 
 ifeq ($(SHADOW_TEST),1)
 UPROGS += _shadowtest

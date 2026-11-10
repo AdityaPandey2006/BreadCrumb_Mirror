@@ -5,6 +5,8 @@
 #include "sleeplock.h"
 #include "fs.h"
 #include "buf.h"
+#include "mmu.h"
+#include "proc.h"
 
 // Simple logging that allows concurrent FS system calls.
 //
@@ -138,6 +140,9 @@ recover_from_log(void)
 void
 begin_op(void)
 {
+  fs_enter();
+  if(spec_current() && !myproc()->fs_publication)
+    return;  // private filesystem operations never join the public log
   acquire(&log.lock);
   while(1){
     if(log.committing || log.exclusive){
@@ -160,6 +165,11 @@ void
 end_op(void)
 {
   int do_commit = 0;
+
+  if(spec_current() && !myproc()->fs_publication){
+    fs_leave();
+    return;
+  }
 
   acquire(&log.lock);
   log.outstanding -= 1;
@@ -187,6 +197,8 @@ end_op(void)
     wakeup(&log);
     release(&log.lock);
   }
+  myproc()->fs_publication = 0;
+  fs_leave();
 }
 
 // Step 5: begin a transaction that is the only one in its log group, for
@@ -199,6 +211,8 @@ end_op(void)
 void
 begin_op_exclusive(void)
 {
+  fs_enter();
+  myproc()->fs_publication = 1;
   acquire(&log.lock);
   while(log.exclusive != EXCL_NONE)    // one publication at a time
     sleep(&log, &log.lock);

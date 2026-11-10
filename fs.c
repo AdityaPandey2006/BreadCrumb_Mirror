@@ -21,6 +21,12 @@
 #include "buf.h"
 #include "file.h"
 
+// Filesystem buffers use the current private view. The cache/log and recovery
+// retain their explicit original paths; ephemeral private buffers never dirty it.
+#define bread fs_bread
+#define brelse fs_brelse
+#define log_write fs_log_write
+
 #define min(a, b) ((a) < (b) ? (a) : (b))
 static void itrunc(struct inode*);
 // there should be one superblock per disk device, but we run with
@@ -45,6 +51,7 @@ bzero(int dev, int bno)
   struct buf *bp;
 
   bp = bread(dev, bno);
+  if(!bp) return;
   memset(bp->data, 0, BSIZE);
   log_write(bp);
   brelse(bp);
@@ -62,18 +69,22 @@ balloc(uint dev)
   bp = 0;
   for(b = 0; b < sb.size; b += BPB){
     bp = bread(dev, BBLOCK(b, sb));
+    if(!bp) return 0;
     for(bi = 0; bi < BPB && b + bi < sb.size; bi++){
       m = 1 << (bi % 8);
-      if((bp->data[bi/8] & m) == 0){  // Is block free?
+      if((bp->data[bi/8] & m) == 0 &&
+         (spec_current() || !shadow_block_busy(dev, b+bi))){
         bp->data[bi/8] |= m;  // Mark block in use.
-        log_write(bp);
+        if(log_write(bp) < 0){ brelse(bp); return 0; }
         brelse(bp);
         bzero(dev, b + bi);
+        if(fs_failed()) return 0;
         return b + bi;
       }
     }
     brelse(bp);
   }
+  if(spec_current()){ fs_fail(); return 0; }
   panic("balloc: out of blocks");
 }
 
@@ -85,8 +96,12 @@ bfree(int dev, uint b)
   int bi, m;
 
   bp = bread(dev, BBLOCK(b, sb));
+  if(!bp) return;
   bi = b % BPB;
   m = 1 << (bi % 8);
+  if((bp->data[bi/8] & m) == 0 && spec_current()){
+    brelse(bp); fs_fail(); return;
+  }
   if((bp->data[bi/8] & m) == 0)
     panic("freeing free block");
   bp->data[bi/8] &= ~m;
@@ -168,6 +183,18 @@ struct {
   struct inode inode[NINODE];
 } icache;
 
+// All filesystem metadata users hold the filesystem gate. Invalidation is also
+// used after an operation savepoint is restored and before leaving a context.
+void
+inode_invalidate(void)
+{
+  struct inode *ip;
+  acquire(&icache.lock);
+  for(ip = icache.inode; ip < &icache.inode[NINODE]; ip++)
+    ip->valid = 0;
+  release(&icache.lock);
+}
+
 void
 iinit(int dev)
 {
@@ -199,18 +226,22 @@ ialloc(uint dev, short type)
   struct dinode *dip;
 
   for(inum = 1; inum < sb.ninodes; inum++){
+    if(!spec_current() && shadow_block_busy(dev, IBLOCK(inum, sb)))
+      continue;  // do not reuse an inode reserved in a private metadata image
     bp = bread(dev, IBLOCK(inum, sb));
+    if(!bp) return 0;
     dip = (struct dinode*)bp->data + inum%IPB;
     if(dip->type == 0){  // a free inode
       memset(dip, 0, sizeof(*dip));
       dip->type = type;
-      log_write(bp);   // mark it allocated on the disk
+      if(log_write(bp) < 0){ brelse(bp); return 0; }
       brelse(bp);
       return iget(dev, inum);
     }
     brelse(bp);
   }
-  panic("ialloc: no inodes");
+  if(spec_current()){ fs_fail(); return 0; }
+  return 0;
 }
 
 // Copy a modified in-memory inode to disk.
@@ -224,6 +255,7 @@ iupdate(struct inode *ip)
   struct dinode *dip;
 
   bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+  if(!bp) return;
   dip = (struct dinode*)bp->data + ip->inum%IPB;
   dip->type = ip->type;
   dip->major = ip->major;
@@ -290,21 +322,14 @@ idup(struct inode *ip)
   return ip;
 }
 
-// Lock the given inode.
-// Reads the inode from disk if necessary.
-void
-ilock(struct inode *ip)
+static void
+inode_reload(struct inode *ip)
 {
   struct buf *bp;
   struct dinode *dip;
-
-  if(ip == 0 || ip->ref < 1)
-    panic("ilock");
-
-  acquiresleep(&ip->lock);
-
-  if(ip->valid == 0){
+  {
     bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+    if(!bp){ ip->type = 0; ip->valid = 0; return; }
     dip = (struct dinode*)bp->data + ip->inum%IPB;
     ip->type = dip->type;
     ip->major = dip->major;
@@ -314,9 +339,22 @@ ilock(struct inode *ip)
     memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
     brelse(bp);
     ip->valid = 1;
-    if(ip->type == 0)
-      panic("ilock: no type");
+    ip->view = spec_current();
   }
+}
+
+// Lock the given inode.
+// Reads the inode from disk if necessary.
+void
+ilock(struct inode *ip)
+{
+  if(ip == 0 || ip->ref < 1)
+    panic("ilock");
+  acquiresleep(&ip->lock);
+  if(!ip->valid || ip->view != spec_current())
+    inode_reload(ip);
+  if(ip->valid && ip->type == 0 && !spec_current())
+    panic("ilock: no type");
 }
 
 // Unlock the given inode.
@@ -339,16 +377,29 @@ iunlock(struct inode *ip)
 void
 iput(struct inode *ip)
 {
+  struct spec_context *sc = 0;
+  int private = spec_current() != 0;
+  // During abort/exit, private truncation is unnecessary and normal pins are
+  // closed. Never let that cleanup become an ordinary public truncation.
+  if(private)
+    sc = spec_pin(spec_current());
   acquiresleep(&ip->lock);
-  if(ip->valid && ip->nlink == 0){
+  if(private && (!sc || fs_failed()))
+    ip->valid = 0;
+  if((!private || (sc && !fs_failed())) &&
+     (!ip->valid || ip->view != spec_current()))
+    inode_reload(ip);
+  if(ip->valid && ip->type != 0 && ip->nlink == 0){
     acquire(&icache.lock);
     int r = ip->ref;
     release(&icache.lock);
     if(r == 1){
       // inode has no links and no other references: truncate and free.
       itrunc(ip);
-      ip->type = 0;
-      iupdate(ip);
+      if(!fs_failed()){
+        ip->type = 0;
+        iupdate(ip);
+      }
       ip->valid = 0;
     }
   }
@@ -357,6 +408,8 @@ iput(struct inode *ip)
   acquire(&icache.lock);
   ip->ref--;
   release(&icache.lock);
+  if(sc)
+    spec_unpin(sc);
 }
 
 // Common idiom: unlock, then put.
@@ -394,11 +447,13 @@ bmap(struct inode *ip, uint bn)
     // Load indirect block, allocating if necessary.
     if((addr = ip->addrs[NDIRECT]) == 0)
       ip->addrs[NDIRECT] = addr = balloc(ip->dev);
+    if(addr == 0) return 0;
     bp = bread(ip->dev, addr);
+    if(!bp) return 0;
     a = (uint*)bp->data;
     if((addr = a[bn]) == 0){
       a[bn] = addr = balloc(ip->dev);
-      log_write(bp);
+      if(!addr || log_write(bp) < 0){ brelse(bp); return 0; }
     }
     brelse(bp);
     return addr;
@@ -422,6 +477,7 @@ bmap_existing(struct inode *ip, uint bn)
   if(bn >= NINDIRECT || (addr = ip->addrs[NDIRECT]) == 0)
     return 0;
   bp = bread(ip->dev, addr);
+  if(!bp) return 0;
   addr = ((uint*)bp->data)[bn];
   brelse(bp);
   return addr;
@@ -442,19 +498,23 @@ itrunc(struct inode *ip)
   for(i = 0; i < NDIRECT; i++){
     if(ip->addrs[i]){
       bfree(ip->dev, ip->addrs[i]);
+      if(fs_failed()) return;
       ip->addrs[i] = 0;
     }
   }
 
   if(ip->addrs[NDIRECT]){
     bp = bread(ip->dev, ip->addrs[NDIRECT]);
+    if(!bp) return;
     a = (uint*)bp->data;
     for(j = 0; j < NINDIRECT; j++){
       if(a[j])
         bfree(ip->dev, a[j]);
+      if(fs_failed()){ brelse(bp); return; }
     }
     brelse(bp);
     bfree(ip->dev, ip->addrs[NDIRECT]);
+    if(fs_failed()) return;
     ip->addrs[NDIRECT] = 0;
   }
 
@@ -497,7 +557,7 @@ readi(struct inode *ip, char *dst, uint off, uint n)
 
   // Speculative view of regular-file data (Step 4). Directories never have
   // private blocks in this stage and are always read from the public view.
-  if(ip->type == T_FILE && (id = spec_current()) != 0){
+  if((id = spec_current()) != 0){
     for(tot=0; tot<n; tot+=m, off+=m, dst+=m){
       m = min(n - tot, BSIZE - off%BSIZE);
       addr = bmap_existing(ip, off/BSIZE);
@@ -510,6 +570,7 @@ readi(struct inode *ip, char *dst, uint off, uint n)
         // No private copy. Safe without a gap: every first-copy of this
         // inode's blocks holds ip->lock, which our caller holds.
         bp = bread(ip->dev, addr);
+        if(!bp) return tot > 0 ? tot : -1;
         memmove(dst, bp->data + off%BSIZE, m);
         brelse(bp);
       }
@@ -519,6 +580,7 @@ readi(struct inode *ip, char *dst, uint off, uint n)
 
   for(tot=0; tot<n; tot+=m, off+=m, dst+=m){
     bp = bread(ip->dev, bmap(ip, off/BSIZE));
+    if(!bp) return tot > 0 ? tot : -1;
     m = min(n - tot, BSIZE - off%BSIZE);
     memmove(dst, bp->data + off%BSIZE, m);
     brelse(bp);
@@ -549,20 +611,40 @@ writei(struct inode *ip, char *src, uint off, uint n)
   if(off + n > MAXFILE*BSIZE)
     return -1;
 
-  // Speculative write (Step 4 subset): only already-allocated bytes of a
-  // linked regular file. Never extends, allocates, log_write()s, bwrite()s or
-  // iupdate()s: the inode and every public buffer stay clean. Rejecting
-  // nlink==0 keeps private copies off blocks that the last iput() may free.
-  // A failure part-way returns the bytes privately written (decision D22).
+  // Private regular-file and directory writes, including allocation/extension.
+  // Each extending chunk has a savepoint so metadata failure cannot orphan a
+  // block or advertise bytes that were never written. Earlier chunks are kept.
   if((id = spec_current()) != 0){
-    if(ip->type != T_FILE || ip->nlink < 1 || off + n > ip->size)
+    struct shadow_save *save;
+    if((ip->type != T_FILE && ip->type != T_DIR) || fs_failed())
       return -1;
     for(tot=0; tot<n; tot+=m, off+=m, src+=m){
-      m = min(n - tot, BSIZE - off%BSIZE);
-      addr = bmap_existing(ip, off/BSIZE);
-      if(addr == 0 ||
-         shadow_write(id, ip->dev, addr, ip->inum, off%BSIZE, src, m) != 1)
-        return tot > 0 ? tot : -1;
+      m = min(n-tot, BSIZE-off%BSIZE);
+      save = off+m > ip->size ? shadow_savepoint() : 0;
+      if(off+m > ip->size && save == 0)
+        return tot ? tot : -1;
+      addr = bmap(ip, off/BSIZE);
+      bp = addr ? bread(ip->dev, addr) : 0;
+      if(bp){
+        bp->inum = ip->type == T_FILE ? ip->inum : SH_META;
+        memmove(bp->data+off%BSIZE, src, m);
+        log_write(bp);
+        brelse(bp);
+      } else
+        fs_fail();
+      if(!fs_failed() && off+m > ip->size){
+        ip->size = off+m;
+        iupdate(ip);
+      }
+      if(fs_failed()){
+        if(save){
+          shadow_restore(save);
+          inode_reload(ip);
+          shadow_save_free(save);
+        }
+        return tot ? tot : -1;
+      }
+      if(save) shadow_save_free(save);
     }
     return n;
   }
@@ -609,12 +691,16 @@ dirlookup(struct inode *dp, char *name, uint *poff)
   uint off, inum;
   struct dirent de;
 
+  if(dp->type != T_DIR && spec_current())
+    return 0;
   if(dp->type != T_DIR)
     panic("dirlookup not DIR");
 
   for(off = 0; off < dp->size; off += sizeof(de)){
-    if(readi(dp, (char*)&de, off, sizeof(de)) != sizeof(de))
+    if(readi(dp, (char*)&de, off, sizeof(de)) != sizeof(de)){
+      if(spec_current()) return 0;
       panic("dirlookup read");
+    }
     if(de.inum == 0)
       continue;
     if(namecmp(name, de.name) == 0){
@@ -646,7 +732,7 @@ dirlink(struct inode *dp, char *name, uint inum)
   // Look for an empty dirent.
   for(off = 0; off < dp->size; off += sizeof(de)){
     if(readi(dp, (char*)&de, off, sizeof(de)) != sizeof(de))
-      panic("dirlink read");
+      return -1;
     if(de.inum == 0)
       break;
   }
@@ -654,7 +740,7 @@ dirlink(struct inode *dp, char *name, uint inum)
   strncpy(de.name, name, DIRSIZ);
   de.inum = inum;
   if(writei(dp, (char*)&de, off, sizeof(de)) != sizeof(de))
-    panic("dirlink");
+    return -1;
 
   return 0;
 }

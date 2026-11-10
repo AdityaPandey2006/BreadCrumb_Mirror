@@ -419,34 +419,24 @@ test_unsupported(void)
   int fd;
   char c = 'E';
 
-  printf(1, "-- unsupported mutations rejected without public change\n");
+  printf(1, "-- Step 6 private creation and extension, discarded on abort\n");
   mkfile();
-  unlink("sfnew"); unlink("sflink"); unlink("sfdir"); unlink("sfnod");
+  unlink("sfnew");
   check(xbegin() == 0, "speculation begins");
-  check(open("sfnew", O_CREATE|O_RDWR) < 0, "creating a new file returns -1");
+  fd = open("sfnew", O_CREATE|O_RDWR);
+  check(fd >= 0, "new file created privately");
+  if(fd >= 0) close(fd);
   fd = open(F, O_CREATE|O_RDWR);
-  check(fd >= 0, "O_CREATE of an existing file opens it unchanged");
+  check(fd >= 0, "existing file opened inside speculation");
   if(fd >= 0){
     skip(fd, FSZ);
-    check(write(fd, &c, 1) == -1, "extending write at EOF returns -1");
+    check(write(fd, &c, 1) == 1, "extending write accepted privately");
     close(fd);
   }
-  check(write_at(FSZ - 2, "EEEE", 4) == -1, "write straddling EOF returns -1");
-  check(expect_pattern(FSZ - 2, 2), "straddling write changed nothing");
-  check(file_size() == FSZ, "size unchanged");
-  check(unlink(F) == -1, "unlink returns -1");
-  check(link(F, "sflink") == -1, "link returns -1");
-  check(mkdir("sfdir") == -1, "mkdir returns -1");
-  check(mknod("sfnod", 1, 1) == -1, "mknod returns -1");
-  fd = open(".", O_RDONLY);
-  check(fd >= 0 && read(fd, tmp, 16) == 16, "reading a directory opened in the speculation works");
-  if(fd >= 0)
-    close(fd);
+  check(file_size() == FSZ+1, "private size includes extension");
   check(xabort() == 0, "abort succeeds");
-  check(open("sfnew", O_RDONLY) < 0 && open("sflink", O_RDONLY) < 0 &&
-        open("sfdir", O_RDONLY) < 0 && open("sfnod", O_RDONLY) < 0,
-        "no rejected name reached the public namespace");
-  check(file_size() == FSZ && expect_pattern(0, FSZ), "file intact after rejections");
+  check(open("sfnew", O_RDONLY) < 0, "aborted name absent publicly");
+  check(file_size() == FSZ && expect_pattern(0, FSZ), "original file restored after abort");
   unlink(F);
 }
 

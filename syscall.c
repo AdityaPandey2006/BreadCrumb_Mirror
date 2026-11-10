@@ -154,7 +154,12 @@ syscall(void)
 
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    curproc->tf->eax = syscalls[num]();
+    if(num == SYS_open || num == SYS_close || num == SYS_link ||
+       num == SYS_unlink || num == SYS_mkdir || num == SYS_mknod ||
+       num == SYS_chdir || num == SYS_exec || num == SYS_fstat)
+      curproc->tf->eax = fs_syscall(num, syscalls[num]);
+    else
+      curproc->tf->eax = syscalls[num]();
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             curproc->pid, curproc->name, num);

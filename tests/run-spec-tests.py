@@ -132,7 +132,7 @@ def main():
     parser.add_argument("--qemu", default=str(ROOT.parent / "build/qemu-system-i386"))
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--suite", default="shadow",
-                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "usertests"))
+                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "pipe", "usertests"))
     args = parser.parse_args()
     if args.repeat < 1:
         parser.error("--repeat must be positive")
@@ -160,7 +160,24 @@ def main():
                         raise RuntimeError("leak detected: LEAK_ABORT_SECRET_999 appeared in console output")
                     if "LEAK_KILL_SECRET_888" in out:
                         raise RuntimeError("leak detected: LEAK_KILL_SECRET_888 appeared in console output")
+                    out_pipe = run("sppipetest", "SPPIPETEST: ALL TESTS PASSED")
+                    if "LEAK_ABORT_PIPE_SECRET_777" in out_pipe:
+                        raise RuntimeError("leak detected: LEAK_ABORT_PIPE_SECRET_777 appeared in output")
+                    if "LEAK_KILL_PIPE_SECRET_666" in out_pipe:
+                        raise RuntimeError("leak detected: LEAK_KILL_PIPE_SECRET_666 appeared in output")
                 run("spectest", "SPEC TESTS PASSED")
+            elif args.suite == "pipe":
+                for _ in range(args.repeat):
+                    out = run("sppipetest", "SPPIPETEST: ALL TESTS PASSED")
+                    if "LEAK_ABORT_PIPE_SECRET_777" in out:
+                        raise RuntimeError("FAIL: LEAK_ABORT_PIPE_SECRET_777 leaked to pipe reader!")
+                    if "LEAK_KILL_PIPE_SECRET_666" in out:
+                        raise RuntimeError("FAIL: LEAK_KILL_PIPE_SECRET_666 leaked to pipe reader!")
+                    if "COMMITTED: SPEC_PIPE_COMMIT_MSG" not in out:
+                        raise RuntimeError("FAIL: committed external pipe message missing!")
+                    if "DELIVERED: CHILD_EXTERNAL_PIPE_MSG-OWNER_EXTERNAL_PIPE_MSG" not in out:
+                        raise RuntimeError("FAIL: delivered external pipe message missing!")
+                    print("Pipe isolation and release checks passed: no leakage, ordered commit release confirmed.")
             elif args.suite == "console":
                 for _ in range(args.repeat):
                     out = run("spconsoletest", "SPCONSOLETEST: ALL TESTS PASSED")

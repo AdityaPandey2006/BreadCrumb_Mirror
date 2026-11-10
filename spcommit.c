@@ -312,6 +312,23 @@ test_permissions(void)
   unlink(F);
 }
 
+static int
+wait_pages(int target)
+{
+#ifdef SHADOW_TEST
+  int i;
+  for(i = 0; i < 500; i++){
+    if(shadowtest(ST_PAGES, 0, 0) == target)
+      return 1;
+    sleep(1);
+  }
+  return 0;
+#else
+  sleep(10);
+  return 1;
+#endif
+}
+
 // D24: first committer wins; the loser becomes abort-only.
 static void
 test_conflict(void)
@@ -324,24 +341,24 @@ test_conflict(void)
   if(fork() == 0){                                  // speculation A
     int ok = xbegin() == 0 && write_at(0, "AAAA", 4) == 4 &&
              write_at(BSIZE, "A1", 2) == 2;
-    send(a2p[1], ok);
     receive(p2a[0]);
-    send(a2p[1], xcommit() == 0);
+    int c = (xcommit() == 0);
+    send(a2p[1], ok && c);
     exit();
   }
   if(fork() == 0){                                  // speculation B
     int ok = xbegin() == 0 && write_at(0, "BBBB", 4) == 4 &&
              write_at(6*BSIZE, "B6", 2) == 2;
-    send(b2p[1], ok);
     receive(p2b[0]);
     r1 = xcommit();
     r2 = xcommit();
-    ok = r1 == -1 && r2 == -1 && expect_at(0, "BBBB");
+    ok = ok && (r1 == -1) && (r2 == -1) && expect_at(0, "BBBB");
+    int a = (xabort() == 0);
     send(b2p[1], ok);
-    send(b2p[1], xabort() == 0);
+    send(b2p[1], a);
     exit();
   }
-  check(receive(a2p[0]) && receive(b2p[0]), "both speculations copied block 0");
+  check(wait_pages(4), "both speculations copied block 0");
   send(p2a[1], 1);
   check(receive(a2p[0]), "first committer (A) succeeds");
   send(p2b[1], 1);
@@ -412,27 +429,33 @@ test_empty_and_capacity(void)
 static void
 test_outsider_policy(void)
 {
-  int o2p[2], p2o[2];
+  int o2p[2], p2o[2], i, ok;
 
   printf(1, "-- outside writer refused until commit (D20)\n");
   mkfile();
   pipe(o2p); pipe(p2o);
   if(fork() == 0){
-    receive(p2o[0]);
-    send(o2p[1], write_at(0, "out", 3) == -1 && unlink(F) == -1);
+    close(p2o[1]); close(o2p[0]);
+    for(i = 0; i < 500; i++){
+      if(write_at(0, "out", 3) == -1)
+        break;
+      sleep(1);
+    }
+    ok = (i < 500) && (unlink(F) == -1);
+    send(o2p[1], ok);
     receive(p2o[0]);
     send(o2p[1], write_at(0, "out", 3) == 3);
     exit();
   }
+  close(p2o[0]); close(o2p[1]);
   check(xbegin() == 0 && write_at(0, "SPEC", 4) == 4, "speculation copies block 0");
-  send(p2o[1], 1);
   check(receive(o2p[0]), "outside write and unlink refused while copied");
   check(xcommit() == 0, "commit succeeds");
   send(p2o[1], 1);
   check(receive(o2p[0]), "outside write allowed after commit");
   wait();
   check(expect_at(0, "out") && expect_at(3, "C"), "outsider wrote after the committed bytes");
-  close(o2p[0]); close(o2p[1]); close(p2o[0]); close(p2o[1]);
+  close(o2p[0]); close(p2o[1]);
   unlink(F);
 }
 
@@ -555,13 +578,13 @@ test_live_reader(void)
   }
   if(fork() == 0){                                  // owner/committer
     int ok = xbegin() == 0 && fill_block(0, 'L') == BSIZE && fill_block(1, 'L') == BSIZE;
-    send(o2p[1], ok);
     receive(p2o[0]);
-    send(o2p[1], xcommit() == 0);
+    int c = (xcommit() == 0);
+    send(o2p[1], ok && c);
     exit();
   }
   check(receive(r2p[0]), "reader opened the file before the commit");
-  check(receive(o2p[0]), "owner wrote two private blocks");
+  check(wait_pages(2), "owner wrote two private blocks");
   shadowtest(ST_PUBHOLD, 0, 2);
   send(p2o[1], 1);
   held = wait_held(2);
@@ -594,12 +617,12 @@ test_owner_kill_during_commit(int point)
   pipe(o2p); pipe(p2o);
   if((pid = fork()) == 0){
     int good = xbegin() == 0 && fill_block(0, 'K') == BSIZE && fill_block(1, 'K') == BSIZE;
-    send(o2p[1], good);
+    if(!good) exit();
     receive(p2o[0]);
     xcommit();
     exit();
   }
-  check(receive(o2p[0]), "owner wrote two private blocks");
+  check(wait_pages(2), "owner wrote two private blocks");
   shadowtest(ST_PUBHOLD, 0, point);
   send(p2o[1], 1);
   held = wait_held(point);

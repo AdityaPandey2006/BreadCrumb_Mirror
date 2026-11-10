@@ -17,6 +17,12 @@ struct pipe {
   uint nwrite;    // number of bytes written
   int readopen;   // read fd is still open
   int writeopen;  // write fd is still open
+  int spec_refs;  // active references from uncommitted speculative pipe buffers
+};
+
+struct spec_pipe_record {
+  struct pipe *pipe;
+  uint len;
 };
 
 int
@@ -34,6 +40,7 @@ pipealloc(struct file **f0, struct file **f1)
   p->writeopen = 1;
   p->nwrite = 0;
   p->nread = 0;
+  p->spec_refs = 0;
   initlock(&p->lock, "pipe");
   (*f0)->type = FD_PIPE;
   (*f0)->readable = 1;
@@ -67,20 +74,188 @@ pipeclose(struct pipe *p, int writable)
     p->readopen = 0;
     wakeup(&p->nwrite);
   }
-  if(p->readopen == 0 && p->writeopen == 0){
+  if(p->readopen == 0 && p->writeopen == 0 && p->spec_refs == 0){
     release(&p->lock);
     kfree((char*)p);
   } else
     release(&p->lock);
 }
 
+// Staging write for speculative processes directed towards external readers.
+// Buffers in context memory with short-write semantics; never sleeps on external readers.
+static int
+spec_pipe_write(struct pipe *p, char *addr, int n)
+{
+  struct spec_context *sc;
+  int id = spec_current();
+  if(id == 0)
+    return -1;
+
+  sc = spec_pin(id);
+  if(!sc)
+    return -1;
+
+  acquire(&sc->resource_lock);
+  acquire(&p->lock);
+  if(p->readopen == 0 || myproc()->killed){
+    release(&p->lock);
+    release(&sc->resource_lock);
+    spec_unpin(sc);
+    return -1;
+  }
+  release(&p->lock);
+
+  if(sc->pipe_buf == 0){
+    sc->pipe_buf = kalloc();
+    if(sc->pipe_buf == 0){
+      release(&sc->resource_lock);
+      spec_unpin(sc);
+      return -1;
+    }
+    sc->pipe_len = 0;
+    sc->pipe_cap = PGSIZE;
+  }
+
+  uint overhead = sizeof(struct spec_pipe_record);
+  if(sc->pipe_len + overhead >= sc->pipe_cap){
+    release(&sc->resource_lock);
+    spec_unpin(sc);
+    return -1;
+  }
+
+  uint avail = sc->pipe_cap - sc->pipe_len - overhead;
+  uint to_write = n;
+  if(to_write > avail)
+    to_write = avail;
+
+  if(to_write == 0){
+    release(&sc->resource_lock);
+    spec_unpin(sc);
+    return -1;
+  }
+
+  struct spec_pipe_record *rec = (struct spec_pipe_record*)(sc->pipe_buf + sc->pipe_len);
+  rec->pipe = p;
+  rec->len = to_write;
+  memmove((char*)(rec + 1), addr, to_write);
+  sc->pipe_len += overhead + to_write;
+
+  acquire(&p->lock);
+  p->spec_refs++;
+  release(&p->lock);
+
+  release(&sc->resource_lock);
+  spec_unpin(sc);
+  return to_write;
+}
+
+// Drain held speculative pipe output on durable commit.
+// Releases bytes directly to pipe buffers under p->lock without holding resource_lock.
+void
+spec_pipe_drain(struct spec_context *sc)
+{
+  acquire(&sc->resource_lock);
+  if(sc->pipe_buf == 0 || sc->pipe_len == 0){
+    if(sc->pipe_buf){
+      kfree(sc->pipe_buf);
+      sc->pipe_buf = 0;
+      sc->pipe_len = 0;
+      sc->pipe_cap = 0;
+    }
+    release(&sc->resource_lock);
+    return;
+  }
+  char *buf = sc->pipe_buf;
+  uint total_len = sc->pipe_len;
+  sc->pipe_buf = 0;
+  sc->pipe_len = 0;
+  sc->pipe_cap = 0;
+  release(&sc->resource_lock);
+
+  uint off = 0;
+  while(off < total_len){
+    struct spec_pipe_record *rec = (struct spec_pipe_record*)(buf + off);
+    struct pipe *p = rec->pipe;
+    uint len = rec->len;
+    char *data = buf + off + sizeof(struct spec_pipe_record);
+    off += sizeof(struct spec_pipe_record) + len;
+
+    acquire(&p->lock);
+    uint i;
+    for(i = 0; i < len; i++){
+      while(p->nwrite == p->nread + PIPESIZE){
+        if(p->readopen == 0 || myproc()->killed)
+          break;
+        wakeup(&p->nread);
+        sleep(&p->nwrite, &p->lock);
+      }
+      if(p->readopen == 0 || myproc()->killed)
+        break;
+      p->data[p->nwrite++ % PIPESIZE] = data[i];
+    }
+    wakeup(&p->nread);
+
+    p->spec_refs--;
+    int should_free = (p->readopen == 0 && p->writeopen == 0 && p->spec_refs == 0);
+    release(&p->lock);
+    if(should_free)
+      kfree((char*)p);
+  }
+
+  kfree(buf);
+}
+
+// Discard held speculative pipe output on abort, cancellation, or owner kill.
+void
+spec_pipe_discard(struct spec_context *sc)
+{
+  acquire(&sc->resource_lock);
+  if(sc->pipe_buf == 0){
+    release(&sc->resource_lock);
+    return;
+  }
+  char *buf = sc->pipe_buf;
+  uint total_len = sc->pipe_len;
+  sc->pipe_buf = 0;
+  sc->pipe_len = 0;
+  sc->pipe_cap = 0;
+  release(&sc->resource_lock);
+
+  uint off = 0;
+  while(off < total_len){
+    struct spec_pipe_record *rec = (struct spec_pipe_record*)(buf + off);
+    struct pipe *p = rec->pipe;
+    uint len = rec->len;
+    off += sizeof(struct spec_pipe_record) + len;
+
+    acquire(&p->lock);
+    p->spec_refs--;
+    wakeup(&p->nread);
+    int should_free = (p->readopen == 0 && p->writeopen == 0 && p->spec_refs == 0);
+    release(&p->lock);
+    if(should_free)
+      kfree((char*)p);
+  }
+
+  kfree(buf);
+}
+
 //PAGEBREAK: 40
 int
 pipewrite(struct pipe *p, char *addr, int n)
 {
+  int spec = spec_current();
+  if(spec != 0 && pipe_has_external_reader(p, spec)){
+    return spec_pipe_write(p, addr, n);
+  }
+
   int i;
 
   acquire(&p->lock);
+  if(p->readopen == 0 || myproc()->killed){
+    release(&p->lock);
+    return -1;
+  }
   for(i = 0; i < n; i++){
     while(p->nwrite == p->nread + PIPESIZE){  //DOC: pipewrite-full
       if(p->readopen == 0 || myproc()->killed){
@@ -103,7 +278,7 @@ piperead(struct pipe *p, char *addr, int n)
   int i;
 
   acquire(&p->lock);
-  while(p->nread == p->nwrite && p->writeopen){  //DOC: pipe-empty
+  while(p->nread == p->nwrite && (p->writeopen || p->spec_refs > 0)){  //DOC: pipe-empty
     if(myproc()->killed){
       release(&p->lock);
       return -1;

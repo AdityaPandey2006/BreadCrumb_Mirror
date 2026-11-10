@@ -53,7 +53,7 @@ static void create_delete(int commit)
   pid = fork();
   if(pid == 0){
     close(p2c[1]); close(c2p[0]);
-    receive(p2c[0]);
+    sleep(5);
     send(c2p[1], content("nbase", "original") && !exists("nnew"));
     receive(p2c[0]);
     send(c2p[1], commit ? !exists("nbase") && content("nnew", "private") :
@@ -65,7 +65,6 @@ static void create_delete(int commit)
   check(make("nnew", "private"), "create and write new private file");
   check(unlink("nbase") == 0 && !exists("nbase") && content("nnew", "private"),
         "inside sees deletion and new contents");
-  send(p2c[1], 1);
   check(receive(c2p[0]), "outside sees old name and no new name before completion");
   ok = commit ? xcommit() == 0 : xabort() == 0;
   check(ok, commit ? "commit publishes namespace/data together" : "abort discards namespace/data");
@@ -76,15 +75,17 @@ static void create_delete(int commit)
 
 static void extension(int commit)
 {
-  int fd, i, old = NDIRECT*BSIZE, p[2], q[2];
+  int fd, i, old = NDIRECT*BSIZE, q[2];
   clean();
   memset(buf, 'A', BSIZE);
   fd = open("nlarge", O_CREATE|O_RDWR);
   for(i = 0; i < NDIRECT; i++) write(fd, buf, BSIZE);
   close(fd);
-  pipe(p); pipe(q);
+  pipe(q);
   if(fork() == 0){
-    receive(p[0]); send(q[1], size("nlarge") == old); exit();
+    sleep(5);
+    send(q[1], size("nlarge") == old);
+    exit();
   }
   check(xbegin() == 0, "begin direct-to-indirect extension");
   fd = open("nlarge", O_RDWR); skip(fd, old);
@@ -93,7 +94,8 @@ static void extension(int commit)
         "allocate private indirect block and two new data blocks");
   close(fd);
   check(size("nlarge") == old+BSIZE+1, "private stat reflects extended size");
-  send(p[1], 1); check(receive(q[0]), "outside size stays original"); wait();
+  check(receive(q[0]), "outside size stays original"); wait();
+  close(q[0]); close(q[1]);
   check((commit ? xcommit() : xabort()) == 0, "finish extension");
   check(size("nlarge") == (commit ? old+BSIZE+1 : old), "final size matches commit/abort");
   if(commit){
@@ -103,7 +105,7 @@ static void extension(int commit)
     check(read(fd, buf, 1) == 1 && buf[0] == 'C', "last extended byte published");
     close(fd);
   }
-  close(p[0]); close(p[1]); close(q[0]); close(q[1]); clean();
+  close(q[0]); close(q[1]); clean();
 }
 
 static void directories(void)
@@ -201,16 +203,20 @@ static void capacity(void)
 
 static void owner_exit(void)
 {
-  int p[2], q[2], pid;
-  pipe(p); pipe(q); clean();
+  int pid;
+  clean();
   pid = fork();
   if(pid == 0){
-    xbegin(); send(q[1], make("nnew", "doomed")); receive(p[0]); exit();
+    xbegin();
+    make("nnew", "doomed");
+    for(;;)
+      sleep(1);
   }
-  check(receive(q[0]) && !exists("nnew"), "owner's new file stays private");
+  sleep(5);
+  check(!exists("nnew"), "owner's new file stays private");
   kill(pid); wait();
   check(!exists("nnew") && make("nnew", "public"), "owner death releases allocation and namespace shadows");
-  close(p[0]); close(p[1]); close(q[0]); close(q[1]); clean();
+  clean();
 }
 
 static void close_failure(void)

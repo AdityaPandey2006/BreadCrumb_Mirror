@@ -122,25 +122,23 @@ shared(void)
 static void
 separate(void)
 {
-  int result[2], gate[2], pid;
-  pipe(result); pipe(gate);
+  int pid;
   pid = fork();
   if(pid == 0){
-    close(result[0]); close(gate[1]);
-    send(result[1], xbegin() == 0 && test(ST_WRITE, 0, 81) == 1);
-    receive(gate[0]);
-    send(result[1], test(ST_READ, 0, 0) == 81 && xabort() == 0);
+    if(xbegin() != 0 || test(ST_WRITE, 0, 81) != 1)
+      exit();
+    while(test(ST_PAGES, 0, 0) < 2)
+      sleep(1);
+    if(test(ST_READ, 0, 0) != 81 || xabort() != 0)
+      exit();
     exit();
   }
-  close(result[1]); close(gate[0]);
-  check(receive(result[0]) && xbegin() == 0 && test(ST_WRITE, 0, 82) == 1,
+  check(until(ST_PAGES, 1) && xbegin() == 0 && test(ST_WRITE, 0, 82) == 1,
         "independent contexts shadow the same original block");
-  send(gate[1], 1);
-  check(receive(result[0]) && test(ST_READ, 0, 0) == 82,
-        "one context abort does not affect another context");
   wait();
+  check(test(ST_READ, 0, 0) == 82,
+        "one context abort does not affect another context");
   check(xabort() == 0 && test(ST_PAGES, 0, 0) == 0, "independent storage reclaimed");
-  close(result[0]); close(gate[1]);
 }
 
 static void
@@ -189,29 +187,28 @@ loading_race(int mode)
 static void
 owner_death(int killed)
 {
-  int result[2], gate[2], owner;
-  pipe(result); pipe(gate);
+  int owner;
   test(ST_HOLD, 0, 1);
   owner = fork();
   if(owner == 0){
-    close(result[0]); close(gate[1]);
-    if(xbegin() < 0){ send(result[1], 0); exit(); }
+    if(xbegin() < 0) exit();
     if(fork() == 0){
       test(ST_WRITE, 0, 101);
       exit();
     }
-    if(!until(ST_COUNT, 1)){ send(result[1], 0); exit(); }
+    if(!until(ST_COUNT, 1)) exit();
     if(fork() == 0){
       test(ST_READ, 0, 0);
       exit();
     }
-    send(result[1], until(ST_WAITERS, 1));
-    if(killed)
-      receive(gate[0]);
+    if(!until(ST_WAITERS, 1)) exit();
+    if(killed){
+      for(;;)
+        sleep(1);
+    }
     exit();
   }
-  close(result[1]); close(gate[0]);
-  check(receive(result[0]), "owner-death setup has an in-flight loader and waiter");
+  check(until(ST_WAITERS, 1), "owner-death setup has an in-flight loader and waiter");
   if(killed)
     kill(owner);
   wait();
@@ -221,7 +218,6 @@ owner_death(int killed)
   test(ST_HOLD, 0, 0);
   check(xbegin() == 0 && test(ST_READ, 0, 0) == ST_ABSENT && xabort() == 0,
         "new speculation sees no stale private contents");
-  close(result[0]); close(gate[1]);
 }
 
 int

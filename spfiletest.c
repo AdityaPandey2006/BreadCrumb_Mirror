@@ -167,6 +167,7 @@ test_outsider_isolation(void)
     close(p2o[1]);
     close(o2p[0]);
     receive(p2o[0]);
+    sleep(2);
     send(o2p[1], expect_pattern(0, 2*BSIZE + 16));   // original bytes
     send(o2p[1], write_at(10, "OUT", 3) == -1);       // block 0 copied
     send(o2p[1], expect_pattern(0, BSIZE));
@@ -182,6 +183,7 @@ test_outsider_isolation(void)
   close(p2o[0]);
   close(o2p[1]);
 
+  send(p2o[1], 1);
   check(xbegin() == 0, "speculation begins");
   check(write_at(0, "WORLD", 5) == 5, "speculative overwrite of block 0");
   check(write_at(2*BSIZE + 7, "XY", 2) == 2, "speculative overwrite of block 2");
@@ -189,7 +191,6 @@ test_outsider_isolation(void)
         "speculation reads its own private bytes");
   check(expect_pattern(5, BSIZE - 5), "rest of private block keeps original bytes");
   check(file_size() == FSZ, "stat size unchanged by non-extending write");
-  send(p2o[1], 1);
   check(receive(o2p[0]), "outsider reads original bytes");
   check(receive(o2p[0]), "outsider write to a privately copied block returns -1");
   check(receive(o2p[0]), "refused outsider write left the public block unchanged");
@@ -250,8 +251,8 @@ test_independent(void)
   mkfile();
   pipe(a); pipe(b); pipe(r); pipe(toa); pipe(tob);
   if(fork() == 0){                       // A
+    send(a[1], 1);
     int ok = xbegin() == 0 && write_at(0, "AAAA", 4) == 4;
-    send(a[1], ok);
     receive(toa[0]);                     // B has written its own copy
     ok = ok && expect_at(0, "AAAA");
     ok = ok && xabort() == 0;
@@ -259,19 +260,20 @@ test_independent(void)
     exit();
   }
   if(fork() == 0){                       // B
-    int ok;
     receive(tob[0]);
-    ok = xbegin() == 0 && expect_pattern(0, 4);
+    send(b[1], 1);
+    int ok = xbegin() == 0 && expect_pattern(0, 4);
     ok = ok && write_at(0, "BBBB", 4) == 4 && expect_at(0, "BBBB");
-    send(b[1], ok);
     receive(tob[0]);
     ok = ok && expect_at(0, "BBBB") && xabort() == 0;
     send(r[1], ok);
     exit();
   }
   check(receive(a[0]), "speculation A writes block 0 privately");
+  sleep(2);
   send(tob[1], 1);
   check(receive(b[0]), "speculation B sees original bytes, then its own");
+  sleep(2);
   check(expect_pattern(0, 4), "outsider still sees original bytes");
   send(toa[1], 1);
   send(tob[1], 1);
@@ -372,24 +374,31 @@ test_owner_death(int by_kill)
 
   printf(1, "-- owner %s discards private work\n", by_kill ? "kill" : "exit");
   mkfile();
-  pipe(o2t); pipe(t2o); pipe(m2o); pipe(hold);
+  pipe(o2t); pipe(t2o);
   if((owner = fork()) == 0){
     char c;
+    close(o2t[0]); close(t2o[1]);
+    send(o2t[1], 1);
+    pipe(m2o); pipe(hold);
     ok = xbegin() == 0 && write_at(0, "DEAD", 4) == 4;
+    if(!ok) exit();
     if(fork() == 0){                     // member blocks until cancelled
+      close(m2o[0]); close(hold[1]);
       send(m2o[1], 1);
       read(hold[0], &c, 1);
       exit();
     }
+    close(m2o[1]); close(hold[0]);
     receive(m2o[0]);
-    send(o2t[1], ok);
-    receive(t2o[0]);                     // wait for the outsider's checks
     if(by_kill)
       for(;;)
         sleep(100);
+    receive(t2o[0]);                     // wait for the outsider's checks
     exit();                              // voluntary exit cancels
   }
+  close(o2t[1]); close(t2o[0]);
   check(receive(o2t[0]), "owner and member write privately");
+  sleep(5);
   check(expect_pattern(0, 4), "outsider sees original while owner lives");
   check(write_at(0, "abcd", 4) == -1, "outsider write refused while copies exist");
   if(by_kill)
@@ -408,8 +417,7 @@ test_owner_death(int by_kill)
     buf[i] = pat(i);
   write_at(0, buf, 4);
   check(expect_pattern(0, FSZ), "public file holds only original bytes");
-  close(o2t[0]); close(o2t[1]); close(t2o[0]); close(t2o[1]);
-  close(m2o[0]); close(m2o[1]); close(hold[0]); close(hold[1]);
+  close(o2t[0]); close(t2o[1]);
   unlink(F);
 }
 

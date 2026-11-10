@@ -120,6 +120,9 @@ int             pipealloc(struct file**, struct file**);
 void            pipeclose(struct pipe*, int);
 int             piperead(struct pipe*, char*, int);
 int             pipewrite(struct pipe*, char*, int);
+int             pipe_has_external_reader(struct pipe*, int);
+void            spec_pipe_drain(struct spec_context*);
+void            spec_pipe_discard(struct spec_context*);
 
 //PAGEBREAK: 16
 // proc.c

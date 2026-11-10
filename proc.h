@@ -53,6 +53,9 @@ struct spec_context {
   char *console_buf;            // dynamically allocated console buffer (resource_lock)
   uint console_len;             // bytes buffered so far (resource_lock)
   uint console_cap;             // buffer capacity (resource_lock)
+  char *pipe_buf;               // dynamically allocated external pipe buffer (resource_lock)
+  uint pipe_len;                // bytes buffered so far (resource_lock)
+  uint pipe_cap;                // buffer capacity (resource_lock)
 };
 
 // Per-process state

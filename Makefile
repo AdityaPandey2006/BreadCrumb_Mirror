@@ -197,6 +197,7 @@ UPROGS=\
 	_spcommit\
 	_spnamespace\
 	_spconsoletest\
+	_sppipetest\
 
 ifeq ($(SHADOW_TEST),1)
 UPROGS += _shadowtest

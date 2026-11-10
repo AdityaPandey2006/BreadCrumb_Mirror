@@ -6,6 +6,9 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "fs.h"
+#include "sleeplock.h"
+#include "file.h"
 
 struct {
   struct spinlock lock;
@@ -79,6 +82,7 @@ spec_reclaim(struct spec_context *sc)
 {
   shadow_discard(sc);
   spec_console_discard(sc);
+  spec_pipe_discard(sc);
   acquire(&ptable.lock);
   if(sc->members != 0 || sc->refs != 1)
     panic("spec reclaim invariant");
@@ -138,6 +142,8 @@ spec_context_free_locked(struct spec_context *sc)
     panic("spec resources still attached");
   if(sc->console_buf != 0)
     panic("spec console buffer still attached");
+  if(sc->pipe_buf != 0)
+    panic("spec pipe buffer still attached");
   sc->id = 0;
   sc->owner_pid = 0;
   sc->abort_only = 0;
@@ -148,6 +154,9 @@ spec_context_free_locked(struct spec_context *sc)
   sc->console_buf = 0;
   sc->console_len = 0;
   sc->console_cap = 0;
+  sc->pipe_buf = 0;
+  sc->pipe_len = 0;
+  sc->pipe_cap = 0;
 }
 
 static struct spec_context*
@@ -235,6 +244,9 @@ spec_begin(void)
   sc->console_buf = 0;
   sc->console_len = 0;
   sc->console_cap = 0;
+  sc->pipe_buf = 0;
+  sc->pipe_len = 0;
+  sc->pipe_cap = 0;
   p->spec = id;
   release(&ptable.lock);
   return 0;
@@ -300,6 +312,7 @@ spec_complete(int commit)
   fs_finish(sc, commit);
   shadow_discard(sc);
   spec_console_discard(sc);
+  spec_pipe_discard(sc);
   acquire(&ptable.lock);
   spec_detach_locked(p);
   release(&ptable.lock);
@@ -310,13 +323,14 @@ spec_complete(int commit)
 
 // Step 5 completion point: the speculation's file changes are durable on disk
 // (its own log commit record has been written) and visible to every process.
-// Step 7 releases held console output here; pipe output remains Step 8.
+// Step 7 releases held console output here; Step 8 releases held external pipe output.
 // Called once per successful nonempty or empty commit, before the
 // private copies are freed and the owner is detached.
 static void
 spec_commit_durable(struct spec_context *sc)
 {
   spec_console_drain(sc);
+  spec_pipe_drain(sc);
 }
 
 // Like sleep(chan, resource_lock), but cancellation/killed checks and sleeping
@@ -381,6 +395,32 @@ spec_abort_only(void)
   release(&ptable.lock);
 }
 
+// Check whether pipe p has any active reader belonging to an external domain
+// (i.e. pr->spec != spec, which includes non-speculative pr->spec == 0 or a different speculation).
+int
+pipe_has_external_reader(struct pipe *p, int spec)
+{
+  struct proc *pr;
+  int i;
+
+  acquire(&ptable.lock);
+  for(pr = ptable.proc; pr < &ptable.proc[NPROC]; pr++){
+    if(pr->state == UNUSED)
+      continue;
+    for(i = 0; i < NOFILE; i++){
+      struct file *f = pr->ofile[i];
+      if(f && f->type == FD_PIPE && f->pipe == p && f->readable){
+        if(pr->spec != spec){
+          release(&ptable.lock);
+          return 1;
+        }
+      }
+    }
+  }
+  release(&ptable.lock);
+  return 0;
+}
+
 void
 pinit(void)
 {
@@ -391,6 +431,9 @@ pinit(void)
     spectable[i].console_buf = 0;
     spectable[i].console_len = 0;
     spectable[i].console_cap = 0;
+    spectable[i].pipe_buf = 0;
+    spectable[i].pipe_len = 0;
+    spectable[i].pipe_cap = 0;
   }
 }
 

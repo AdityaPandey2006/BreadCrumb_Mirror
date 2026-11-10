@@ -255,13 +255,14 @@ test_owner_cancellation(int by_kill)
     close(notice[0]);
     close(control[1]);
     close(bad[0]);
+    write(notice[1], &c, 1);
+    close(notice[1]);
     if(xbegin() < 0)
       exit();
     pipe(inner);
     worker = fork();
     if(worker == 0){
       close(inner[0]);
-      close(notice[1]);
       close(control[0]);
       write(inner[1], &c, 1);
       close(inner[1]);
@@ -274,8 +275,6 @@ test_owner_cancellation(int by_kill)
     close(inner[1]);
     read(inner[0], &c, 1);        // worker registered and reached its gate
     close(inner[0]);
-    write(notice[1], &c, 1);
-    close(notice[1]);
     if(by_kill)
       read(control[0], &c, 1);    // root kills this sleeping owner
     close(control[0]);
@@ -287,6 +286,7 @@ test_owner_cancellation(int by_kill)
   close(control[0]);
   close(bad[1]);
   read(notice[0], &c, 1);
+  sleep(2);
   if(by_kill)
     check(kill(owner) == 0, "owner kill request succeeds");
   check(wait() == owner, by_kill ? "killed owner exits" : "owner exits voluntarily");
@@ -313,9 +313,9 @@ test_context_exhaustion(void)
     if(pid == 0){
       close(gate[1]);
       close(ready[0]);
+      write(ready[1], &c, 1);
       if(xbegin() < 0)
         exit();
-      write(ready[1], &c, 1);
       read(gate[0], &c, 1);
       exit();
     }
@@ -323,6 +323,7 @@ test_context_exhaustion(void)
       break;
     pids[n++] = pid;
     read(ready[0], &c, 1);
+    sleep(1);
   }
   check(n == NSPEC, "all bounded context slots can be allocated");
   check(xbegin() == -1, "begin fails cleanly when context table is full");

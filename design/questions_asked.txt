@@ -967,3 +967,80 @@ User: "go for it"
 Action: Implemented Step 7 console buffering, wrote spconsoletest, updated test
 runner with strict host-side transcript assertions against leakage, and validated
 across single/multi-CPU suites, crash recovery, and full usertests.
+
+
+STEP 8: PIPE HANDLING ACROSS SPECULATION BOUNDARIES
+===================================================
+
+1. Current implementation analysis and leak points
+--------------------------------------------------
+User: "We are implementing the academic xv6 project “Externalization barriers for
+speculative processes”. Steps 1–7 have been implemented and merged. Implement Step 8:
+pipe handling across speculation boundaries. First read... Before coding:
+1. Explain how pipes currently work and where speculative bytes can escape.
+2. Present the ordered implementation breakdown in simple words.
+3. Identify unresolved pipe semantics, explain the options, and recommend choices.
+4. Wait for my signal before implementing."
+
+Assistant explanation & leak analysis:
+- Traditional xv6 pipe implementation (pipe.c):
+  Each pipe consists of a 512-byte in-memory circular ring buffer (struct pipe)
+  protected by a single spinlock (p->lock). When a writer writes (pipewrite), it
+  copies bytes directly into p->data[p->nwrite++ % PIPESIZE] and immediately wakes
+  sleeping readers via wakeup(&p->nread).
+- Where speculative bytes escape before Step 8:
+  Any process calling write(p[1], ...) immediately deposits bytes into the shared
+  in-memory ring buffer. An outside reader (spec == 0 or a process in a different
+  speculation) can read those bytes immediately in piperead(), observing uncommitted
+  speculative data before durable commit. If the writing speculation aborts, those
+  bytes have already leaked and cannot be recalled.
+- Progress deadlock hazard (D06/D08):
+  In this project, only the speculation owner may commit, and only after all child
+  participants have exited (D06/D08). If a speculative child writer blocked sleeping
+  on a full external pipe waiting for an outside reader to consume bytes, but the
+  outside reader cannot consume bytes until commit, the system deadlocks.
+
+2. Design decisions resolved for Step 8 (D40–D44)
+-------------------------------------------------
+- Endpoint & Visibility Semantics (D40):
+  Reader membership dynamically determines visibility. When a speculative process
+  writes to a pipe, pipe_has_external_reader(p, spec) scans all open reader
+  descriptors across ptable.proc under ptable.lock. If any reader belongs to an
+  external domain (pr->spec != spec, which includes outside spec == 0 or a different
+  speculation), the write is intercepted and staged into context-private memory
+  (sc->pipe_buf). Intra-speculation pipes (where all open readers share the same
+  speculation) write directly to the pipe ring buffer for immediate communication.
+  Ordinary writers (spec == 0) write directly without staging; speculative readers
+  consume ordinary bytes immediately without rollback capability.
+- Storage, Capacity & Backpressure (D41):
+  Private pipe state is allocated lazily as a single 4096-byte page (kalloc()) per
+  speculation context (sc->pipe_buf, sc->pipe_len, sc->pipe_cap), separate from the
+  8-block filesystem shadow table and the console buffer. Uses Unix short-write
+  semantics (D22/D25/D36) on overflow/exhaustion: writes up to available capacity
+  and returns count, or -1 if 0 bytes could be written. Speculative writers never
+  sleep waiting for external readers, preventing child-exit commit deadlocks.
+  Pipe lifetime is tracked via p->spec_refs: each staged record increments spec_refs,
+  preventing premature pipe freeing when descriptors close before commit.
+- Durable Commit Release & Ordered Drain (D42):
+  Held external pipe output is drained in spec_commit_durable(sc) strictly after
+  shadow_publish(sc) makes filesystem changes durable on disk and before console
+  drain. Staged pipe records are copied into each pipe's ring buffer under p->lock
+  without holding sc->resource_lock or the filesystem gate fs_enter(), waking
+  sleeping external readers (wakeup(&p->nread)).
+- Discard on Abort, Cancellation, and Owner Termination (D43):
+  On explicit xabort(), owner exit/kill, or failed commit before durability,
+  spec_pipe_discard(sc) decrements p->spec_refs on all target pipes, wakes waiting
+  readers, frees the pipe struct if both endpoints and spec_refs are 0, and frees
+  sc->pipe_buf via kfree(). Held bytes never reach external readers.
+- Crash Semantics and Input Rollback Limits (D44, part of O05):
+  Crash recovery restores durable filesystem state from the disk log, but in-memory
+  pipe buffers do not survive reboot. Once a speculative process consumes input
+  from an external pipe, an abort cannot undo that consumption or restore the
+  external writer's state.
+
+3. Execution authorization
+--------------------------
+User: "ok go for it"
+Action: Implemented Step 8 pipe isolation in pipe.c, proc.c, proc.h, defs.h; created
+sppipetest test suite; updated test synchronization in existing tests; validated
+across pipe, console, shadow, namespace, crash, namespace-crash, and usertests.

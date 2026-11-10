@@ -899,3 +899,71 @@ User: "alright update the design decisions and summary and then push the changes
 Action: update the spreadsheet/CSV, PDF/editable source, implementation and
 verification notes, retain raw evidence, then commit/push the feature branch
 to the team and mirror. Main is left for pull-request review.
+
+
+STEP 7: CONSOLE BUFFERING DESIGN AND IMPLEMENTATION
+===================================================
+
+1. Current implementation analysis and requirements
+---------------------------------------------------
+User: "We are implementing the academic xv6 project “Externalization barriers for
+speculative processes”. Steps 1–6 have been implemented. Implement Step 7:
+console buffering. First read... Before coding: 1. Explain the current
+implementation relevant to console output. 2. Present an ordered breakdown of
+Step 7 in simple words. 3. List the design questions that must be resolved,
+explain the options, and recommend choices. 4. Distinguish existing agreed
+decisions from new proposals. 5. Wait for my signal before implementing."
+
+Assistant explanation & breakdown:
+- Physical console driver (console.c/uart.c): consolewrite() drops ip->lock, takes
+  cons.lock, and emits each byte to both UART COM1 and CGA video memory.
+- cprintf() directly invokes consputc() under cons.lock (and bypasses locks on
+  panic) for immediate operator diagnosis.
+- consoleintr() handles keyboard/serial interrupt echo directly; consoleread()
+  consumes keystrokes from input.buf. These input effects remain unbuffered.
+- File descriptor routing (file.c/sysfile.c/fs.c): write(fd, buf, n) routes to
+  filewrite() -> writei() -> devsw[CONSOLE].write. Under D21, device descriptors
+  (T_DEV) are exempt from the opening-speculation rule; inherited and duplicated
+  descriptors can be written to by speculative processes.
+- Completed Step-5 hook: spec_complete(commit) calls spec_commit_durable(sc)
+  strictly after shadow_publish(sc) finishes its durable log write. This hook is
+  the exact integration point for releasing held console output.
+
+2. Design questions resolved for Step 7
+---------------------------------------
+- Storage & Capacity (D34, resolving O04 for console):
+  Allocated lazily via kalloc() as a single 4096-byte page on the first speculative
+  console write. Kept separate from the 8-block filesystem shadow table. Cleaned up
+  with kfree() on abort, kill/exit, reclamation, or post-commit discard.
+- Interception Point & FS Gate Bypass (D35):
+  Intercept in consolewrite() by testing spec_current(). In filewrite(), device
+  writes bypass fs_enter() (matching fileread), eliminating contention on the
+  coarse filesystem gate. Non-speculative writes and kernel prints (cprintf/panic)
+  proceed immediately without buffering.
+- Overflow & Short-Write Semantics (D36):
+  Unix short-write convention (matching D22/D25): write remaining capacity and
+  return count written; return -1 if 0 bytes could be written or page allocation
+  fails. Never spill unbuffered bytes to physical console. Do not mark speculation
+  abort-only; user program inspects return count and decides.
+- Durable Commit Release & Unbuffered Drain (D37):
+  Drain buffered console output in spec_commit_durable(sc) strictly after
+  shadow_publish(sc) commits. Emits bytes directly via consputc under cons.lock
+  without holding resource_lock or ptable.lock, preventing recursive buffering and
+  lock inversion.
+- Abort, Kill, and Cancellation Discard (D38):
+  Discard and free console buffer on explicit xabort(), owner kill/exit, or failed
+  commit before durability. No bytes are emitted to UART or CGA.
+- Crash Semantics (D39, part of O05):
+  Filesystem durability and physical console delivery are distinct effects. A crash
+  after the log commit header is written preserves filesystem changes on reboot,
+  while console output may be omitted or partially delivered if power fails
+  before/during drain. No distributed atomic delivery is claimed.
+
+3. Execution authorization
+--------------------------
+User: "all the required qemu distribution is available right?"
+Assistant: Confirmed x86 QEMU (11.1.50) and GCC toolchain operational in WSL2.
+User: "go for it"
+Action: Implemented Step 7 console buffering, wrote spconsoletest, updated test
+runner with strict host-side transcript assertions against leakage, and validated
+across single/multi-CPU suites, crash recovery, and full usertests.

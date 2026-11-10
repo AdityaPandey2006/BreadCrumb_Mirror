@@ -78,6 +78,7 @@ static void
 spec_reclaim(struct spec_context *sc)
 {
   shadow_discard(sc);
+  spec_console_discard(sc);
   acquire(&ptable.lock);
   if(sc->members != 0 || sc->refs != 1)
     panic("spec reclaim invariant");
@@ -135,6 +136,8 @@ spec_context_free_locked(struct spec_context *sc)
     panic("spec context still referenced");
   if(sc->resources != 0)
     panic("spec resources still attached");
+  if(sc->console_buf != 0)
+    panic("spec console buffer still attached");
   sc->id = 0;
   sc->owner_pid = 0;
   sc->abort_only = 0;
@@ -142,6 +145,9 @@ spec_context_free_locked(struct spec_context *sc)
   sc->members = 0;
   sc->refs = 0;
   sc->resources = 0;
+  sc->console_buf = 0;
+  sc->console_len = 0;
+  sc->console_cap = 0;
 }
 
 static struct spec_context*
@@ -226,6 +232,9 @@ spec_begin(void)
   sc->refs = 1;
   sc->resources = 0;
   sc->abort_only = 0;
+  sc->console_buf = 0;
+  sc->console_len = 0;
+  sc->console_cap = 0;
   p->spec = id;
   release(&ptable.lock);
   return 0;
@@ -290,6 +299,7 @@ spec_complete(int commit)
   }
   fs_finish(sc, commit);
   shadow_discard(sc);
+  spec_console_discard(sc);
   acquire(&ptable.lock);
   spec_detach_locked(p);
   release(&ptable.lock);
@@ -300,13 +310,13 @@ spec_complete(int commit)
 
 // Step 5 completion point: the speculation's file changes are durable on disk
 // (its own log commit record has been written) and visible to every process.
-// Later stages release held console/pipe output here (Steps 7-8); nothing is
-// held yet. Called once per successful nonempty or empty commit, before the
+// Step 7 releases held console output here; pipe output remains Step 8.
+// Called once per successful nonempty or empty commit, before the
 // private copies are freed and the owner is detached.
 static void
 spec_commit_durable(struct spec_context *sc)
 {
-  (void)sc;
+  spec_console_drain(sc);
 }
 
 // Like sleep(chan, resource_lock), but cancellation/killed checks and sleeping
@@ -376,8 +386,12 @@ pinit(void)
 {
   int i;
   initlock(&ptable.lock, "ptable");
-  for(i = 0; i < NSPEC; i++)
+  for(i = 0; i < NSPEC; i++){
     initlock(&spectable[i].resource_lock, "spec-resource");
+    spectable[i].console_buf = 0;
+    spectable[i].console_len = 0;
+    spectable[i].console_cap = 0;
+  }
 }
 
 // Must be called with interrupts disabled

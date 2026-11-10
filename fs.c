@@ -598,8 +598,8 @@ writei(struct inode *ip, char *src, uint off, uint n)
   int id;
   struct buf *bp;
 
-  // Console/devices keep their ordinary effects, even for speculative
-  // callers: output buffering is a later stage.
+  // Devices: console writes for speculative processes are buffered at
+  // consolewrite() until durable commit (Step 7).
   if(ip->type == T_DEV){
     if(ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].write)
       return -1;

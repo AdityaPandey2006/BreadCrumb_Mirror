@@ -36,6 +36,9 @@ void            consoleinit(void);
 void            cprintf(char*, ...);
 void            consoleintr(int(*)(void));
 void            panic(char*) __attribute__((noreturn));
+int             spec_console_write(int, char*, int);
+void            spec_console_drain(struct spec_context*);
+void            spec_console_discard(struct spec_context*);
 
 // exec.c
 int             exec(char*, char**);

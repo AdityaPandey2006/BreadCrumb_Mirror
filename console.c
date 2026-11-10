@@ -271,9 +271,113 @@ consoleread(struct inode *ip, char *dst, int n)
 }
 
 int
+spec_console_write(int spec, char *buf, int n)
+{
+  struct spec_context *sc;
+  char *page = 0;
+  int written = 0;
+  int remaining;
+
+  if(n <= 0)
+    return 0;
+
+  sc = spec_pin(spec);
+  if(sc == 0)
+    return -1;
+
+  acquire(&sc->resource_lock);
+  if(sc->state != SPEC_ACTIVE){
+    release(&sc->resource_lock);
+    spec_unpin(sc);
+    return -1;
+  }
+
+  if(sc->console_buf == 0){
+    release(&sc->resource_lock);
+    page = kalloc();
+    if(page == 0){
+      spec_unpin(sc);
+      return -1;
+    }
+    acquire(&sc->resource_lock);
+    if(sc->state != SPEC_ACTIVE){
+      release(&sc->resource_lock);
+      kfree(page);
+      spec_unpin(sc);
+      return -1;
+    }
+    if(sc->console_buf == 0){
+      sc->console_buf = page;
+      sc->console_len = 0;
+      sc->console_cap = PGSIZE;
+      page = 0;
+    }
+  }
+
+  remaining = sc->console_cap - sc->console_len;
+  if(remaining > 0){
+    written = n < remaining ? n : remaining;
+    memmove(sc->console_buf + sc->console_len, buf, written);
+    sc->console_len += written;
+  } else {
+    written = -1;
+  }
+
+  release(&sc->resource_lock);
+  if(page)
+    kfree(page);
+  spec_unpin(sc);
+
+  return written;
+}
+
+void
+spec_console_drain(struct spec_context *sc)
+{
+  char *buf;
+  uint len, i;
+
+  acquire(&sc->resource_lock);
+  buf = sc->console_buf;
+  len = sc->console_len;
+  sc->console_len = 0;
+  release(&sc->resource_lock);
+
+  if(buf == 0 || len == 0)
+    return;
+
+  acquire(&cons.lock);
+  for(i = 0; i < len; i++)
+    consputc(buf[i] & 0xff);
+  release(&cons.lock);
+}
+
+void
+spec_console_discard(struct spec_context *sc)
+{
+  char *buf = 0;
+
+  acquire(&sc->resource_lock);
+  if(sc->console_buf){
+    buf = sc->console_buf;
+    sc->console_buf = 0;
+    sc->console_len = 0;
+    sc->console_cap = 0;
+  }
+  release(&sc->resource_lock);
+
+  if(buf)
+    kfree(buf);
+}
+
+int
 consolewrite(struct inode *ip, char *buf, int n)
 {
   int i;
+  int spec = spec_current();
+
+  if(spec != 0)
+    return spec_console_write(spec, buf, n);
 
   iunlock(ip);
   acquire(&cons.lock);

@@ -132,7 +132,7 @@ def main():
     parser.add_argument("--qemu", default=str(ROOT.parent / "build/qemu-system-i386"))
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--suite", default="shadow",
-                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "usertests"))
+                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "usertests"))
     args = parser.parse_args()
     if args.repeat < 1:
         parser.error("--repeat must be positive")
@@ -155,7 +155,31 @@ def main():
                     run("shadowtest", "SHADOW TESTS PASSED")
                     run("spfiletest", "SPFILE TESTS PASSED")
                     run("spcommit", "SPCOMMIT TESTS PASSED")
+                    out = run("spconsoletest", "SPCONSOLETEST: ALL TESTS PASSED")
+                    if "LEAK_ABORT_SECRET_999" in out:
+                        raise RuntimeError("leak detected: LEAK_ABORT_SECRET_999 appeared in console output")
+                    if "LEAK_KILL_SECRET_888" in out:
+                        raise RuntimeError("leak detected: LEAK_KILL_SECRET_888 appeared in console output")
                 run("spectest", "SPEC TESTS PASSED")
+            elif args.suite == "console":
+                for _ in range(args.repeat):
+                    out = run("spconsoletest", "SPCONSOLETEST: ALL TESTS PASSED")
+                    # Strict host-side observer checks for absence of leakage:
+                    if "LEAK_ABORT_SECRET_999" in out:
+                        raise RuntimeError("FAIL: LEAK_ABORT_SECRET_999 leaked to console!")
+                    if "LEAK_KILL_SECRET_888" in out:
+                        raise RuntimeError("FAIL: LEAK_KILL_SECRET_888 leaked to console!")
+                    if "AAAAAAA" in out:
+                        raise RuntimeError("FAIL: overflow bytes leaked to console during abort!")
+                    # Check that committed messages appeared:
+                    for needle in ("SPEC_COMMIT_MSG_FD1", "SPEC_COMMIT_MSG_FD2",
+                                   "PARENT_START-CHILD_PART-PARENT_END",
+                                   "DUP_WRITE_MSG-OPEN_WRITE_MSG",
+                                   "EMPTY_COMMIT_OUTPUT",
+                                   "CONSOLE_AFTER_FS_DURABLE"):
+                        if needle not in out:
+                            raise RuntimeError(f"FAIL: committed message '{needle}' missing from console output!")
+                    print("Console isolation and release checks passed: no leakage, ordered commit release confirmed.")
             elif args.suite == "lifecycle":
                 run("spectest", "SPEC TESTS PASSED")
                 run("spfiletest", "SPFILE TESTS PASSED")

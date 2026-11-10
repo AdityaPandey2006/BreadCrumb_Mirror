@@ -194,18 +194,20 @@ filewrite(struct file *f, char *addr, int n)
 
     // A speculative write never enters the log, so it needs no transaction
     // or chunking. Partial private writes return the byte count (D22).
+    // Device writes bypass the filesystem gate, matching fileread().
     if(spec_current() != 0){
-      fs_enter();
+      int gated = f->ip->type != T_DEV;
+      if(gated) fs_enter();
       ilock(f->ip);
       if(!spec_file_ok(f)){
         iunlock(f->ip);
-        fs_leave();
+        if(gated) fs_leave();
         return -1;
       }
       if((r = writei(f->ip, addr, f->off, n)) > 0)
         f->off += r;
       iunlock(f->ip);
-      fs_leave();
+      if(gated) fs_leave();
       return r;
     }
 

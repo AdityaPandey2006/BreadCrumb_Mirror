@@ -50,6 +50,9 @@ struct spec_context {
   struct spinlock resource_lock;
   void *resources;              // linked shadow entries, owned by shadow.c
   int abort_only;               // D24: lost a commit-time conflict (ptable.lock)
+  char *console_buf;            // dynamically allocated console buffer (resource_lock)
+  uint console_len;             // bytes buffered so far (resource_lock)
+  uint console_cap;             // buffer capacity (resource_lock)
 };
 
 // Per-process state

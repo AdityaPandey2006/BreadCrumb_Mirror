@@ -1,6 +1,6 @@
 EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES
 Questions, explanations, and decisions before implementation
-Updated: 10 November 2026 (Step 6)
+Updated: 11 November 2026 (Step 10)
 
 HOW TO READ THIS RECORD
 =======================
@@ -1124,3 +1124,123 @@ Action:
 - Verified 1 CPU and 3 CPUs (3 repeats) on spconflict with 100% pass rate.
 - Passed full shadow, console, pipe, namespace, crash, namespace-crash, usertests,
   and Python rule agent regressions.
+
+
+STEP 10: FAILURE TESTING, MEASUREMENTS, GRAPHS AND DEMONSTRATIONS
+=================================================================
+
+1. Request and pre-coding briefing
+----------------------------------
+User: "We are implementing the academic xv6 project "Externalization barriers
+for speculative processes". Steps 1-9 have been implemented and merged.
+Complete Step 10: failure testing, measurements, graphs and final
+demonstrations. ... Before coding: Summarize the implemented guarantees and
+known limitations. Present an ordered testing and measurement plan. Identify
+decisions needed for workloads, baselines, metrics and graph formats.
+Recommend choices and wait for my signal."
+
+Assistant briefing (summary):
+- Guarantees: owner-only lifecycle with nested/peer rejection and
+  cancellation on owner death; block-level private copies (8 blocks incl.
+  metadata); private create/unlink/extend; one exclusive log transaction per
+  commit with all-old/all-new visibility and crash recovery; first committer
+  wins; held console and outside-pipe output (4 KiB each) released only after
+  the durable point and discarded on abort/kill/conflict; internal pipes work.
+- Limitations: 8-block cap; coarse filesystem gate (so ordinary mode on the
+  modified kernel is not an original-xv6 baseline); non-snapshot reads and
+  metadata false conflicts; pre-xbegin descriptors refused; offsets not
+  rewound; no exactly-once output; O01/O03 open; barriers do not detect
+  injection; no GDB log yet; crash tests covered only commit points 1-4;
+  earlier evidence came from different machines; CRLF checkout.
+- Plan: environment -> failure matrix -> crash expansion -> full correctness
+  run (fix defects first) -> baselines -> measurements -> graphs ->
+  demonstrations -> documentation.
+- Recommendations D49-D59: rdtsc timing with per-boot calibration; QEMU TCG,
+  1 CPU micro / 1-2-4 CPU concurrency; original xv6 = fd7d454 + FSSIZE 2000;
+  50 iterations x 5 boots, median + IQR, warm-up separate; workload list with
+  failed attempts labelled, cliff shown; resource use in the test build only;
+  ST_FAIL selector + crash points in the release window; matplotlib pinned in
+  a venv; specrun + agent demo modes; a GDB session on a real bug; keep the
+  eight-block configuration.
+
+User: "go"
+Action: all recommendations adopted as D49-D59.
+
+2. Defects found during Step 10 (all fixed with regression tests)
+-----------------------------------------------------------------
+D1 / D60 - directory entries lost on abort.
+  Adding three user programs made spectest fail: a file created publicly
+  before an unrelated speculation disappeared after that speculation aborted.
+  The unmodified kernel with three dummy programs reproduced it, so the cause
+  was layout, not the new code. Diagnosis: with exactly 32 root entries the
+  stock mkfs rounding ((off/BSIZE)+1)*BSIZE set the root size to 1024 with only
+  one block allocated. The first lookup allocated the missing block only in the
+  cached inode (bmap; writei does not iupdate when the size does not grow).
+  Stock xv6 never reloads the root inode, but Step 6's inode_invalidate() on
+  abort does, losing that block's entries. Fix: mkfs rounds to allocated
+  blocks and refuses to build a hole. Regression: tests/regress-root-hole.sh.
+
+D2 / D61 - commit release deadlock.
+  New test F1 (1500 held bytes into a 512-byte outside pipe whose reader
+  prints between reads) hung on 1 and 3 CPUs: the committer slept in the pipe
+  drain while holding the filesystem gate, and the reader's console printf
+  (begin_op -> fs_enter) waited for that gate. This contradicted D42. Fix:
+  detach held output at the durable point, finish cleanup, leave the gate,
+  then release pipe output and then console output. Regression:
+  spfailure drainfull.
+
+D3 / D62 - test race in spfiletest.
+  The outsider waited sleep(2) and assumed the speculation had copied its
+  blocks; under emulation a write can take a tick, so the outsider's write
+  sometimes (correctly) landed publicly first. Replaced by a probe that
+  rewrites an original byte until D20 refuses it. Other sleep-based orderings
+  remain and are documented as test limitations.
+
+Also noted while testing (not kernel defects):
+- Checks printed inside a speculation are themselves held output and vanish
+  on abort; spfailure records them silently and reports after completion.
+- xv6 sh accepts at most 10 arguments and 100 bytes per line and interprets
+  ';', '>' and '|', which shaped specrun's comma-joined step syntax.
+- The original-xv6 tree has no test harness; staging copies the host harness
+  into the baseline directory (no kernel change).
+
+3. Crash semantics made concrete
+--------------------------------
+Crash points 5-8 sit after the durable point. Recovery always gives the
+complete new filesystem; held output not yet released is lost, and console
+output being released can be cut after its first 16 bytes. Nothing replays it
+after reboot. Filesystem durability therefore does not imply exactly-once
+console or pipe delivery; the same window exists if the releasing process is
+killed.
+
+4. Barriers versus prompt injection
+-----------------------------------
+The demonstrations and agent modes show containment, not detection: the
+injected deletion is discarded only because a caller-supplied rule (keep the
+file the user did not ask to change) decides to abort, and an unguarded commit
+publishes the same deletion. The kernel cannot decide whether a requested
+action is trustworthy.
+
+5. GDB session and completion instructions
+------------------------------------------
+Assistant: gdb was not installed and needed sudo; asked whether to record the
+handout's GDB session and whether to commit.
+
+User: "gdb is instlled resume the step 10 and whatever is included and dont
+commit anythign for now"
+
+Action:
+- Recorded the GDB session on defect D1 with tests/gdb-root-hole.sh
+  (D58 done): with the stock mkfs the breakpoint in bmap() shows the root
+  hole filled only in the cached inode at boot and again after each abort
+  (fs_finish(committed=0) -> inode_invalidate), and spectest fails; with the
+  fixed mkfs the only hit is a normal extension through writei/dirlink and
+  spectest passes.
+- Found while checking the figures: the concurrency benchmark wrote the same
+  bytes as the file already held, so first-committer-wins validation (which
+  compares block contents) never saw a change and reported 0 % conflicts. That
+  is a real property of content-based validation (identical rewrites do not
+  conflict), but it made the measurement meaningless; spbench now writes
+  distinct bytes per worker and attempt and the concurrency phase was re-run.
+  The invalid first data set is kept as conc-identical-bytes-invalid.csv.
+- Nothing was committed, as requested.

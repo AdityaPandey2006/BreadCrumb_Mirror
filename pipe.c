@@ -7,6 +7,9 @@
 #include "spinlock.h"
 #include "sleeplock.h"
 #include "file.h"
+#ifdef SHADOW_TEST
+#include "shadowtest.h"
+#endif
 
 #define PIPESIZE 512
 
@@ -106,6 +109,11 @@ spec_pipe_write(struct pipe *p, char *addr, int n)
   release(&p->lock);
 
   if(sc->pipe_buf == 0){
+#ifdef SHADOW_TEST
+    if(shadow_test_fail(STF_PIPE))
+      sc->pipe_buf = 0;
+    else
+#endif
     sc->pipe_buf = kalloc();
     if(sc->pipe_buf == 0){
       release(&sc->resource_lock);
@@ -149,30 +157,36 @@ spec_pipe_write(struct pipe *p, char *addr, int n)
   return to_write;
 }
 
-// Drain held speculative pipe output on durable commit.
-// Releases bytes directly to pipe buffers under p->lock without holding resource_lock.
+// Durable commit, part 1: detach the held pipe records from the context so
+// that context cleanup (spec_pipe_discard) no longer sees them. The caller
+// owns *bufp afterwards and must pass it to spec_pipe_deliver().
 void
-spec_pipe_drain(struct spec_context *sc)
+spec_pipe_take(struct spec_context *sc, char **bufp, uint *lenp)
 {
   acquire(&sc->resource_lock);
-  if(sc->pipe_buf == 0 || sc->pipe_len == 0){
-    if(sc->pipe_buf){
-      kfree(sc->pipe_buf);
-      sc->pipe_buf = 0;
-      sc->pipe_len = 0;
-      sc->pipe_cap = 0;
-    }
-    release(&sc->resource_lock);
-    return;
-  }
-  char *buf = sc->pipe_buf;
-  uint total_len = sc->pipe_len;
+  *bufp = sc->pipe_buf;
+  *lenp = sc->pipe_len;
   sc->pipe_buf = 0;
   sc->pipe_len = 0;
   sc->pipe_cap = 0;
   release(&sc->resource_lock);
+}
 
+// Durable commit, part 2 (D42, Step 10 fix): deliver detached records into
+// the outside pipes. This may sleep while an outside pipe is full, so the
+// caller must hold NO filesystem gate, inode lock or spinlock: the outside
+// reader may need the filesystem (e.g. console printf -> begin_op) before it
+// reads again. A kill of the releasing process stops delivery; the rest is
+// dropped (partial delivery, documented with the crash window).
+void
+spec_pipe_deliver(char *buf, uint total_len)
+{
+  if(buf == 0)
+    return;
   uint off = 0;
+#ifdef SHADOW_TEST
+  int records = 0;
+#endif
   while(off < total_len){
     struct spec_pipe_record *rec = (struct spec_pipe_record*)(buf + off);
     struct pipe *p = rec->pipe;
@@ -200,6 +214,10 @@ spec_pipe_drain(struct spec_context *sc)
     release(&p->lock);
     if(should_free)
       kfree((char*)p);
+#ifdef SHADOW_TEST
+    if(++records == 1 && off < total_len)
+      shadow_crash_point(SPC_MID_PIPE);   // first record out, rest held
+#endif
   }
 
   kfree(buf);

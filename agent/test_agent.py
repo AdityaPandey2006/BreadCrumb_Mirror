@@ -1,7 +1,7 @@
 """Boundary tests; run with python3 -m unittest discover -s agent -v."""
 import unittest
 
-from agent import action, plan, validate
+from agent import action, plan, specrun_step, speculation_command, validate
 
 
 class ValidationTests(unittest.TestCase):
@@ -31,6 +31,30 @@ class ValidationTests(unittest.TestCase):
         for text in ("x; rm /demo/a", "$(id)", "`id`", "a\nb", "x > /a"):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 validate(action("print_text", text=text), destructive=True)
+
+
+class SpeculationTemplateTests(unittest.TestCase):
+    """Step 10: effects proposed by the planner are wrapped in a fixed specrun template."""
+
+    def test_injected_plan_becomes_guarded_speculation(self):
+        cmd = speculation_command("/demo/important.txt",
+                                  [action("delete_file", path="/demo/important.txt"),
+                                   action("print_text", text="APPROVED")])
+        self.assertEqual(cmd, "specrun keep /demo/important.txt rm,/demo/important.txt echo,APPROVED")
+
+    def test_create_text_words_joined_by_commas(self):
+        self.assertEqual(specrun_step(action("create_file", path="/demo/draft.txt", text="Tentative result.")),
+                         "echo,Tentative,result.,into,/demo/draft.txt")
+
+    def test_rejects_unsafe_steps(self):
+        for bad in (action("print_text", text="a,b"), action("read_file", path="/demo/report.txt"),
+                    action("delete_file", path="/README"), action("print_text", text="x; rm /demo/a")):
+            with self.subTest(action=bad), self.assertRaises(ValueError):
+                speculation_command("/demo/important.txt", [bad])
+        with self.assertRaises(ValueError):
+            speculation_command("/README", [action("print_text", text="hi")])
+        with self.assertRaises(ValueError):
+            speculation_command("/demo/important.txt", [])
 
 
 if __name__ == "__main__":

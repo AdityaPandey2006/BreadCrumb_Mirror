@@ -1,0 +1,103 @@
+root after mkfs: root size=1024 allocated_blocks=1 entries=32
+The target architecture is set to "i386".
+0x0000fff0 in ?? ()
+Breakpoint 1 at 0x80101d20: bmap. (2 locations)
+Breakpoint 2 at 0x80103360: file fsview.c, line 114.
+
+[gdb] hit 1: bmap(root inode 1, bn=1) with addrs[1]=0, cached size=1024, current pid=1 spec=0
+[gdb]   size 1024 covers block 1 although it is not allocated: HOLE (size already > 512; writei will not iupdate)
+#0  bmap (ip=0x80113c34 <icache+52>, bn=1) at fs.c:439
+#1  0x80101fb9 in readi (ip=ip@entry=0x80113c34 <icache+52>, dst=dst@entry=0x8dfffe70 "\037", off=off@entry=512, n=16) at fs.c:582
+#2  0x80102be8 in readi (ip=0x80113c34 <icache+52>, dst=0x8dfffe70 "\037", off=512, n=16) at fs.c:699
+#3  dirlookup (dp=0x80113c34 <icache+52>, name=0x8dfffee2 "console", poff=0x0) at fs.c:700
+#4  0x80102dbd in namex (path=0x88f "", path@entry=0x888 "console", nameiparent=nameiparent@entry=0, name=name@entry=0x8dfffee2 "console") at fs.c:813
+
+[gdb] fs_finish(committed=0) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=0) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] hit 2: bmap(root inode 1, bn=1) with addrs[1]=0, cached size=1024, current pid=3 spec=0
+[gdb]   size 1024 covers block 1 although it is not allocated: HOLE (size already > 512; writei will not iupdate)
+#0  bmap (ip=0x80113c34 <icache+52>, bn=1) at fs.c:439
+#1  0x80101fb9 in readi (ip=ip@entry=0x80113c34 <icache+52>, dst=dst@entry=0x8dfbee80 "\037", off=off@entry=512, n=16) at fs.c:582
+#2  0x80102be8 in readi (ip=0x80113c34 <icache+52>, dst=0x8dfbee80 "\037", off=512, n=16) at fs.c:699
+#3  dirlookup (dp=0x80113c34 <icache+52>, name=0x8dfbeed2 "specleak", poff=0x0) at fs.c:700
+#4  0x8010851d in create (path=<optimized out>, type=type@entry=2, major=major@entry=0, minor=0) at sysfile.c:260
+
+[gdb] fs_finish(committed=0) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] hit 3: bmap(root inode 1, bn=1) with addrs[1]=0, cached size=1024, current pid=3 spec=0
+[gdb]   size 1024 covers block 1 although it is not allocated: HOLE (size already > 512; writei will not iupdate)
+#0  bmap (ip=0x80113c34 <icache+52>, bn=1) at fs.c:439
+#1  0x80101fb9 in readi (ip=ip@entry=0x80113c34 <icache+52>, dst=dst@entry=0x8dfbee70 "\037", off=off@entry=512, n=16) at fs.c:582
+#2  0x80102be8 in readi (ip=0x80113c34 <icache+52>, dst=0x8dfbee70 "\037", off=512, n=16) at fs.c:699
+#3  dirlookup (dp=0x80113c34 <icache+52>, name=0x8dfbeee2 "specleak", poff=0x0) at fs.c:700
+#4  0x80102dbd in namex (path=0x193c "", path@entry=0x1934 "specleak", nameiparent=nameiparent@entry=0, name=name@entry=0x8dfbeee2 "specleak") at fs.c:813
+Cannot execute this command while the target is running.
+Use the "interrupt" command to stop the target
+and then try again.
+---- guest serial result ----
+FAIL: speculative overwrite discarded by xabort (Step 4 isolation)
+SPEC TESTS FAILED: 3

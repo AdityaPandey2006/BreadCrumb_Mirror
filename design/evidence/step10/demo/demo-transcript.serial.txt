@@ -1,0 +1,108 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ mkdir /demo; echo DONEc230e6d652
+DONEc230e6d652
+$ echo The server handled 100 requests. Five failed. > /demo/report.txt; echo DONE5603c5e2d2
+DONE5603c5e2d2
+$ echo Original important data. > /demo/important.txt; echo DONEcb6984d92e
+DONEcb6984d92e
+$ echo original a > /demo/a.txt; echo DONE2bb9e8e746
+DONE2bb9e8e746
+$ echo public version > /demo/a2.txt; echo DONE29d9ce3baa
+DONE29d9ce3baa
+$ echo ORDINARY_NOTE > /demo/note.txt; echo DONEf099deb82e
+DONEf099deb82e
+$ cat /demo/note.txt; echo DONEd5d6adc0d6
+ORDINARY_NOTE
+DONEd5d6adc0d6
+$ rm /demo/note.txt; echo DONE877113cb7d
+DONE877113cb7d
+$ cat /demo/note.txt; echo DONEac83f430c7
+cat: cannot open /demo/note.txt
+DONEac83f430c7
+$ specrun commit echo,PRIVATE_DRAFT,into,/demo/draft.txt echo,HELD_LINE_2 pause,300 &
+$ ls /demo; echo DONE33daf24a85
+.              1 32 112
+..             1 1 528
+report.txt     2 33 46
+important.txt  2 34 25
+a.txt          2 35 11
+a2.txt         2 36 15
+DONE33daf24a85
+$ cat /demo/draft.txt; echo DONE0b52843dee
+cat: cannot open /demo/draft.txt
+DONE0b52843dee
+$ HELD_LINE_2
+SPECRUN: committed: changes published; held output released above
+czombie!
+at /demo/draft.txt; echo DONE8b03d15430
+PRIVATE_DRAFT
+DONE8b03d15430
+$ specrun abort rm,/demo/a.txt echo,hi,into,/demo/b.txt echo,ABORT_SECRET_LINE; echo DONE65eac6457c
+SPECRUN: aborted: private changes and held output discarded
+DONE65eac6457c
+$ cat /demo/a.txt; echo DONE2d11488060
+original a
+DONE2d11488060
+$ cat /demo/b.txt; echo DONEbfa355aac0
+cat: cannot open /demo/b.txt
+DONEbfa355aac0
+$ specrun commit rm,/demo/a.txt echo,hi,into,/demo/b.txt echo,COMMIT_LINE; echo DONE6504c624e1
+COMMIT_LINE
+SPECRUN: committed: changes published; held output released above
+DONE6504c624e1
+$ cat /demo/a.txt; echo DONE86f4b60f74
+cat: cannot open /demo/a.txt
+DONE86f4b60f74
+$ cat /demo/b.txt; echo DONE36a79c3fcf
+hi
+DONE36a79c3fcf
+$ cat /demo/report.txt | wc; echo DONE93a762167a
+1 7 46 
+DONE93a762167a
+$ specrun commit cat,/demo/report.txt,pipe,wc; echo DONEe49852d535
+1 7 46 
+SPECRUN: committed: changes published; held output released above
+DONEe49852d535
+$ specrun abort cat,/usertests,into,/demo/big.bin; echo DONE04a598cae4
+SPECRUN: aborted: private changes and held output discarded
+DONE04a598cae4
+$ cat /demo/big.bin; echo DONEfca5ca5833
+cat: cannot open /demo/big.bin
+DONEfca5ca5833
+$ specrun commit cat,/usertests,into,/demo/big.bin; echo DONEd6b008e908
+SPECRUN: committed: changes published; held output released above
+DONEd6b008e908
+$ ls /demo/big.bin; echo DONE5e944cba2d
+big.bin        2 38 2560
+DONE5e944cba2d
+$ specrun commit echo,SPEC_VERSION,into,/demo/c.txt echo,LOSER_LINE pause,300 &
+$ echo OUTSIDE_VERSION > /demo/c.txt; echo DONE9c31423a1b
+DONE9c31423a1b
+$ SPECRUN: commit refused (conflict, first committer wins); attempt aborted
+czombie!
+at /demo/c.txt; echo DONE5035177167
+OUTSIDE_VERSION
+DONE5035177167
+$ specrun commit echo,SPEC_A2,into,/demo/a2.txt pause,300 &
+$ echo OUTSIDER > /demo/a2.txt; echo DONE2e571888bc
+DONE2e571888bc
+$ cat /demo/a2.txt; echo DONE0ea0309af5
+public version
+DONE0ea0309af5
+$ SPECRUN: committed: changes published; held output released above
+czombie!
+at /demo/a2.txt; echo DONEf63c8ba78a
+SPEC_A2
+ersion
+DONEf63c8ba78a
+$ specrun commit rm,/demo/important.txt echo,INJECTED_AND_COMMITTED; echo DONEfe83bee7cf
+INJECTED_AND_COMMITTED
+SPECRUN: committed: changes published; held output released above
+DONEfe83bee7cf
+$ cat /demo/important.txt; echo DONEfe5577701e
+cat: cannot open /demo/important.txt
+DONEfe5577701e
+$ 

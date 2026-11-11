@@ -1,0 +1,105 @@
+
+===== HARNESS: crash point 1 (before any log block is written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE1dfc1d9f
+NSSETUP OK
+TESTDONE1dfc1d9f
+$ spnamespace crash 1
+SPEC CRASH POINT 1
+lapicid 0: panic: spec crash point 
+===== HARNESS: guest halted at crash point 1; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify old; echo TESTDONEcc472666
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONEcc472666
+$ 
+===== HARNESS: PASS crash point 1: recovered complete old state =====
+
+===== HARNESS: crash point 2 (log blocks written, commit record (log header) not written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONEdbdf940d
+NSSETUP OK
+TESTDONEdbdf940d
+$ spnamespace crash 2
+SPEC CRASH POINT 2
+lapicid 0: panic: spec crash point
+===== HARNESS: guest halted at crash point 2; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify old; echo TESTDONEddc6bdf1
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONEddc6bdf1
+$ 
+===== HARNESS: PASS crash point 2: recovered complete old state =====
+
+===== HARNESS: crash point 3 (commit record written, nothing installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE7085f5be
+NSSETUP OK
+TESTDONE7085f5be
+$ spnamespace crash 3
+SPEC CRASH POINT 3
+lapicid 0: panic: spec crash point 
+===== HARNESS: guest halted at crash point 3; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify new; echo TESTDONE819f34cd
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONE819f34cd
+$ 
+===== HARNESS: PASS crash point 3: recovered complete new state =====
+
+===== HARNESS: crash point 4 (first of three blocks installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE40cb7f41
+NSSETUP OK
+TESTDONE40cb7f41
+$ spnamespace crash 4
+SPEC CRASH POINT 4
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 8010424a 801044af
+===== HARNESS: guest halted at crash point 4; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify new; echo TESTDONE30f61e0e
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONE30f61e0e
+$ 
+===== HARNESS: PASS crash point 4: recovered complete new state =====

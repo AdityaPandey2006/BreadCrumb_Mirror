@@ -14,6 +14,9 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#ifdef SHADOW_TEST
+#include "shadowtest.h"
+#endif
 
 static void consputc(int);
 
@@ -294,6 +297,11 @@ spec_console_write(int spec, char *buf, int n)
 
   if(sc->console_buf == 0){
     release(&sc->resource_lock);
+#ifdef SHADOW_TEST
+    if(shadow_test_fail(STF_CONSOLE))
+      page = 0;
+    else
+#endif
     page = kalloc();
     if(page == 0){
       spec_unpin(sc);
@@ -331,25 +339,45 @@ spec_console_write(int spec, char *buf, int n)
   return written;
 }
 
+// Durable commit, part 1: detach the held console page from the context.
+// The caller owns *bufp afterwards and must pass it to spec_console_emit().
 void
-spec_console_drain(struct spec_context *sc)
+spec_console_take(struct spec_context *sc, char **bufp, uint *lenp)
 {
-  char *buf;
-  uint len, i;
-
   acquire(&sc->resource_lock);
-  buf = sc->console_buf;
-  len = sc->console_len;
+  *bufp = sc->console_buf;
+  *lenp = sc->console_len;
+  sc->console_buf = 0;
   sc->console_len = 0;
+  sc->console_cap = 0;
   release(&sc->resource_lock);
+}
 
-  if(buf == 0 || len == 0)
+// Durable commit, part 2 (D37): emit the detached bytes, then free the page.
+// Runs after the filesystem gate is released and after held pipe output.
+void
+spec_console_emit(char *buf, uint len)
+{
+  uint i;
+
+  if(buf == 0)
     return;
-
+#ifdef SHADOW_TEST
+  shadow_crash_point(SPC_BEFORE_CONS);
+#endif
   acquire(&cons.lock);
-  for(i = 0; i < len; i++)
+  for(i = 0; i < len; i++){
     consputc(buf[i] & 0xff);
+#ifdef SHADOW_TEST
+    if(i == 15 && len > 16){
+      release(&cons.lock);              // panic's cprintf needs cons.lock
+      shadow_crash_point(SPC_MID_CONS); // first 16 bytes out, rest held
+      acquire(&cons.lock);
+    }
+#endif
+  }
   release(&cons.lock);
+  kfree(buf);
 }
 
 void

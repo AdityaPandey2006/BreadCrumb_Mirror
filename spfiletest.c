@@ -167,7 +167,15 @@ test_outsider_isolation(void)
     close(p2o[1]);
     close(o2p[0]);
     receive(p2o[0]);
-    sleep(2);
+    // Step 10 fix (was sleep(2), which raced with slow emulated writes): wait
+    // until the speculation has copied block 2, the last block it writes. The
+    // probe rewrites one ORIGINAL byte of block 2, so while it still succeeds
+    // it changes nothing; once it is refused (D20) blocks 0 and 2 are copied.
+    {
+      char orig = pat(2*BSIZE + 100);
+      for(i = 0; i < 2000 && write_at(2*BSIZE + 100, &orig, 1) == 1; i++)
+        sleep(1);
+    }
     send(o2p[1], expect_pattern(0, 2*BSIZE + 16));   // original bytes
     send(o2p[1], write_at(10, "OUT", 3) == -1);       // block 0 copied
     send(o2p[1], expect_pattern(0, BSIZE));

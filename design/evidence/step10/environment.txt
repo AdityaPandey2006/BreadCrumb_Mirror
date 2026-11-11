@@ -1,0 +1,19 @@
+date_utc: 2026-11-11T11:41:43Z
+git_head: c05d19a12a76925a0174ed125b6ec1ef405fbbce (step10)
+git_dirty_files: 20
+host_kernel: Linux 6.18.33.1-microsoft-standard-WSL2 x86_64 GNU/Linux
+os: Ubuntu 26.04.1 LTS
+cpu_model: AMD Ryzen 7 170 with Radeon Graphics
+host_cpus: 16
+host_mem: 7595 MiB
+gcc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+ld: GNU ld (GNU Binutils for Ubuntu) 2.46
+make: GNU Make 4.4.1
+python: Python 3.14.4
+qemu_binary: /home/ishaan/qemu/build/qemu-system-i386
+qemu: QEMU emulator version 11.1.50 (v11.1.0-1709-g7074591d79)
+qemu_accel: TCG (no -enable-kvm; harness passes -smp N -m 512, serial to a pipe)
+guest_memory: 512 MiB; guest disk: raw fs.img (2000 blocks) + xv6.img
+build_flags: CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+fault_injection_flag: SHADOW_TEST=1 adds -DSHADOW_TEST (test build only)
+kernel_limits: NSPEC=8 NSHADOW=8 MAXOPBLOCKS=10 LOGSIZE=(MAXOPBLOCKS*3) NBUF=(MAXOPBLOCKS*3) FSSIZE=2000 

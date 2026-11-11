@@ -37,7 +37,8 @@ void            cprintf(char*, ...);
 void            consoleintr(int(*)(void));
 void            panic(char*) __attribute__((noreturn));
 int             spec_console_write(int, char*, int);
-void            spec_console_drain(struct spec_context*);
+void            spec_console_take(struct spec_context*, char**, uint*);
+void            spec_console_emit(char*, uint);
 void            spec_console_discard(struct spec_context*);
 
 // exec.c
@@ -121,7 +122,8 @@ void            pipeclose(struct pipe*, int);
 int             piperead(struct pipe*, char*, int);
 int             pipewrite(struct pipe*, char*, int);
 int             pipe_has_external_reader(struct pipe*, int);
-void            spec_pipe_drain(struct spec_context*);
+void            spec_pipe_take(struct spec_context*, char**, uint*);
+void            spec_pipe_deliver(char*, uint);
 void            spec_pipe_discard(struct spec_context*);
 
 //PAGEBREAK: 16
@@ -181,6 +183,13 @@ void            shadow_crash_point(int);
 #define SPC_BEFORE_HEAD  2  // log blocks written, commit record not yet
 #define SPC_AFTER_HEAD   3  // commit record written, not installed
 #define SPC_MID_INSTALL  4  // first of several blocks installed home
+// Step 10: output-release window (after the durable point).
+#define SPC_AFTER_DURABLE 5 // filesystem durable, no held output released
+#define SPC_MID_PIPE      6 // first held pipe record delivered, rest not
+#define SPC_BEFORE_CONS   7 // pipe output released, console not yet
+#define SPC_MID_CONS      8 // first 16 held console bytes emitted, rest not
+int             shadow_test_fail(int);
+int             kfreepages(void);
 #endif
 
 // swtch.S

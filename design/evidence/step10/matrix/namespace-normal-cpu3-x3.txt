@@ -1,0 +1,134 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace; echo TESTDONE3e135cdc
+PASS: abort discards namespace/data
+PASS: outside sees the correct final namespace
+PASS: begin create/delete attempt
+PASS: create and write new private file
+PASS: inside sees deletion and new contents
+PASS: outside sees old name and no new name before completion
+PASS: commit publishes namespace/data together
+PASS: outside sees the correct final namespace
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: begin direct-to-indirect extension
+PASS: allocate private indirect block and two new data blocks
+PASS: private stat reflects extended size
+PASS: outside size stays original
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: published indirect data is readable
+PASS: last extended byte published
+PASS: abort removes new directory and restores usable root cwd
+PASS: commit directory and its child
+PASS: committed child reachable through directory
+PASS: abort directory deletion
+PASS: aborted directory deletion preserves child
+PASS: commit directory deletion
+PASS: deleted directory absent publicly
+PASS: abort removes private hard link
+PASS: commit hard link
+PASS: public nlink and alias agree
+PASS: abort invalidates all aliases of a newly created file
+PASS: begin new-descriptor commit
+PASS: committed new descriptor remains usable
+PASS: commit unlink while an outside descriptor remains open
+PASS: outside open descriptor retains unlinked contents
+PASS: capacity failures leave public metadata unchanged
+PASS: begin partial extension
+PASS: metadata counts toward cap; failed extension preserves completed chunks
+PASS: partial extension remains consistently committable
+PASS: owner's new file stays private
+PASS: owner death releases allocation and namespace shadows
+PASS: abort restores consistent allocation after close failure
+NAMESPACE TESTS PASSED
+TESTDONE3e135cdc
+$ spnamespace; echo TESTDONEd5c2b5d1
+PASS: abort discards namespace/data
+PASS: outside sees the correct final namespace
+PASS: begin create/delete attempt
+PASS: create and write new private file
+PASS: inside sees deletion and new contents
+PASS: outside sees old name and no new name before completion
+PASS: commit publishes namespace/data together
+PASS: outside sees the correct final namespace
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: begin direct-to-indirect extension
+PASS: allocate private indirect block and two new data blocks
+PASS: private stat reflects extended size
+PASS: outside size stays original
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: published indirect data is readable
+PASS: last extended byte published
+PASS: abort removes new directory and restores usable root cwd
+PASS: commit directory and its child
+PASS: committed child reachable through directory
+PASS: abort directory deletion
+PASS: aborted directory deletion preserves child
+PASS: commit directory deletion
+PASS: deleted directory absent publicly
+PASS: abort removes private hard link
+PASS: commit hard link
+PASS: public nlink and alias agree
+PASS: abort invalidates all aliases of a newly created file
+PASS: begin new-descriptor commit
+PASS: committed new descriptor remains usable
+PASS: commit unlink while an outside descriptor remains open
+PASS: outside open descriptor retains unlinked contents
+PASS: capacity failures leave public metadata unchanged
+PASS: begin partial extension
+PASS: metadata counts toward cap; failed extension preserves completed chunks
+PASS: partial extension remains consistently committable
+PASS: owner's new file stays private
+PASS: owner death releases allocation and namespace shadows
+PASS: abort restores consistent allocation after close failure
+NAMESPACE TESTS PASSED
+TESTDONEd5c2b5d1
+$ spnamespace; echo TESTDONE2dd9075f
+PASS: abort discards namespace/data
+PASS: outside sees the correct final namespace
+PASS: begin create/delete attempt
+PASS: create and write new private file
+PASS: inside sees deletion and new contents
+PASS: outside sees old name and no new name before completion
+PASS: commit publishes namespace/data together
+PASS: outside sees the correct final namespace
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: begin direct-to-indirect extension
+PASS: allocate private indirect block and two new data blocks
+PASS: private stat reflects extended size
+PASS: outside size stays original
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: published indirect data is readable
+PASS: last extended byte published
+PASS: abort removes new directory and restores usable root cwd
+PASS: commit directory and its child
+PASS: committed child reachable through directory
+PASS: abort directory deletion
+PASS: aborted directory deletion preserves child
+PASS: commit directory deletion
+PASS: deleted directory absent publicly
+PASS: abort removes private hard link
+PASS: commit hard link
+PASS: public nlink and alias agree
+PASS: abort invalidates all aliases of a newly created file
+PASS: begin new-descriptor commit
+PASS: committed new descriptor remains usable
+PASS: commit unlink while an outside descriptor remains open
+PASS: outside open descriptor retains unlinked contents
+PASS: capacity failures leave public metadata unchanged
+PASS: begin partial extension
+PASS: metadata counts toward cap; failed extension preserves completed chunks
+PASS: partial extension remains consistently committable
+PASS: owner's new file stays private
+PASS: owner death releases allocation and namespace shadows
+PASS: abort restores consistent allocation after close failure
+NAMESPACE TESTS PASSED
+TESTDONE2dd9075f
+$ 

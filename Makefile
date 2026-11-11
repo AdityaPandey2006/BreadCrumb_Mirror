@@ -199,6 +199,9 @@ UPROGS=\
 	_spconsoletest\
 	_sppipetest\
 	_spconflict\
+	_spfailure\
+	_spbench\
+	_specrun\
 
 ifeq ($(SHADOW_TEST),1)
 UPROGS += _shadowtest

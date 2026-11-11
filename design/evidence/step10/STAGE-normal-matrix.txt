@@ -1,0 +1,9 @@
+config=normal
+source=worktree@c05d19a12a76925a0174ed125b6ec1ef405fbbce
+branch_head=c05d19a12a76925a0174ed125b6ec1ef405fbbce
+dirty_tree=yes
+staged_source_sha256=7d9c3ceb1a26e8a1
+staged_at=2026-11-11T11:42:01Z
+build_command=make -B xv6.img fs.img
+test_only_kernel_symbols=0
+fs_img_sha256=6c1a4de40779ff0e xv6_img_sha256=7dd769fc9a6e11c4

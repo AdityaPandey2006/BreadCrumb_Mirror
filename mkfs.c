@@ -158,8 +158,20 @@ main(int argc, char *argv[])
   // fix size of root inode dir
   rinode(rootino, &din);
   off = xint(din.size);
-  off = ((off/BSIZE) + 1) * BSIZE;
+  // Step 10 fix: round up to the blocks actually allocated. The original
+  // ((off/BSIZE) + 1) * BSIZE added a whole unallocated block (addrs[k] == 0)
+  // when the root held exactly a multiple of 32 entries. The kernel then
+  // allocated that block inside the cached inode only (bmap without iupdate),
+  // and the speculation abort path's inode_invalidate() reloaded the on-disk
+  // inode, losing every directory entry in that block.
+  off = ((off + BSIZE - 1) / BSIZE) * BSIZE;
   din.size = xint(off);
+  for(i = 0; i < off / BSIZE; i++){
+    if(i >= NDIRECT || xint(din.addrs[i]) == 0){
+      fprintf(stderr, "mkfs: root size %u covers unallocated block %d\n", off, i);
+      exit(1);
+    }
+  }
   winode(rootino, &din);
 
   balloc(freeblock);

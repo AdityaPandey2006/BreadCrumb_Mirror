@@ -1,0 +1,10 @@
+config=orig
+source=fd7d454a3a149f2954dbfdf28e204262abcbbb80
+branch_head=c05d19a12a76925a0174ed125b6ec1ef405fbbce
+dirty_tree=yes
+staged_source_sha256=81839ed10aec4bbb
+staged_at=2026-11-11T12:17:11Z
+baseline_patch=FSSIZE 1000->2000; +_spbench (compiled with ORIG_XV6)
+build_command=make -B xv6.img fs.img
+test_only_kernel_symbols=0
+fs_img_sha256=5324399910e78f3a xv6_img_sha256=a57154c65cc24894

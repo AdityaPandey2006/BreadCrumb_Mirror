@@ -101,6 +101,7 @@ shadow_inode_busy(uint dev, uint inum)
 }
 
 #ifdef SHADOW_TEST
+#include "shadowtest.h"
 static volatile uint fail_alloc;
 static volatile uint hold_loader;
 static volatile uint waiting;
@@ -109,6 +110,20 @@ static volatile uint pubwrites;
 static volatile uint pubhold;     // ST_PUBHOLD: hold point to pause at
 static volatile uint pubheld;     // hold point a committer is paused at
 static volatile uint crashpoint;  // ST_CRASH: SPC_* point to halt at
+static volatile uint fail_console; // ST_FAIL STF_CONSOLE: next console page
+static volatile uint fail_pipe;    // ST_FAIL STF_PIPE: next held-pipe page
+
+// Test-only: consume a pending injected failure for the console (STF_CONSOLE)
+// or pipe (STF_PIPE) held-output page. Returns 1 if the caller must fail.
+int
+shadow_test_fail(int which)
+{
+  if(which == STF_CONSOLE)
+    return __sync_bool_compare_and_swap(&fail_console, 1, 0);
+  if(which == STF_PIPE)
+    return __sync_bool_compare_and_swap(&fail_pipe, 1, 0);
+  return 0;
+}
 
 void
 shadow_note_public_write(void)
@@ -515,9 +530,18 @@ shadow_test(int op, int slot, int value)
     return 0;
   }
   if(op == ST_FAIL){
-    __sync_lock_test_and_set(&fail_alloc, 1);
+    if(value == STF_CONSOLE)
+      __sync_lock_test_and_set(&fail_console, 1);
+    else if(value == STF_PIPE)
+      __sync_lock_test_and_set(&fail_pipe, 1);
+    else if(value == 0 || value == STF_SHADOW)
+      __sync_lock_test_and_set(&fail_alloc, 1);
+    else
+      return -1;
     return 0;
   }
+  if(op == ST_FREEPAGES)
+    return kfreepages();
   if(op == ST_HOLD){
     __sync_lock_test_and_set(&hold_loader, value != 0);
     return 0;

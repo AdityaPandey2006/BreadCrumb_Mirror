@@ -158,16 +158,24 @@ static void
 test_outsider_isolation(void)
 {
   int p2o[2], o2p[2], pid, i;
+  char ready;
 
   printf(1, "-- outsider isolation and outside-writer refusal\n");
   mkfile();
   pipe(p2o);
   pipe(o2p);
+  // Fill the readiness pipe before speculation (PIPESIZE is 512 in pipe.c).
+  // The outsider's extra ordinary write cannot finish until we consume a byte
+  // after creating both shadows. Unlike a speculative outgoing signal, this
+  // input consumption is immediate and does not wait for commit.
+  memset(tmp, 'P', BSIZE);
+  check(write(p2o[1], tmp, BSIZE) == BSIZE, "fill readiness pipe");
   if((pid = fork()) == 0){
-    close(p2o[1]);
+    close(p2o[0]);
     close(o2p[0]);
-    receive(p2o[0]);
-    sleep(2);
+    if(write(p2o[1], "P", 1) != 1)
+      exit();
+    close(p2o[1]);
     send(o2p[1], expect_pattern(0, 2*BSIZE + 16));   // original bytes
     send(o2p[1], write_at(10, "OUT", 3) == -1);       // block 0 copied
     send(o2p[1], expect_pattern(0, BSIZE));
@@ -180,10 +188,9 @@ test_outsider_isolation(void)
     send(o2p[1], write_at(5*BSIZE + 3, "OK", 2) == 2); // uncopied block
     exit();
   }
-  close(p2o[0]);
+  close(p2o[1]);
   close(o2p[1]);
 
-  send(p2o[1], 1);
   check(xbegin() == 0, "speculation begins");
   check(write_at(0, "WORLD", 5) == 5, "speculative overwrite of block 0");
   check(write_at(2*BSIZE + 7, "XY", 2) == 2, "speculative overwrite of block 2");
@@ -191,6 +198,7 @@ test_outsider_isolation(void)
         "speculation reads its own private bytes");
   check(expect_pattern(5, BSIZE - 5), "rest of private block keeps original bytes");
   check(file_size() == FSZ, "stat size unchanged by non-extending write");
+  check(read(p2o[0], &ready, 1) == 1, "release outsider after private writes");
   check(receive(o2p[0]), "outsider reads original bytes");
   check(receive(o2p[0]), "outsider write to a privately copied block returns -1");
   check(receive(o2p[0]), "refused outsider write left the public block unchanged");
@@ -208,7 +216,7 @@ test_outsider_isolation(void)
         "abort preserves the original public bytes");
   check(write_at(10, "abc", 3) == 3, "outside write allowed again after abort");
   check(unlink(F) == 0, "outside unlink allowed again after abort");
-  close(p2o[1]);
+  close(p2o[0]);
   close(o2p[0]);
 }
 

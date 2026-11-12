@@ -34,6 +34,7 @@ SYSCALL(hello)
 SYSCALL(xbegin)
 SYSCALL(xcommit)
 SYSCALL(xabort)
+SYSCALL(xask)
 #ifdef SHADOW_TEST
 SYSCALL(shadowtest)
 #endif

@@ -56,6 +56,8 @@ struct spec_context {
   char *pipe_buf;               // dynamically allocated external pipe buffer (resource_lock)
   uint pipe_len;                // bytes buffered so far (resource_lock)
   uint pipe_cap;                // buffer capacity (resource_lock)
+  int asked;                    // D63: owner called xask (ptable.lock)
+  int approved;                 // D63: the console answer was yes (ptable.lock)
 };
 
 // Per-process state
@@ -73,6 +75,7 @@ struct proc {
   int spec;                    // Shared speculation ID, or 0 if not a participant
   int fs_error;                // private filesystem operation failed
   int fs_publication;          // explicit public log path during commit
+  int spec_frozen;             // D63: owner asked; only finish/exit/wait allowed
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)

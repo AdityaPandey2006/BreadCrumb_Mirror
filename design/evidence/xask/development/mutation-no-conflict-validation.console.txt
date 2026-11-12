@@ -1,0 +1,44 @@
+spasktest; echo TESTDONEd81b06e7
+BEGIN ASK_REFUSALS
+END ASK_REFUSALS
+BEGIN ASK_YES
+
+[speculation 4] ASKTEST A
+commit? [y/n] y
+ASK_HELD_A
+A results: ask=1 write=-1 open=-1 fork=-1 mkdir=-1 unlink=-1 read=-1 again=-1 commit=0
+END ASK_YES
+BEGIN ASK_NO
+
+[speculation 5] ASKTEST B
+commit? [y/n] n
+B results: ask=0 commit=-1 abort=0
+END ASK_NO
+BEGIN ASK_CONFLICT
+RIVAL_COMMITTED
+
+[speculation 6] ASKTEST C
+commit? [y/n] y
+LEAK_ASK_CONFLICT_333
+C results: got=513 ask=1 commit=0 commit2=-1 abort=-1
+FAIL: xcommit after yes fails on conflict
+FAIL: public file holds the rival's data only
+Traceback (most recent call last):
+  File "/home/ishaan/bc-mut/tests/run-spec-tests.py", line 440, in <module>
+    main()
+    ~~~~^^
+  File "/home/ishaan/bc-mut/tests/run-spec-tests.py", line 428, in main
+    ask_suite(guest)
+    ~~~~~~~~~^^^^^^^
+  File "/home/ishaan/bc-mut/tests/run-spec-tests.py", line 263, in ask_suite
+    out, asked = guest.run_answering("spasktest", {"ASKTEST A": "y", "ASKTEST B": "n",
+                 ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                   "ASKTEST C": ("y", "RIVAL_COMMITTED"),
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                   "ASKTEST E": None},
+                                                   ^^^^^^^^^^^^^^^^^^^
+                                     "SPASKTEST: ALL TESTS PASSED")
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ishaan/bc-mut/tests/run-spec-tests.py", line 146, in run_answering
+    raise RuntimeError(f"{command} failed; inspect {self.logpath}")
+RuntimeError: spasktest failed; inspect logs/mut.txt

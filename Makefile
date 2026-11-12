@@ -202,6 +202,7 @@ UPROGS=\
 	_spfailure\
 	_spbench\
 	_specrun\
+	_spasktest\
 
 ifeq ($(SHADOW_TEST),1)
 UPROGS += _shadowtest

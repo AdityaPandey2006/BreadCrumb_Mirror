@@ -29,6 +29,7 @@ int hello(void);
 int xbegin(void);
 int xcommit(void);
 int xabort(void);
+int xask(const char*);   // owner only, after all members exit: 1 yes, 0 no, -1 refused
 #ifdef SHADOW_TEST
 int shadowtest(int, int, int);
 #endif

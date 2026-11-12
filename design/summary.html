@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><title>Project Summary - Externalization Barriers</title><style>@page {size: A4; margin: 12mm 14mm 12mm 14mm;} body {font-family: "Liberation Sans", Arial, sans-serif; font-size: 9pt; line-height: 1.08; color:#182631;} section {page-break-before: always;} section:first-child {page-break-before: auto;} h1 {font-size:19pt; color:#163b56; margin:8pt 0 12pt;} h2 {font-size:12pt; color:#1b536f; margin:8pt 0 4pt;} p {margin:4pt 0 5pt;} ul,ol {margin:5pt 0 8pt; padding-left:18pt;} li {margin-bottom:3pt;} .eyebrow {font-size:8pt; color:#526f80; letter-spacing:0.5pt;} .lead {font-size:10pt;} .note {background:#edf3f6; padding:7pt; border-left:3pt solid #3c7896;} code,pre {font-family: "Liberation Mono", monospace; font-size:8.5pt;} pre {background:#f1f4f6; padding:8pt; white-space:pre-wrap;} table {border-collapse:collapse; width:100%; font-size:9pt;} th,td {border:1px solid #bdcdd5; padding:3pt; text-align:left; vertical-align:top;} th {background:#e8f0f4;}</style></head><body><div><h1 style="page-break-before:auto">1. Project context and present status</h1><div class="eyebrow">EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES · TEAM HANDOFF</div>
-<p class="lead">Current team handoff and project history, updated <strong>11 November 2026</strong>. Steps 1-10 are complete: the mechanism (Steps 1-9) plus failure testing, crash expansion, measurements, graphs and final demonstrations (Step 10, sections 23-25). Step 10 found and fixed two defects and one test race. Read this alongside the decision spreadsheet and questions_asked.txt.</p>
+<p class="lead">Current team handoff and project history, updated <strong>12 November 2026</strong>. Steps 1-10 are complete: the mechanism (Steps 1-9) plus failure testing, crash expansion, measurements, graphs and final demonstrations (Step 10, sections 23-25). Step 10 found and fixed two defects and one test race. After Step 10, the commit decision can be handed to the user: the owner shows a summary and asks y/n through the new <code>xask</code> syscall (decision D63, section 26). Read this alongside the decision spreadsheet and questions_asked.txt.</p>
 <h2>Project and environment</h2>
 <ul><li>Four-member team. The user will distribute work; the teammate implemented Step 2 and the user implemented Step 3 locally with Codex. Remaining assignments are controlled by the user.</li>
 <li>Project: <strong>Externalization barriers for speculative processes</strong>, problem 5 in the project handout.</li>
@@ -377,14 +377,14 @@ python3 -m unittest discover -s agent</pre>
 <li><strong>Descriptors.</strong> Files opened before <code>xbegin</code> are refused inside the speculation (D21), so shell redirection does not work there. File offsets are not rewound on abort.</li>
 <li><strong>Inode writes.</strong> The kernel still writes an inode back only when its size grows; holes are now prevented by mkfs.</li>
 <li><strong>Tests.</strong> Several older tests still order processes with fixed sleeps. Crashes are injected at named points; torn writes and disk caches are not modelled.</li>
-<li><strong>Security scope.</strong> Barriers contain effects; they do not detect prompt injection or judge whether a request is trustworthy. An owner that commits a harmful attempt publishes it, as demonstration 7 shows.</li></ul>
+<li><strong>Security scope.</strong> Barriers contain effects; they do not detect prompt injection or judge whether a request is trustworthy. An owner that commits a harmful attempt publishes it, as demonstration 7 shows. Section 26 adds a human approval step (<code>xask</code>); the summary the user sees is still written by the owner.</li></ul>
 <h2>Future work</h2>
 <ul><li>Coordinated capacity upgrade (R04: shadow cap, log and buffer cache together), labelled as a separate configuration.</li>
 <li>Finer-grained locking in place of the coarse gate.</li>
 <li>Read-set or version validation and sub-block metadata conflicts.</li>
 <li>Write-back on <code>bmap</code> allocation.</li>
 <li>A persistent output queue, if exactly-once delivery is ever required.</li>
-<li>Owner-independent commit policies.</li>
+<li>Owner-independent commit policies. (First step done after Step 10: the user approves through <code>xask</code>, section 26.)</li>
 <li>A deterministic handshake API for tests.</li></ul>
 <h2>Tests run and not run</h2>
 <p><strong>Run:</strong> the 37-row matrix (all passed), the measurements described above, the 20 demonstration checks, the 4 agent demos, and the GDB session.</p>
@@ -402,4 +402,52 @@ python3 bench/demo.py NORMAL_BUILD                                  # demonstrat
 (cd NORMAL_BUILD &amp;&amp; python3 agent/agent.py demo speculative)
 sh tests/gdb-root-hole.sh QEMU WORK OUT                             # GDB session (needs gdb)</pre>
 <p>Details: <code>design/step10-implementation.md</code>, <code>step10-verification.md</code>, <code>step10-test-matrix.md</code>, <code>bench/README.md</code>. Decisions D49-D62 are in the spreadsheet.</p></div>
+<div><h1 style="page-break-before:always">26. After Step 10: the user approves the commit (xask)</h1><div class="eyebrow">EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES · TEAM HANDOFF</div>
+<p class="lead">Until now the owner process decided alone: <code>specrun keep PATH</code> committed by a fixed rule, and nobody was asked. Now the owner can show the user what the attempt would change and let the user answer y/n before anything escapes. Decision D63.</p>
+<h2>Flow</h2>
+<pre>user prompt -&gt; agent proposes actions -&gt; specrun ask STEP...
+  xbegin()                      effects go to shadow blocks, output is held
+  steps run as members          all members exit
+  xask(summary)                 kernel freezes the attempt, prints the question
+                                directly, waits for one console line
+  y -&gt; xcommit()                durable commit, then held pipe, then console output
+  n -&gt; xcommit() refused, xabort()   nothing escapes</pre>
+<h2>Kernel: <code>int xask(char *question)</code></h2>
+<ul><li><strong>Who and when.</strong> Only the owner, only once, only when it is the last member (all children exited), the attempt is active and not abort-only. Otherwise -1 with no effect. Questions are at most 1024 bytes (<code>XASK_MAX</code>).</li>
+<li><strong>Freeze.</strong> Set before the question is printed, so what the user sees is what commits. A frozen owner may only call <code>xcommit</code>, <code>xabort</code>, <code>exit</code>, <code>wait</code>, <code>getpid</code>, <code>sleep</code>, <code>uptime</code>; every other syscall (file, console, pipe, fork, read) returns -1 (<code>syscall()</code>, <code>proc.spec_frozen</code>, cleared on detach).</li>
+<li><strong>The one exception to the hold.</strong> The question is printed with <code>cprintf</code>, bypassing the D35 console hold. Held console and pipe output is untouched and still released only after durability (D37/D42/D48).</li>
+<li><strong>Answer.</strong> Lines typed before the question are discarded, so a typed-ahead "y" cannot approve. <code>y</code>/<code>yes</code> returns 1; anything else or EOF returns 0; kill while waiting returns -1 and the attempt is cancelled (D23).</li>
+<li><strong>Enforced answer.</strong> The context records <code>asked</code>/<code>approved</code>; after an <code>xask</code>, <code>xcommit</code> is refused unless the answer was yes.</li>
+<li><strong>No locks while waiting.</strong> The wait holds no spinlock and no filesystem gate (the D61 lesson), so other processes run while the human decides.</li></ul>
+<h2>User side and agent</h2>
+<ul><li><code>specrun ask STEP...</code> stats every path the steps touch (<code>rm</code>/<code>mkdir</code> arguments, <code>into</code> targets) before <code>xbegin</code> and again in its private view, and asks with lines such as <code>create /demo/draft.txt (3 bytes)</code> or <code>delete /demo/important.txt</code>.</li>
+<li><code>agent.py demo ask</code> / <code>demo ask-benign</code>: the bridge sees the prompt, shows it on the host and asks with <code>input()</code>; <code>--answer y|n</code> scripts it. Planner/LLM output never reaches the guest console, so it cannot answer.</li></ul>
+<h2>What the user sees (agent, <code>demo ask</code>, answer n)</h2>
+<pre>The speculation is finished and frozen. The guest asks:
+  proposed changes (summary by specrun):
+    delete /demo/important.txt
+    console/pipe output stays held until commit
+Commit these changes? [y/n] n
+...
+SPECRUN: aborted by user: private changes and held output discarded
+read_file /demo/important.txt: Original important data.</pre></div>
+<div><h1 style="page-break-before:always">26 (cont.). xask verification, limits and files</h1><div class="eyebrow">EXTERNALIZATION BARRIERS FOR SPECULATIVE PROCESSES · TEAM HANDOFF</div>
+<h2>Verification (12 November 2026, evidence in <code>design/evidence/xask/</code>)</h2>
+<table><tr><th>Check</th><th>Result</th></tr>
+<tr><td><code>--suite ask</code> (<code>spasktest</code> + <code>specrun ask</code>)</td><td>Pass, 8 repeats on each of 1, 2, 3, 4 CPUs; 3 repeats on the <code>SHADOW_TEST</code> build</td></tr>
+<tr><td>Yes, but a rival committed the same file first (case C)</td><td><code>xcommit</code> -1, abort-only, rival's data kept, no leak. Ordered without sleeps: the parent writes 513 bytes into a 512-byte pipe the asker reads only after shadowing the file</td></tr>
+<tr><td>Mutation: commit validation disabled</td><td>Case C fails (<code>commit=0</code>, rival's data overwritten), so the test detects it</td></tr>
+<tr><td>Existing suites on the xask kernel</td><td>lifecycle, console, pipe, conflict, failure, files, commit, namespace (1 and 3 CPUs), usertests; shadow, crash 1-4, output-crash 5-8 (<code>SHADOW_TEST</code>, 3 CPUs): all pass</td></tr>
+<tr><td>Agent</td><td>20 unit tests; <code>demo ask</code> and <code>demo ask-benign</code> with y and n; one interactive run</td></tr></table>
+<h2>Limits</h2>
+<ul><li>The summary is written by <code>specrun</code>, not the kernel, and compares sizes only; a same-size rewrite is not reported. A kernel-generated write-set summary is future work.</li>
+<li>The console is shared: another process reading it at the same time could take the answer, and discarding type-ahead also drops its pending lines.</li>
+<li>No timeout: an unanswered attempt holds its context slot and shadow pages.</li>
+<li>The question text itself escapes before commit (one message, at the end, 1024 bytes).</li>
+<li>On several CPUs other processes' <code>printf</code> output can interleave with the prompt (cosmetic; the harness strips the prompt). The kill-while-waiting test still uses <code>sleep(100)</code> but passes in either order.</li></ul>
+<h2>Files and reproduce</h2>
+<p>Kernel: <code>proc.c</code>, <code>proc.h</code>, <code>console.c</code>, <code>syscall.c</code>, <code>syscall.h</code>, <code>sysproc.c</code>, <code>defs.h</code>, <code>param.h</code>, <code>usys.S</code>, <code>user.h</code>. User: <code>specrun.c</code>, <code>spasktest.c</code>. Agent: <code>agent/agent.py</code>, <code>test_agent.py</code>, <code>README.md</code>. Harness: <code>tests/run-spec-tests.py</code>.</p>
+<pre>python3 tests/run-spec-tests.py --suite ask --cpus 3 --repeat 8 --log logs/ask.txt
+python3 agent/agent.py demo ask              # asks you at the terminal
+python3 agent/agent.py --answer n demo ask   # scripted answer</pre></div>
 </body></html>

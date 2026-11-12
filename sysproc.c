@@ -100,6 +100,17 @@ sys_xabort(void)
   return spec_abort();
 }
 
+// D63: int xask(char *question) -> 1 yes, 0 no, -1 refused/killed.
+int
+sys_xask(void)
+{
+  char *msg;
+
+  if(argstr(0, &msg) < 0)
+    return -1;
+  return spec_ask(msg);
+}
+
 #ifdef SHADOW_TEST
 int
 sys_shadowtest(void)

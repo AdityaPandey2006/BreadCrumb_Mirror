@@ -273,6 +273,51 @@ consoleread(struct inode *ip, char *dst, int n)
   return target - n;
 }
 
+// D63: xask's console exchange. Called by spec_ask() with no spinlock held and
+// outside the filesystem gate. Complete lines typed before the question are
+// discarded, so an answer typed ahead (by anyone) cannot approve it. The
+// question goes straight to the device; the speculation's held console
+// output stays held. Returns 1 for "y"/"yes", 0 for any other line or EOF,
+// -1 if the process is killed while waiting.
+int
+console_ask(int spec, char *msg)
+{
+  char ans[4];
+  int c, len = 0;
+
+  acquire(&cons.lock);
+  input.r = input.w;
+  release(&cons.lock);
+
+  cprintf("\n[speculation %d] %s\ncommit? [y/n] ", spec, msg);
+
+  acquire(&cons.lock);
+  for(;;){
+    while(input.r == input.w){
+      if(myproc()->killed){
+        release(&cons.lock);
+        return -1;
+      }
+      sleep(&input.r, &cons.lock);
+    }
+    c = input.buf[input.r++ % INPUT_BUF];
+    if(c == C('D') || c == '\n')
+      break;
+    if(c == ' ' || c == '\t')
+      continue;
+    if(len < (int)sizeof(ans))
+      ans[len] = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
+    len++;
+  }
+  release(&cons.lock);
+
+  if(len == 1 && ans[0] == 'y')
+    return 1;
+  if(len == 3 && ans[0] == 'y' && ans[1] == 'e' && ans[2] == 's')
+    return 1;
+  return 0;
+}
+
 int
 spec_console_write(int spec, char *buf, int n)
 {

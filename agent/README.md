@@ -85,6 +85,37 @@ injection. Committing without the guard would publish the deletion (see
 `bench/demo.py`, demonstration 7). Text inside a speculation may not contain
 commas, and the whole command must fit xv6 sh's 100-byte line.
 
+### The user decides (decision D63)
+
+```sh
+python3 agent/agent.py --log agent/logs/ask.jsonl demo ask
+python3 agent/agent.py --log agent/logs/ask-benign.jsonl demo ask-benign
+python3 agent/agent.py --answer n demo ask      # scripted answer, no prompt
+```
+
+The same proposed effects run inside one speculation through the fixed
+template `specrun ask STEP...`. When every step has finished, the guest owner
+compares the touched paths before and after (its own private view) and calls
+`xask(summary)`. The kernel freezes the attempt, prints the summary directly
+(the only output that skips the hold), and waits for one console line. The
+agent shows the question here and asks you:
+
+```
+[speculation 1] proposed changes (summary by specrun):
+  delete /demo/important.txt
+  console/pipe output stays held until commit
+Commit these changes? [y/n]
+```
+
+* `y`: the owner calls `xcommit`; the deletion is published and `APPROVED`
+  appears only after the durable commit.
+* `n`: `xcommit` is refused by the kernel, the owner aborts, and neither the
+  deletion nor `APPROVED` ever escapes.
+
+The answer comes only from `input()` on this host (or `--answer`); planner or
+LLM output never reaches the guest console. The summary is written by
+`specrun`, not by the kernel, and compares sizes only.
+
 The JSONL log records proposed/validated actions, serial chunks (including boot
 and kernel output), fixed guest commands, observations, and verification results.
 The default `agent/logs/latest.jsonl` is overwritten each invocation; use `--log`

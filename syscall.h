@@ -29,3 +29,4 @@
 #ifdef SHADOW_TEST
 #define SYS_shadowtest 27
 #endif
+#define SYS_xask   28

@@ -109,6 +109,7 @@ extern int sys_hello(void);
 extern int sys_xbegin(void);
 extern int sys_xcommit(void);
 extern int sys_xabort(void);
+extern int sys_xask(void);
 #ifdef SHADOW_TEST
 extern int sys_shadowtest(void);
 #endif
@@ -141,6 +142,7 @@ static int (*syscalls[])(void) = {
 [SYS_xbegin]  sys_xbegin,
 [SYS_xcommit] sys_xcommit,
 [SYS_xabort]  sys_xabort,
+[SYS_xask]    sys_xask,
 #ifdef SHADOW_TEST
 [SYS_shadowtest] sys_shadowtest,
 #endif
@@ -154,7 +156,11 @@ syscall(void)
 
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    if(num == SYS_open || num == SYS_close || num == SYS_link ||
+    // D63: a frozen owner (after xask) may only finish; the field changes only
+    // in this process's own xask/xbegin/detach, so no lock is needed here.
+    if(curproc->spec_frozen && !spec_frozen_allows(num))
+      curproc->tf->eax = -1;
+    else if(num == SYS_open || num == SYS_close || num == SYS_link ||
        num == SYS_unlink || num == SYS_mkdir || num == SYS_mknod ||
        num == SYS_chdir || num == SYS_exec || num == SYS_fstat)
       curproc->tf->eax = fs_syscall(num, syscalls[num]);

@@ -1,0 +1,197 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spasktest; echo TESTDONEd990b8b8
+BEGIN ASK_REFUSALS
+END ASK_REFUSALS
+BEGIN ASK_YES
+
+[speculation 4] ASKTEST A
+commit? [y/n] y
+ASK_HELD_A
+A results: ask=1 write=-1 open=-1 fork=-1 mkdir=-1 unlink=-1 read=-1 again=-1 commit=0
+END ASK_YES
+BEGIN ASK_NO
+
+[speculation 5] ASKTEST B
+commit? [y/n] n
+B results: ask=0 commit=-1 abort=0
+END ASK_NO
+BEGIN ASK_CONFLICT
+RIVAL_COMMITTED
+
+[speculation 6] ASKTEST C
+commit? [y/n] y
+C results: got=513 ask=1 commit=-1 commit2=-1 abort=0
+END ASK_CONFLICT
+BEGIN ASK_KILL
+
+[speculation 8] ASKTEST E
+commit? [y/n] END ASK_KILL
+SPASKTEST: ALL TESTS PASSED
+TESTDONEd990b8b8
+$ echo keep > askG; echo TESTDONE70022213
+TESTDONE70022213
+$ specrun ask echo,hi,into,askF rm,askG echo,HELD_SPECRUN_Y; echo TESTDONEbe9303da
+
+[speculation 9] proposed changes (summary by specrun):
+  create askF (3 bytes)
+  delete askG
+  console/pipe output stays held until commit
+commit? [y/n] y
+HELD_SPECRUN_Y
+SPECRUN: committed: changes published; held output released above
+TESTDONEbe9303da
+$ cat askF; echo TESTDONE3c7ef39a
+hi
+TESTDONE3c7ef39a
+$ cat askG; echo TESTDONE30540be9
+cat: cannot open askG
+TESTDONE30540be9
+$ echo keep > askG; echo TESTDONE9a0b4e18
+TESTDONE9a0b4e18
+$ specrun ask rm,askG echo,LEAK_SPECRUN_N; echo TESTDONE9bafa3e0
+
+[speculation 10] proposed changes (summary by specrun):
+  delete askG
+  console/pipe output stays held until commit
+commit? [y/n] n
+SPECRUN: aborted by user: private changes and held output discarded
+TESTDONE9bafa3e0
+$ cat askG; echo TESTDONEff95c45d
+keep
+TESTDONEff95c45d
+$ rm askF; echo TESTDONE84b750d6
+TESTDONE84b750d6
+$ rm askG; echo TESTDONEfb5dbe3f
+TESTDONEfb5dbe3f
+$ spasktest; echo TESTDONE56c170c9
+BEGIN ASK_REFUSALS
+END ASK_REFUSALS
+BEGIN ASK_YES
+
+[speculation 14] ASKTEST A
+commit? [y/n] y
+ASK_HELD_A
+A results: ask=1 write=-1 open=-1 fork=-1 mkdir=-1 unlink=-1 read=-1 again=-1 commit=0
+END ASK_YES
+BEGIN ASK_NO
+
+[speculation 15] ASKTEST B
+commit? [y/n] n
+B results: ask=0 commit=-1 abort=0
+END ASK_NO
+BEGIN ASK_CONFLICT
+RIVAL_COMMITTED
+
+[speculation 16] ASKTEST C
+commit? [y/n] y
+C results: got=513 ask=1 commit=-1 commit2=-1 abort=0
+END ASK_CONFLICT
+BEGIN ASK_KILL
+
+[speculation 18] ASKTEST E
+commit? [y/n] END ASK_KILL
+SPASKTEST: ALL TESTS PASSED
+TESTDONE56c170c9
+$ echo keep > askG; echo TESTDONE862150ba
+TESTDONE862150ba
+$ specrun ask echo,hi,into,askF rm,askG echo,HELD_SPECRUN_Y; echo TESTDONE05d2f7cd
+
+[speculation 19] proposed changes (summary by specrun):
+  create askF (3 bytes)
+  delete askG
+  console/pipe output stays held until commit
+commit? [y/n] y
+HELD_SPECRUN_Y
+SPECRUN: committed: changes published; held output released above
+TESTDONE05d2f7cd
+$ cat askF; echo TESTDONE30ccec11
+hi
+TESTDONE30ccec11
+$ cat askG; echo TESTDONE9aa78159
+cat: cannot open askG
+TESTDONE9aa78159
+$ echo keep > askG; echo TESTDONE403b4d61
+TESTDONE403b4d61
+$ specrun ask rm,askG echo,LEAK_SPECRUN_N; echo TESTDONE572240e8
+
+[speculation 20] proposed changes (summary by specrun):
+  delete askG
+  console/pipe output stays held until commit
+commit? [y/n] n
+SPECRUN: aborted by user: private changes and held output discarded
+TESTDONE572240e8
+$ cat askG; echo TESTDONE3e3208c4
+keep
+TESTDONE3e3208c4
+$ rm askF; echo TESTDONEfabe0544
+TESTDONEfabe0544
+$ rm askG; echo TESTDONEcafedbfb
+TESTDONEcafedbfb
+$ spasktest; echo TESTDONE01ebf754
+BEGIN ASK_REFUSALS
+END ASK_REFUSALS
+BEGIN ASK_YES
+
+[speculation 24] ASKTEST A
+commit? [y/n] y
+ASK_HELD_A
+A results: ask=1 write=-1 open=-1 fork=-1 mkdir=-1 unlink=-1 read=-1 again=-1 commit=0
+END ASK_YES
+BEGIN ASK_NO
+
+[speculation 25] ASKTEST B
+commit? [y/n] n
+B results: ask=0 commit=-1 abort=0
+END ASK_NO
+BEGIN ASK_CONFLICT
+RIVAL_COMMITTED
+
+[speculation 26] ASKTEST C
+commit? [y/n] y
+C results: got=513 ask=1 commit=-1 commit2=-1 abort=0
+END ASK_CONFLICT
+BEGIN ASK_KILL
+
+[speculation 28] ASKTEST E
+commit? [y/n] END ASK_KILL
+SPASKTEST: ALL TESTS PASSED
+TESTDONE01ebf754
+$ echo keep > askG; echo TESTDONE28896f53
+TESTDONE28896f53
+$ specrun ask echo,hi,into,askF rm,askG echo,HELD_SPECRUN_Y; echo TESTDONE805308d7
+
+[speculation 29] proposed changes (summary by specrun):
+  create askF (3 bytes)
+  delete askG
+  console/pipe output stays held until commit
+commit? [y/n] y
+HELD_SPECRUN_Y
+SPECRUN: committed: changes published; held output released above
+TESTDONE805308d7
+$ cat askF; echo TESTDONE008fa7fd
+hi
+TESTDONE008fa7fd
+$ cat askG; echo TESTDONEf64fd272
+cat: cannot open askG
+TESTDONEf64fd272
+$ echo keep > askG; echo TESTDONE2a3e7341
+TESTDONE2a3e7341
+$ specrun ask rm,askG echo,LEAK_SPECRUN_N; echo TESTDONEfcbc981e
+
+[speculation 30] proposed changes (summary by specrun):
+  delete askG
+  console/pipe output stays held until commit
+commit? [y/n] n
+SPECRUN: aborted by user: private changes and held output discarded
+TESTDONEfcbc981e
+$ cat askG; echo TESTDONEd2f65045
+keep
+TESTDONEd2f65045
+$ rm askF; echo TESTDONEe8ffc5dc
+TESTDONEe8ffc5dc
+$ rm askG; echo TESTDONEa406647a
+TESTDONEa406647a
+$ 

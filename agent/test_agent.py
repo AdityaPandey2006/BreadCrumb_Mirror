@@ -1,7 +1,7 @@
 """Boundary tests; run with python3 -m unittest discover -s agent -v."""
 import unittest
 
-from agent import action, plan, specrun_step, speculation_command, validate
+from agent import action, ask_command, plan, specrun_step, speculation_command, validate
 
 
 class ValidationTests(unittest.TestCase):
@@ -67,6 +67,16 @@ class SpeculationTemplateTests(unittest.TestCase):
                     speculation_command("/demo/important.txt", [action(tool, **args)])
         self.assertEqual(specrun_step(action("print_text", text="pipeline walkinto")),
                          "echo,pipeline,walkinto")
+
+    def test_ask_template(self):
+        """D63: the human decides; the template carries no guard."""
+        self.assertEqual(ask_command([action("delete_file", path="/demo/important.txt"),
+                                      action("print_text", text="APPROVED")]),
+                         "specrun ask rm,/demo/important.txt echo,APPROVED")
+        with self.assertRaises(ValueError):
+            ask_command([])
+        with self.assertRaises(ValueError):
+            ask_command([action("print_text", text="x; rm /demo/a")])
 
 
 if __name__ == "__main__":

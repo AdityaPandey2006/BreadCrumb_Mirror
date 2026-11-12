@@ -69,13 +69,16 @@ class Guest:
                                      stderr=subprocess.STDOUT)
 
     def until(self, pattern, timeout=180):
+        return self.until_match(pattern, timeout)[0]
+
+    def until_match(self, pattern, timeout=180):
         deadline = time.monotonic() + timeout
         while True:
             match = re.search(pattern, self.pending)
             if match:
                 out = self.pending[:match.start()]
                 self.pending = self.pending[match.end():]
-                return out.decode(errors="replace")
+                return out.decode(errors="replace"), match.group(0)
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError(f"Guest timeout; inspect {self.logpath}")
@@ -105,6 +108,44 @@ class Guest:
             raise RuntimeError(f"{command} failed; inspect {self.logpath}")
         return output
 
+    def run_answering(self, command, answers, expected):
+        """Run command; answer each xask prompt by the tag in its question.
+
+        answers maps a question prefix to "y", "n", None (leave unanswered),
+        or (answer, token): type answer only once token has appeared in the
+        guest output (an ordering point, not a delay).
+        Returns (whole output, list of (question, answer)).
+        """
+        marker = "TESTDONE" + uuid.uuid4().hex[:8]
+        self.type(f"{command}; echo {marker}")
+        pattern = rb"commit\? \[y/n\] |(?:^|\n)" + marker.encode() + rb"\r?\n"
+        output, asked = "", []
+        while True:
+            out, hit = self.until_match(pattern, timeout=self.timeout)
+            output += out
+            if marker.encode() in hit:
+                break
+            output += "commit? [y/n] "
+            questions = re.findall(r"\[speculation \d+\] ([^\r\n]*)", out)
+            question = questions[-1] if questions else ""
+            answer = next((a for tag, a in answers.items() if question.startswith(tag)), "?")
+            if answer == "?":
+                raise RuntimeError(f"unexpected prompt {question!r}; inspect {self.logpath}")
+            if isinstance(answer, tuple):
+                # On several CPUs a user printf (one write per character) can be
+                # split by the prompt, which the kernel prints in one locked piece.
+                answer, token = answer
+                while token not in strip_prompts(output):
+                    output += self.until(rb"\n", timeout=self.timeout) + "\n"
+            asked.append((question, answer))
+            if answer is not None:
+                self.type(answer)
+        self.until(rb"\$ ")
+        print(output, flush=True)
+        if expected not in output or "FAIL:" in output or "panic:" in output:
+            raise RuntimeError(f"{command} failed; inspect {self.logpath}")
+        return output, asked
+
     def stop(self):
         self.proc.terminate()
         try:
@@ -114,6 +155,11 @@ class Guest:
             self.proc.wait()
         self.proc.stdin.close()
         self.proc.stdout.close()
+
+
+def strip_prompts(text):
+    """Remove single-line xask prompts (printed atomically by the kernel)."""
+    return re.sub(r"\r?\n\[speculation \d+\] [^\r\n]*\r?\ncommit\? \[y/n\] ", "", text)
 
 
 def note(log, text):
@@ -208,6 +254,59 @@ def output_crash_suite(args, folder, log):
         note(log, "SUMMARY " + " | ".join(str(x) for x in row))
 
 
+ASK_LEAKS = ["LEAK_ASK_NO_222", "LEAK_ASK_KILL_111", "LEAK_FROZEN_WRITE",
+             "LEAK_ASK_CONFLICT_333", "ASKTEST R1", "ASKTEST R2", "ASKTEST A again"]
+
+
+def ask_suite(guest):
+    """D63: owner approval prompt, answered from the host like a human would."""
+    out, asked = guest.run_answering("spasktest", {"ASKTEST A": "y", "ASKTEST B": "n",
+                                                   "ASKTEST C": ("y", "RIVAL_COMMITTED"),
+                                                   "ASKTEST E": None},
+                                     "SPASKTEST: ALL TESTS PASSED")
+    for token in ASK_LEAKS:
+        if token in out:
+            raise RuntimeError(f"FAIL: {token} appeared in guest output")
+    if [q for q, _ in asked][:3] != ["ASKTEST A", "ASKTEST B", "ASKTEST C"]:
+        raise RuntimeError(f"FAIL: unexpected prompts {asked}")
+    # C: the yes was typed after the rival's commit, and the commit still failed.
+    plain = strip_prompts(out)
+    if not plain.index("RIVAL_COMMITTED") < plain.index("C results"):
+        raise RuntimeError("FAIL: conflict case answered before the rival committed")
+    if "commit=-1 commit2=-1 abort=0" not in out:
+        raise RuntimeError("FAIL: yes after a lost conflict did not fail cleanly")
+    # The question is shown before commit; held output only after the yes.
+    if not out.index("ASKTEST A") < out.index("ASK_HELD_A") < out.index("A results"):
+        raise RuntimeError("FAIL: held output released before the question or after the result line")
+
+    # specrun ask: the summary describes the private changes; y publishes.
+    guest.run("echo keep > askG", "")
+    out, asked = guest.run_answering("specrun ask echo,hi,into,askF rm,askG echo,HELD_SPECRUN_Y",
+                                     {"proposed changes": "y"}, "committed")
+    question = asked[0][0] if asked else ""
+    body = out.split("proposed changes", 1)[-1]
+    for needle in ("create askF (3 bytes)", "delete askG"):
+        if needle not in body.split("commit? [y/n]")[0]:
+            raise RuntimeError(f"FAIL: summary lacks '{needle}': {question!r}")
+    if "HELD_SPECRUN_Y" in body.split("commit? [y/n]")[0]:
+        raise RuntimeError("FAIL: held output released before the answer")
+    if "HELD_SPECRUN_Y" not in body.split("commit? [y/n]")[1]:
+        raise RuntimeError("FAIL: held output not released after yes")
+    guest.run("cat askF", "hi")
+    if "cannot open" not in guest.run("cat askG", ""):
+        raise RuntimeError("FAIL: approved deletion not published")
+
+    # n discards: file kept, held output never shown (only the echoed command line).
+    guest.run("echo keep > askG", "")
+    out, _ = guest.run_answering("specrun ask rm,askG echo,LEAK_SPECRUN_N",
+                                 {"proposed changes": "n"}, "aborted by user")
+    if out.count("LEAK_SPECRUN_N") != 1:
+        raise RuntimeError("FAIL: held output of a rejected attempt was released")
+    guest.run("cat askG", "keep")
+    guest.run("rm askF", "")
+    guest.run("rm askG", "")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cpus", type=int, choices=(1, 2, 3, 4), default=1)
@@ -216,7 +315,7 @@ def main():
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--suite", default="shadow",
                         choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "pipe", "conflict", "usertests",
-                                 "failure", "drainfull", "output-crash"))
+                                 "failure", "drainfull", "output-crash", "ask"))
     parser.add_argument("--timeout", type=int, default=180,
                         help="seconds to wait for one guest command (hang detection)")
     args = parser.parse_args()
@@ -324,6 +423,9 @@ def main():
             elif args.suite == "drainfull":
                 for _ in range(args.repeat):
                     run("spfailure drainfull", "SPFAILURE DRAINFULL PASSED")
+            elif args.suite == "ask":
+                for _ in range(args.repeat):
+                    ask_suite(guest)
             elif args.suite == "namespace":
                 for _ in range(args.repeat):
                     run("spnamespace", "NAMESPACE TESTS PASSED")

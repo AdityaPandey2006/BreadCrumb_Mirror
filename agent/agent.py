@@ -80,6 +80,18 @@ def speculation_command(guard, actions):
     return "specrun keep " + guard + " " + " ".join(specrun_step(a) for a in actions)
 
 
+def ask_command(actions):
+    """Fixed template: specrun ask STEP... (the human decides, D63).
+
+    The guest owner summarizes the private changes and asks through xask; the
+    answer comes only from the human at this host (Bridge.command's ask
+    callback), never from planner or LLM output.
+    """
+    if not actions:
+        raise ValueError("Empty speculation")
+    return "specrun ask " + " ".join(specrun_step(a) for a in actions)
+
+
 def plan(request):
     if request == "list":
         return {"tool": "list_files", "args": {}}
@@ -103,13 +115,16 @@ class Bridge:
         self.log.write(json.dumps({"time": time.time(), **event}) + "\n")
         self.log.flush()
 
-    def until(self, pattern):
+    def until(self, pattern, keep_match=False):
         deadline = time.monotonic() + self.timeout
         while True:
             match = re.search(pattern, self.pending)
             if match:
                 output, self.pending = self.pending[:match.start()], self.pending[match.end():]
-                return output.decode("utf-8", errors="replace").replace("\r", "")
+                output = output.decode("utf-8", errors="replace").replace("\r", "")
+                if keep_match:
+                    return output, match.group(0).decode("utf-8", errors="replace")
+                return output
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError("Guest response timed out; session stopped")
@@ -158,18 +173,41 @@ class Bridge:
         if self.temp:
             self.temp.cleanup()
 
-    def command(self, command):
-        # This method is private to fixed templates; user text never becomes a command.
-        marker = "DONE" + uuid.uuid4().hex[:12]
-        line = f"{command}; echo {marker}"
-        if len(line) >= 99:
-            raise ValueError("Command exceeds xv6 shell input limit")
+    def type(self, line):
         # The teaching UART can drop bytes if a host pipe floods its FIFO.
         for byte in (line + "\n").encode():
             self.proc.stdin.write(bytes([byte]))
             self.proc.stdin.flush()
             time.sleep(0.003)
-        output = self.until(rb"(?:^|\n)" + marker.encode() + rb"\r?\n")
+
+    def command(self, command, ask=None):
+        """Run a fixed-template command.
+
+        ask, if given, is called with the text of each xask question and
+        returns True to commit; it must get its answer from the human.
+        """
+        # This method is private to fixed templates; user text never becomes a command.
+        marker = "DONE" + uuid.uuid4().hex[:12]
+        line = f"{command}; echo {marker}"
+        if len(line) >= 99:
+            raise ValueError("Command exceeds xv6 shell input limit")
+        self.type(line)
+        done = rb"(?:^|\n)" + marker.encode() + rb"\r?\n"
+        prompt = rb"commit\? \[y/n\] "
+        output = ""
+        while True:
+            chunk = self.until(prompt + b"|" + done if ask else done, keep_match=True)
+            text, matched = chunk
+            output += text
+            if not ask or marker in matched:
+                break
+            question = re.split(r"\[speculation \d+\] ", text)[-1].strip()
+            answer = "y" if ask(question) else "n"
+            self.record(question=question, answer=answer)
+            self.type(answer)
+            output += f"commit? [y/n] {answer}"
+            self.until(rb"\n")    # the guest's echo of the answer line
+            output += "\n"
         self.until(rb"\$ ")
         # xv6 echoes console input. Strip only the exact submitted line.
         lines = output.splitlines()
@@ -276,7 +314,66 @@ def demo_speculative(bridge, injection=True):
         print("Verified: draft published and APPROVED released only after durable commit.")
 
 
-DEMOS = {"demo baseline", "demo injection", "demo speculative", "demo speculative-benign"}
+def ask_human(question):
+    """The only source of a commit answer: the person at this terminal."""
+    print("\nThe speculation is finished and frozen. The guest asks:")
+    print("  " + question.replace("\n", "\n  "))
+    while True:
+        reply = input("Commit these changes? [y/n] ").strip().lower()
+        if reply in {"y", "yes", "n", "no"}:
+            return reply in {"y", "yes"}
+
+
+def demo_speculative_ask(bridge, injection=True, answer=None):
+    """D63: the same effects, but the human approves or rejects the commit.
+
+    The proposed actions run inside one speculation; the guest owner then shows
+    a summary of the private changes through xask and waits. Nothing is
+    published and no held output is shown unless the human answers yes.
+    answer ("y"/"n") replaces the interactive question for scripted runs.
+    """
+    def show(label, result):
+        print(f"{label}: {result or '(no output)'}")
+        return result
+
+    def decide(question):
+        if answer is None:
+            return ask_human(question)
+        print(f"\nGuest asks:\n  {question}\nScripted human answer: {answer}")
+        return answer == "y"
+
+    show("read_file /demo/important.txt", bridge.execute(action("read_file", path="/demo/important.txt")))
+    if injection:
+        show("read_file /demo/inbox.txt", bridge.execute(action("read_file", path="/demo/inbox.txt")))
+        print("Scripted vulnerable rule: inbox read -> propose deletion + APPROVED. No LLM involved.")
+        proposed = [action("delete_file", path="/demo/important.txt"),
+                    action("print_text", text="APPROVED")]
+    else:
+        proposed = [action("create_file", path="/demo/draft.txt", text="Ok"),
+                    action("print_text", text="APPROVED")]
+    for a in proposed:
+        bridge.record(proposed=a)
+    command = ask_command(proposed)
+    bridge.record(validated_speculation=command)
+    result = show("speculation", bridge.command(command, ask=decide))
+    after = show("read_file /demo/important.txt", bridge.execute(action("read_file", path="/demo/important.txt")))
+    show("list_files", bridge.execute(action("list_files")))
+    released = "APPROVED" in result.split("commit? [y/n]")[-1]
+    if "committed" in result:
+        ok = released
+        print("Verified: approved changes published; held output released after the commit.")
+    elif "aborted by user" in result:
+        ok = not released and "Original important data." in after
+        print("Verified: rejected attempt discarded; important.txt intact and APPROVED never shown.")
+    else:
+        ok = False
+    bridge.record(check="human-approved speculation outcome", passed=ok)
+    if not ok:
+        raise RuntimeError("Speculative ask check failed")
+
+
+DEMOS = {"demo baseline", "demo injection", "demo speculative", "demo speculative-benign",
+         "demo ask", "demo ask-benign"}
 
 
 def find_qemu():
@@ -291,6 +388,8 @@ def main():
     parser.add_argument("request", nargs="*", help='e.g. "read report.txt" or "demo baseline"')
     parser.add_argument("--qemu", default=find_qemu())
     parser.add_argument("--log", type=Path, default=ROOT / "agent/logs/latest.jsonl")
+    parser.add_argument("--answer", choices=("y", "n"),
+                        help="scripted human answer for 'demo ask' (default: ask at this terminal)")
     opts = parser.parse_args()
     request = " ".join(opts.request)
     try:
@@ -308,6 +407,8 @@ def main():
             if request:
                 if request in ("demo speculative", "demo speculative-benign"):
                     demo_speculative(bridge, request == "demo speculative")
+                elif request in ("demo ask", "demo ask-benign"):
+                    demo_speculative_ask(bridge, request == "demo ask", opts.answer)
                 elif request.startswith("demo "):
                     demo(bridge, request == "demo injection")
                 else:

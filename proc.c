@@ -9,6 +9,7 @@
 #include "fs.h"
 #include "sleeplock.h"
 #include "file.h"
+#include "syscall.h"
 
 struct {
   struct spinlock lock;
@@ -162,6 +163,8 @@ spec_context_free_locked(struct spec_context *sc)
   sc->pipe_buf = 0;
   sc->pipe_len = 0;
   sc->pipe_cap = 0;
+  sc->asked = 0;
+  sc->approved = 0;
 }
 
 static struct spec_context*
@@ -177,6 +180,7 @@ spec_detach_locked(struct proc *p)
   p->spec = 0;
   p->fs_error = 0;
   p->fs_publication = 0;
+  p->spec_frozen = 0;
   sc->members--;
   sc->refs--;
   if(sc->members == 0 && sc->refs == 0){
@@ -252,7 +256,10 @@ spec_begin(void)
   sc->pipe_buf = 0;
   sc->pipe_len = 0;
   sc->pipe_cap = 0;
+  sc->asked = 0;
+  sc->approved = 0;
   p->spec = id;
+  p->spec_frozen = 0;
   release(&ptable.lock);
   return 0;
 }
@@ -280,6 +287,12 @@ spec_complete(int commit)
   }
   // D24: a speculation that lost a commit-time conflict can only abort.
   if(commit && sc->abort_only){
+    release(&ptable.lock);
+    fs_leave();
+    return -1;
+  }
+  // D63: once the owner has asked, only a "yes" answer can be committed.
+  if(commit && sc->asked && !sc->approved){
     release(&ptable.lock);
     fs_leave();
     return -1;
@@ -404,6 +417,61 @@ int
 spec_abort(void)
 {
   return spec_complete(0);
+}
+
+// D63: owner approval prompt. The owner, as the only remaining member, freezes
+// the attempt (afterwards syscall() admits only xcommit/xabort/exit/wait and a
+// few effect-free calls), prints msg directly to the console (the one
+// deliberate exception to the console hold), and reads one answer line.
+// Returns 1 for yes, 0 for no, -1 if refused or killed while waiting.
+// The wait holds no spinlock and no filesystem gate, so other processes keep
+// running while the human decides. The answer is recorded in the context:
+// xcommit is refused unless it was yes.
+int
+spec_ask(char *msg)
+{
+  struct proc *p = myproc();
+  struct spec_context *sc;
+  int r;
+
+  if(strlen(msg) > XASK_MAX)
+    return -1;
+  acquire(&ptable.lock);
+  if(p->spec == 0 || p->killed || p->spec_frozen){
+    release(&ptable.lock);
+    return -1;
+  }
+  sc = spec_lookup_locked(p->spec);
+  if(sc == 0 || sc->state != SPEC_ACTIVE || sc->owner_pid != p->pid ||
+     sc->members != 1 || sc->refs != 1 || sc->abort_only || sc->asked){
+    release(&ptable.lock);
+    return -1;
+  }
+  p->spec_frozen = 1;      // before printing: what is shown is what commits
+  sc->asked = 1;
+  sc->approved = 0;
+  release(&ptable.lock);
+
+  // sc stays valid: the owner is a member, and a frozen owner cannot fork.
+  r = console_ask(sc->id, msg);
+
+  acquire(&ptable.lock);
+  if(r == 1 && sc->state == SPEC_ACTIVE && !p->killed)
+    sc->approved = 1;
+  else if(r == 1)
+    r = -1;
+  release(&ptable.lock);
+  return r;
+}
+
+// D63: syscalls a frozen owner may still make. Everything else, including any
+// file, console or pipe effect and fork, is refused with -1.
+int
+spec_frozen_allows(int num)
+{
+  return num == SYS_xcommit || num == SYS_xabort || num == SYS_exit ||
+         num == SYS_wait || num == SYS_getpid || num == SYS_sleep ||
+         num == SYS_uptime;
 }
 
 // An irreversible descriptor close whose private inode cleanup failed cannot
@@ -534,6 +602,7 @@ found:
   p->cwd = 0;
   p->fs_error = 0;
   p->fs_publication = 0;
+  p->spec_frozen = 0;
   p->name[0] = 0;
   memset(p->ofile, 0, sizeof(p->ofile));
 

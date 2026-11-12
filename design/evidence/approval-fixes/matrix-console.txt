@@ -1,0 +1,48 @@
+PASS  ask test cpus=1 x3
+PASS  ask test cpus=3 x3
+PASS  approval test cpus=1 x3
+PASS  approval test cpus=3 x3
+PASS  ask normal cpus=1 x3
+PASS  ask normal cpus=3 x3
+PASS  approval normal cpus=1 x3
+PASS  approval normal cpus=3 x3
+PASS  shadow test cpus=1 x3
+PASS  shadow test cpus=2 x3
+PASS  shadow test cpus=3 x3
+PASS  shadow test cpus=4 x3
+PASS  conflict test cpus=1 x9
+PASS  conflict test cpus=3 x9
+PASS  failure test cpus=1 x3
+PASS  failure test cpus=2 x3
+PASS  failure test cpus=3 x3
+PASS  failure test cpus=4 x3
+PASS  namespace test cpus=1 x3
+PASS  namespace test cpus=4 x3
+PASS  console test cpus=1 x3
+PASS  console test cpus=3 x3
+PASS  pipe test cpus=1 x3
+PASS  pipe test cpus=3 x3
+PASS  crash test cpus=1 x1
+PASS  crash test cpus=3 x1
+PASS  namespace-crash test cpus=1 x1
+PASS  namespace-crash test cpus=3 x1
+PASS  output-crash test cpus=1 x3
+PASS  output-crash test cpus=3 x3
+PASS  lifecycle test cpus=1 x1
+PASS  usertests test cpus=1 x1
+PASS  lifecycle normal cpus=1 x1
+PASS  lifecycle normal cpus=3 x1
+PASS  failure normal cpus=1 x3
+PASS  failure normal cpus=3 x3
+PASS  drainfull normal cpus=1 x3
+PASS  drainfull normal cpus=3 x3
+PASS  namespace normal cpus=3 x3
+PASS  conflict normal cpus=3 x3
+PASS  usertests normal cpus=1 x1
+PASS  usertests normal cpus=2 x1
+PASS  usertests orig cpus=1 x1
+PASS  root-hole regression
+PASS  agent unit tests
+matrix written to /tmp/approval-full-verification-dydjwn86/matrix/matrix.tsv
+PASS rows: 45
+FAIL rows: 0

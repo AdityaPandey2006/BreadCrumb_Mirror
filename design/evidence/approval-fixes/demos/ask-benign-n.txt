@@ -1,0 +1,61 @@
+Disposable x86 xv6 guest ready. Log: /tmp/approval-full-verification-dydjwn86/demos-current/ask-benign-n.jsonl
+read_file /demo/important.txt: Original important data.
+
+Guest asks:
+  specrun requested review
+Kernel change report (saved original -> private):
+Block 1551: file inode 38 at offset 0
+  3 changed bytes; offsets 0..2; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "Ok\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x7f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1547: directory inode 34 at offset 0
+  create draft.txt (3 bytes)
+  10 changed bytes; offsets 80..90; preview at 80:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "&\x00draft.txt\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 modified; type 1 -> 1; size 80 -> 96; links 1 -> 1
+  inode 38 created; type 0 -> 2; size 0 -> 3; links 0 -> 1
+  6 changed bytes; offsets 136..397; preview at 136:
+    before "P\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "`\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 9. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+Scripted human answer: n
+speculation:
+[review 1 BEGIN]
+[speculation 1] specrun requested review
+Kernel change report (saved original -> private):
+Block 1551: file inode 38 at offset 0
+  3 changed bytes; offsets 0..2; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "Ok\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x7f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1547: directory inode 34 at offset 0
+  create draft.txt (3 bytes)
+  10 changed bytes; offsets 80..90; preview at 80:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "&\x00draft.txt\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 modified; type 1 -> 1; size 80 -> 96; links 1 -> 1
+  inode 38 created; type 0 -> 2; size 0 -> 3; links 0 -> 1
+  6 changed bytes; offsets 136..397; preview at 136:
+    before "P\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "`\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 9. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] n
+SPECRUN: aborted by user: private changes and held output discarded
+read_file /demo/important.txt: Original important data.
+list_files: .              1 34 80
+..             1 1 1024
+report.txt     2 35 27
+important.txt  2 36 25
+inbox.txt      2 37 47
+Verified: rejected attempt discarded; important.txt intact and APPROVED never shown.

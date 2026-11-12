@@ -235,6 +235,11 @@ consoleintr(int (*getc)(void))
   }
 }
 
+// Approval reservations use cons.lock only to protect ownership. sleep()
+// releases that spinlock; no filesystem gate is held while a human decides.
+static int approval_owner;
+static int approval_waiters;
+
 int
 consoleread(struct inode *ip, char *dst, int n)
 {
@@ -245,7 +250,7 @@ consoleread(struct inode *ip, char *dst, int n)
   target = n;
   acquire(&cons.lock);
   while(n > 0){
-    while(input.r == input.w){
+    while(approval_owner || approval_waiters || input.r == input.w){
       if(myproc()->killed){
         release(&cons.lock);
         ilock(ip);
@@ -273,49 +278,82 @@ consoleread(struct inode *ip, char *dst, int n)
   return target - n;
 }
 
-// D63: xask's console exchange. Called by spec_ask() with no spinlock held and
-// outside the filesystem gate. Complete lines typed before the question are
-// discarded, so an answer typed ahead (by anyone) cannot approve it. The
-// question goes straight to the device; the speculation's held console
-// output stays held. Returns 1 for "y"/"yes", 0 for any other line or EOF,
-// -1 if the process is killed while waiting.
+static void
+ask_puts(char *s)
+{
+  while(*s) consputc(*s++ & 0xff);
+}
+
+static void
+ask_num(uint n)
+{
+  char buf[12];
+  int i = 0;
+  do { buf[i++] = '0' + n % 10; n /= 10; } while(n);
+  while(i) consputc(buf[--i]);
+}
+
+// Owner notes are labels, not a trusted audit. Escape controls and newlines
+// so neither a note nor file bytes can forge the host's framed prompt.
+static void
+ask_note(char *s)
+{
+  static char hex[] = "0123456789abcdef";
+  uint c;
+  while(*s){
+    c = *s++ & 0xff;
+    if(c >= 32 && c < 127 && c != '\\') consputc(c);
+    else {
+      ask_puts("\\x"); consputc(hex[c >> 4]); consputc(hex[c & 15]);
+    }
+  }
+}
+
+// Reserve the entire exchange, not just printing. Other approval callers and
+// ordinary console readers sleep until this exact request has its answer.
 int
-console_ask(int spec, char *msg)
+console_ask(int spec, char *note, char *report)
 {
   char ans[4];
-  int c, len = 0;
+  int c, len = 0, result = -1, pid = myproc()->pid;
 
   acquire(&cons.lock);
-  input.r = input.w;
-  release(&cons.lock);
-
-  cprintf("\n[speculation %d] %s\ncommit? [y/n] ", spec, msg);
-
-  acquire(&cons.lock);
+  approval_waiters++;
+  while(approval_owner && !myproc()->killed)
+    sleep(&approval_owner, &cons.lock);
+  approval_waiters--;
+  if(myproc()->killed){
+    wakeup(&input.r);
+    release(&cons.lock);
+    return -1;
+  }
+  approval_owner = pid;
+  // Discard complete AND partially typed old input while printing atomically.
+  input.r = input.w = input.e;
+  ask_puts("\n[review "); ask_num(spec); ask_puts(" BEGIN]\n[speculation ");
+  ask_num(spec); ask_puts("] "); ask_note(note); ask_puts("\n");
+  ask_puts(report);
+  ask_puts("[approval "); ask_num(spec); ask_puts("] commit? [y/n] ");
   for(;;){
-    while(input.r == input.w){
-      if(myproc()->killed){
-        release(&cons.lock);
-        return -1;
-      }
+    while(input.r == input.w && !myproc()->killed)
       sleep(&input.r, &cons.lock);
-    }
+    if(myproc()->killed) goto done;
     c = input.buf[input.r++ % INPUT_BUF];
-    if(c == C('D') || c == '\n')
-      break;
-    if(c == ' ' || c == '\t')
-      continue;
+    if(c == C('D') || c == '\n') break;
+    if(c == ' ' || c == '\t') continue;
     if(len < (int)sizeof(ans))
       ans[len] = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
-    len++;
+    if(len < 4) len++;          // saturate: a long answer can never become yes
   }
+  result = (len == 1 && ans[0] == 'y') ||
+           (len == 3 && ans[0] == 'y' && ans[1] == 'e' && ans[2] == 's');
+done:
+  input.r = input.w = input.e;
+  approval_owner = 0;
+  wakeup(&approval_owner);
+  wakeup(&input.r);
   release(&cons.lock);
-
-  if(len == 1 && ans[0] == 'y')
-    return 1;
-  if(len == 3 && ans[0] == 'y' && ans[1] == 'e' && ans[2] == 's')
-    return 1;
-  return 0;
+  return result;
 }
 
 int

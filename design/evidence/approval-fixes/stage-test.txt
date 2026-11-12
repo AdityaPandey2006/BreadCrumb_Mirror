@@ -1,0 +1,9 @@
+config=test
+source=worktree@f3b16ee2a344ded90b66b469c1172bd804aff2c7
+branch_head=f3b16ee2a344ded90b66b469c1172bd804aff2c7
+dirty_tree=yes
+staged_source_sha256=660da4b980eee734
+staged_at=2026-11-12T17:20:41Z
+build_command=make -B SHADOW_TEST=1 xv6.img fs.img
+test_only_kernel_symbols=3
+fs_img_sha256=5e5ead684b24b21a xv6_img_sha256=fe60458233aef7f4

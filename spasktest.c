@@ -202,6 +202,7 @@ test_conflict_after_yes(void)
     for(got = 0; got < PIPESIZE + 1; got += n)             // outside input (D44)
       if((n = read(p[0], buf, sizeof(buf))) <= 0)
         break;
+    read(p[0], buf, 1);        // EOF only after rival finishes its approval/commit
     close(p[0]);
     r = xask("ASKTEST C");
     c1 = xcommit();             // loses: rival committed first
@@ -219,7 +220,7 @@ test_conflict_after_yes(void)
   close(p[0]);
   memset(buf, 'g', sizeof(buf));
   check(write(p[1], buf, sizeof(buf)) == sizeof(buf), "release asker");
-  close(p[1]);
+  // Keep the writer open until after the rival commits.
   // The asker's shadow of askC exists. Rival commits the same file first.
   check(xbegin() == 0, "rival xbegin C");
   n = open("askC", O_WRONLY);
@@ -228,6 +229,7 @@ test_conflict_after_yes(void)
   close(n);
   check(xcommit() == 0, "rival commits first");
   printf(1, "RIVAL_COMMITTED\n");
+  close(p[1]);
   check(wait() == pid, "wait C");
   check(content("askC", "rival!!!"), "public file holds the rival's data only");
   unlink("askC");

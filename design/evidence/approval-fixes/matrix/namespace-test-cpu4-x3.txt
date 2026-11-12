@@ -1,0 +1,852 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace; echo TESTDONE72e73782
+PASS: abort discards namespace/data
+PASS: outside sees the correct final namespace
+
+[review 2 BEGIN]
+[speculation 2] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  7 changed bytes; offsets 0..6; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "private\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  create nnew (7 bytes)
+  11 changed bytes; offsets 48..69; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 2 -> 0; size 8 -> 0; links 1 -> 0
+  inode 36 created; type 0 -> 2; size 0 -> 7; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 180. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 2] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin create/delete attempt
+PASS: create and write new private file
+PASS: inside sees deletion and new contents
+PASS: outside sees old name and no new name before completion
+PASS: commit publishes namespace/data together
+PASS: outside sees the correct final namespace
+PASS: finish extension
+PASS: final size matches commit/abort
+
+[review 4 BEGIN]
+[speculation 4] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1686: file inode 35 at offset 6656
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 6144 -> 6657; links 1 -> 1
+  4 changed bytes; offsets 200..253; preview at 200:
+    before "\x00\x18\x00\x00\x88\x06\x00\x00\x89\x06\x00\x00\x8a\x06\x00\x00\x8b\x06\x00\x00\x8c\x06\x00\x00"
+    after  "\x01\x1a\x00\x00\x88\x06\x00\x00\x89\x06\x00\x00\x8a\x06\x00\x00\x8b\x06\x00\x00\x8c\x06\x00\x00"
+Block 1685: file inode 35 at offset 6144
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "BBBBBBBBBBBBBBBBBBBBBBBB"
+Block 1684: indirect pointers for inode 35 at offset 6144
+  4 changed bytes; offsets 0..5; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x95\x06\x00\x00\x96\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 210..210; preview at 210:
+    before "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x7f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 5. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 179. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 4] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin direct-to-indirect extension
+PASS: allocate private indirect block and two new data blocks
+PASS: private stat reflects extended size
+PASS: outside size stays original
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: published indirect data is readable
+PASS: last extended byte published
+PASS: abort removes new directory and restores usable root cwd
+
+[review 6 BEGIN]
+[speculation 6] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create ndir (48 bytes)
+  5 changed bytes; offsets 48..53; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00ndir\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1672: directory inode 35 at offset 0
+  create . (48 bytes)
+  create .. (1024 bytes)
+  create item (4 bytes)
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "#\x00.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00..\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 32: inode metadata
+  inode 1 modified; type 1 -> 1; size 1024 -> 1024; links 1 -> 2
+  1 changed bytes; offsets 70..70; preview at 70:
+    before "\x01\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 1; size 0 -> 48; links 0 -> 1
+  inode 36 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x01\x000\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 6. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 6] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit directory and its child
+PASS: committed child reachable through directory
+PASS: abort directory deletion
+PASS: aborted directory deletion preserves child
+
+[review 8 BEGIN]
+[speculation 8] commit requested by owner
+Kernel change report (saved original -> private):
+Block 32: inode metadata
+  inode 1 modified; type 1 -> 1; size 1024 -> 1024; links 2 -> 1
+  1 changed bytes; offsets 70..70; preview at 70:
+    before "\x02\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete ndir
+  5 changed bytes; offsets 48..53; preview at 48:
+    before "#\x00ndir\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 1 -> 0; size 48 -> 0; links 1 -> 0
+  inode 36 freed; type 2 -> 0; size 4 -> 0; links 1 -> 0
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x01\x00\x00\x00\x00\x00\x01\x000\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1672: directory inode 35 at offset 0
+  delete item
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "$\x00item\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 5. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 8] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit directory deletion
+PASS: deleted directory absent publicly
+PASS: abort removes private hard link
+
+[review 10 BEGIN]
+[speculation 10] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1566: directory inode 1 at offset 512
+  create nlink (8 bytes)
+  6 changed bytes; offsets 64..70; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00nlink\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 8 -> 8; links 1 -> 2
+  1 changed bytes; offsets 198..198; preview at 198:
+    before "\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 10] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit hard link
+PASS: public nlink and alias agree
+PASS: abort invalidates all aliases of a newly created file
+
+[review 12 BEGIN]
+[speculation 12] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  4 changed bytes; offsets 0..3; preview at 0:
+    before "data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "new\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create nnew (3 bytes)
+  5 changed bytes; offsets 64..69; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "$\x00nnew\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 36 created; type 0 -> 2; size 0 -> 3; links 0 -> 1
+  5 changed bytes; offsets 256..269; preview at 256:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x03\x00\x00\x00\x89\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 34. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 12] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin new-descriptor commit
+PASS: committed new descriptor remains usable
+
+[review 13 BEGIN]
+[speculation 13] commit requested by owner
+Kernel change report (saved original -> private):
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 8 -> 8; links 1 -> 0
+  1 changed bytes; offsets 198..198; preview at 198:
+    before "\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  6 changed bytes; offsets 48..54; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 13] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit unlink while an outside descriptor remains open
+PASS: outside open descriptor retains unlinked contents
+PASS: capacity failures leave public metadata unchanged
+
+[review 15 BEGIN]
+[speculation 15] commit requested by owner
+Kernel change report (saved original -> private):
+Block 36: inode metadata
+  inode 36 created; type 0 -> 2; size 0 -> 2560; links 0 -> 1
+  13 changed bytes; offsets 256..285; preview at 256:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x00\x0a\x00\x00\x91\x06\x00\x00\x92\x06\x00\x00\x93\x06\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create nfail (2560 bytes)
+  6 changed bytes; offsets 64..70; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "$\x00nfail\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 210..210; preview at 210:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "?\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1681: file inode 36 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1682: file inode 36 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1683: file inode 36 at offset 1024
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1684: file inode 36 at offset 1536
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "\x95\x06\x00\x00\x96\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1685: file inode 36 at offset 2048
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "BBBBBBBBBBBBBBBBBBBBBBBB"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Changed blocks: 8. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 108. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 15] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin partial extension
+PASS: metadata counts toward cap; failed extension preserves completed chunks
+PASS: partial extension remains consistently committable
+PASS: failure cleanup leaks no shadow pages
+PASS: owner's new file stays private
+PASS: owner death releases allocation and namespace shadows
+PASS: abort restores consistent allocation after close failure
+NAMESPACE TESTS PASSED
+TESTDONE72e73782
+$ spnamespace; echo TESTDONE269c55fc
+PASS: abort discards namespace/data
+PASS: outside sees the correct final namespace
+
+[review 20 BEGIN]
+[speculation 20] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "private\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  create nnew (7 bytes)
+  11 changed bytes; offsets 48..69; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 2 -> 0; size 8 -> 0; links 1 -> 0
+  inode 36 created; type 0 -> 2; size 0 -> 7; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 180. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 20] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin create/delete attempt
+PASS: create and write new private file
+PASS: inside sees deletion and new contents
+PASS: outside sees old name and no new name before completion
+PASS: commit publishes namespace/data together
+PASS: outside sees the correct final namespace
+PASS: finish extension
+PASS: final size matches commit/abort
+
+[review 22 BEGIN]
+[speculation 22] commit requested by owner
+Kernel change report (saved original -> private):
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 6144 -> 6657; links 1 -> 1
+  4 changed bytes; offsets 200..253; preview at 200:
+    before "\x00\x18\x00\x00\x88\x06\x00\x00\x89\x06\x00\x00\x8a\x06\x00\x00\x8b\x06\x00\x00\x8c\x06\x00\x00"
+    after  "\x01\x1a\x00\x00\x88\x06\x00\x00\x89\x06\x00\x00\x8a\x06\x00\x00\x8b\x06\x00\x00\x8c\x06\x00\x00"
+Block 1685: file inode 35 at offset 6144
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "YYYYYYYYYYYYYYYYYYYYYYYY"
+    after  "BBBBBBBBBBBBBBBBBBBBBBBB"
+Block 1684: indirect pointers for inode 35 at offset 6144
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "YYYYYYYYYYYYYYYYYYYYYYYY"
+    after  "\x95\x06\x00\x00\x96\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 210..210; preview at 210:
+    before "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x7f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 179. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 22] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin direct-to-indirect extension
+PASS: allocate private indirect block and two new data blocks
+PASS: private stat reflects extended size
+PASS: outside size stays original
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: published indirect data is readable
+PASS: last extended byte published
+PASS: abort removes new directory and restores usable root cwd
+
+[review 24 BEGIN]
+[speculation 24] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create ndir (48 bytes)
+  5 changed bytes; offsets 48..53; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00ndir\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1672: directory inode 35 at offset 0
+  create . (48 bytes)
+  create .. (1024 bytes)
+  create item (4 bytes)
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "#\x00.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00..\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 32: inode metadata
+  inode 1 modified; type 1 -> 1; size 1024 -> 1024; links 1 -> 2
+  1 changed bytes; offsets 70..70; preview at 70:
+    before "\x01\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 1; size 0 -> 48; links 0 -> 1
+  inode 36 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x01\x000\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 6. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 24] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit directory and its child
+PASS: committed child reachable through directory
+PASS: abort directory deletion
+PASS: aborted directory deletion preserves child
+
+[review 26 BEGIN]
+[speculation 26] commit requested by owner
+Kernel change report (saved original -> private):
+Block 32: inode metadata
+  inode 1 modified; type 1 -> 1; size 1024 -> 1024; links 2 -> 1
+  1 changed bytes; offsets 70..70; preview at 70:
+    before "\x02\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete ndir
+  5 changed bytes; offsets 48..53; preview at 48:
+    before "#\x00ndir\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 1 -> 0; size 48 -> 0; links 1 -> 0
+  inode 36 freed; type 2 -> 0; size 4 -> 0; links 1 -> 0
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x01\x00\x00\x00\x00\x00\x01\x000\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1672: directory inode 35 at offset 0
+  delete item
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "$\x00item\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 5. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 26] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit directory deletion
+PASS: deleted directory absent publicly
+PASS: abort removes private hard link
+
+[review 28 BEGIN]
+[speculation 28] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1566: directory inode 1 at offset 512
+  create nlink (8 bytes)
+  6 changed bytes; offsets 64..70; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00nlink\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 8 -> 8; links 1 -> 2
+  1 changed bytes; offsets 198..198; preview at 198:
+    before "\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 28] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit hard link
+PASS: public nlink and alias agree
+PASS: abort invalidates all aliases of a newly created file
+
+[review 30 BEGIN]
+[speculation 30] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  4 changed bytes; offsets 0..3; preview at 0:
+    before "data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "new\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create nnew (3 bytes)
+  5 changed bytes; offsets 64..69; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "$\x00nnew\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 36 created; type 0 -> 2; size 0 -> 3; links 0 -> 1
+  5 changed bytes; offsets 256..269; preview at 256:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x03\x00\x00\x00\x89\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 34. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 30] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin new-descriptor commit
+PASS: committed new descriptor remains usable
+
+[review 31 BEGIN]
+[speculation 31] commit requested by owner
+Kernel change report (saved original -> private):
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 8 -> 8; links 1 -> 0
+  1 changed bytes; offsets 198..198; preview at 198:
+    before "\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  6 changed bytes; offsets 48..54; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 31] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit unlink while an outside descriptor remains open
+PASS: outside open descriptor retains unlinked contents
+PASS: capacity failures leave public metadata unchanged
+
+[review 33 BEGIN]
+[speculation 33] commit requested by owner
+Kernel change report (saved original -> private):
+Block 36: inode metadata
+  inode 36 created; type 0 -> 2; size 0 -> 2560; links 0 -> 1
+  13 changed bytes; offsets 256..285; preview at 256:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x00\x0a\x00\x00\x91\x06\x00\x00\x92\x06\x00\x00\x93\x06\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create nfail (2560 bytes)
+  6 changed bytes; offsets 64..70; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "$\x00nfail\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 210..210; preview at 210:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "?\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1681: file inode 36 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1682: file inode 36 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1683: file inode 36 at offset 1024
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1684: file inode 36 at offset 1536
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "\x95\x06\x00\x00\x96\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1685: file inode 36 at offset 2048
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "BBBBBBBBBBBBBBBBBBBBBBBB"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Changed blocks: 8. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 108. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 33] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin partial extension
+PASS: metadata counts toward cap; failed extension preserves completed chunks
+PASS: partial extension remains consistently committable
+PASS: failure cleanup leaks no shadow pages
+PASS: owner's new file stays private
+PASS: owner death releases allocation and namespace shadows
+PASS: abort restores consistent allocation after close failure
+NAMESPACE TESTS PASSED
+TESTDONE269c55fc
+$ spnamespace; echo TESTDONE35a6eadc
+PASS: abort discards namespace/data
+PASS: outside sees the correct final namespace
+
+[review 38 BEGIN]
+[speculation 38] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "private\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  create nnew (7 bytes)
+  11 changed bytes; offsets 48..69; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 2 -> 0; size 8 -> 0; links 1 -> 0
+  inode 36 created; type 0 -> 2; size 0 -> 7; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 180. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 38] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin create/delete attempt
+PASS: create and write new private file
+PASS: inside sees deletion and new contents
+PASS: outside sees old name and no new name before completion
+PASS: commit publishes namespace/data together
+PASS: outside sees the correct final namespace
+PASS: finish extension
+PASS: final size matches commit/abort
+
+[review 40 BEGIN]
+[speculation 40] commit requested by owner
+Kernel change report (saved original -> private):
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 6144 -> 6657; links 1 -> 1
+  4 changed bytes; offsets 200..253; preview at 200:
+    before "\x00\x18\x00\x00\x88\x06\x00\x00\x89\x06\x00\x00\x8a\x06\x00\x00\x8b\x06\x00\x00\x8c\x06\x00\x00"
+    after  "\x01\x1a\x00\x00\x88\x06\x00\x00\x89\x06\x00\x00\x8a\x06\x00\x00\x8b\x06\x00\x00\x8c\x06\x00\x00"
+Block 1685: file inode 35 at offset 6144
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "YYYYYYYYYYYYYYYYYYYYYYYY"
+    after  "BBBBBBBBBBBBBBBBBBBBBBBB"
+Block 1684: indirect pointers for inode 35 at offset 6144
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "YYYYYYYYYYYYYYYYYYYYYYYY"
+    after  "\x95\x06\x00\x00\x96\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 210..210; preview at 210:
+    before "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x7f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 179. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 40] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin direct-to-indirect extension
+PASS: allocate private indirect block and two new data blocks
+PASS: private stat reflects extended size
+PASS: outside size stays original
+PASS: finish extension
+PASS: final size matches commit/abort
+PASS: published indirect data is readable
+PASS: last extended byte published
+PASS: abort removes new directory and restores usable root cwd
+
+[review 42 BEGIN]
+[speculation 42] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create ndir (48 bytes)
+  5 changed bytes; offsets 48..53; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00ndir\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1672: directory inode 35 at offset 0
+  create . (48 bytes)
+  create .. (1024 bytes)
+  create item (4 bytes)
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "#\x00.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00..\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 32: inode metadata
+  inode 1 modified; type 1 -> 1; size 1024 -> 1024; links 1 -> 2
+  1 changed bytes; offsets 70..70; preview at 70:
+    before "\x01\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 1; size 0 -> 48; links 0 -> 1
+  inode 36 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x01\x000\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 6. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 42] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit directory and its child
+PASS: committed child reachable through directory
+PASS: abort directory deletion
+PASS: aborted directory deletion preserves child
+
+[review 44 BEGIN]
+[speculation 44] commit requested by owner
+Kernel change report (saved original -> private):
+Block 32: inode metadata
+  inode 1 modified; type 1 -> 1; size 1024 -> 1024; links 2 -> 1
+  1 changed bytes; offsets 70..70; preview at 70:
+    before "\x02\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x04\x00\x00;\x00\x00\x00\x1e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete ndir
+  5 changed bytes; offsets 48..53; preview at 48:
+    before "#\x00ndir\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 1 -> 0; size 48 -> 0; links 1 -> 0
+  inode 36 freed; type 2 -> 0; size 4 -> 0; links 1 -> 0
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x01\x00\x00\x00\x00\x00\x01\x000\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1672: directory inode 35 at offset 0
+  delete item
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "$\x00item\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 5. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 44] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit directory deletion
+PASS: deleted directory absent publicly
+PASS: abort removes private hard link
+
+[review 46 BEGIN]
+[speculation 46] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1566: directory inode 1 at offset 512
+  create nlink (8 bytes)
+  6 changed bytes; offsets 64..70; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00nlink\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 8 -> 8; links 1 -> 2
+  1 changed bytes; offsets 198..198; preview at 198:
+    before "\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 46] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit hard link
+PASS: public nlink and alias agree
+PASS: abort invalidates all aliases of a newly created file
+
+[review 48 BEGIN]
+[speculation 48] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  4 changed bytes; offsets 0..3; preview at 0:
+    before "data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "new\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create nnew (3 bytes)
+  5 changed bytes; offsets 64..69; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "$\x00nnew\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 36 created; type 0 -> 2; size 0 -> 3; links 0 -> 1
+  5 changed bytes; offsets 256..269; preview at 256:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x03\x00\x00\x00\x89\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 34. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 48] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin new-descriptor commit
+PASS: committed new descriptor remains usable
+
+[review 49 BEGIN]
+[speculation 49] commit requested by owner
+Kernel change report (saved original -> private):
+Block 36: inode metadata
+  inode 35 modified; type 2 -> 2; size 8 -> 8; links 1 -> 0
+  1 changed bytes; offsets 198..198; preview at 198:
+    before "\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  6 changed bytes; offsets 48..54; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 49] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: commit unlink while an outside descriptor remains open
+PASS: outside open descriptor retains unlinked contents
+PASS: capacity failures leave public metadata unchanged
+
+[review 51 BEGIN]
+[speculation 51] commit requested by owner
+Kernel change report (saved original -> private):
+Block 36: inode metadata
+  inode 36 created; type 0 -> 2; size 0 -> 2560; links 0 -> 1
+  13 changed bytes; offsets 256..285; preview at 256:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x00\x0a\x00\x00\x91\x06\x00\x00\x92\x06\x00\x00\x93\x06\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create nfail (2560 bytes)
+  6 changed bytes; offsets 64..70; preview at 64:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "$\x00nfail\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 210..210; preview at 210:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "?\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1681: file inode 36 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1682: file inode 36 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1683: file inode 36 at offset 1024
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "AAAAAAAAAAAAAAAAAAAAAAAA"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1684: file inode 36 at offset 1536
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "\x95\x06\x00\x00\x96\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Block 1685: file inode 36 at offset 2048
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "BBBBBBBBBBBBBBBBBBBBBBBB"
+    after  "YYYYYYYYYYYYYYYYYYYYYYYY"
+Changed blocks: 8. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 108. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 51] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: begin partial extension
+PASS: metadata counts toward cap; failed extension preserves completed chunks
+PASS: partial extension remains consistently committable
+PASS: failure cleanup leaks no shadow pages
+PASS: owner's new file stays private
+PASS: owner death releases allocation and namespace shadows
+PASS: abort restores consistent allocation after close failure
+NAMESPACE TESTS PASSED
+TESTDONE35a6eadc
+$

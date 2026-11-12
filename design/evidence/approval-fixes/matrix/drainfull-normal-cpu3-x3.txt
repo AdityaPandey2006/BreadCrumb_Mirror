@@ -1,0 +1,71 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure drainfull; echo TESTDONE4b966d84
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: F1 fork reader
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 1540. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+yPASS: F
+1 fork reader
+rrrrrrrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+r
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE DRAINFULL PASSED
+TESTDONE4b966d84
+$ spfailure drainfull; echo TESTDONE5ae4a83e
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: F1 fork reader
+PASS: F1 fork reader
+
+[review 2 BEGIN]
+[speculation 2] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 1540. Payloads remain hidden until durable commit.
+[approval 2] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+rrrrrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+rr
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE DRAINFULL PASSED
+TESTDONE5ae4a83e
+$ spfailure drainfull; echo TESTDONEaa2d072e
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: F1 fork rePASS: F1 fork reader
+ader
+
+[review 3 BEGIN]
+[speculation 3] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 1540. Payloads remain hidden until durable commit.
+[approval 3] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+rrrrrrrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE DRAINFULL PASSED
+TESTDONEaa2d072e
+$

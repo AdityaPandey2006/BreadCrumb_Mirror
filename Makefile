@@ -203,6 +203,7 @@ UPROGS=\
 	_spbench\
 	_specrun\
 	_spasktest\
+	_spapproval\
 
 ifeq ($(SHADOW_TEST),1)
 UPROGS += _shadowtest

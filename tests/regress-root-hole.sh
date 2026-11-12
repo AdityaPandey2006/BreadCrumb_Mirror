@@ -8,7 +8,7 @@
 # cached inode (bmap without iupdate); Step 6's inode_invalidate() on abort
 # reloaded the on-disk inode and lost every entry in that block.
 #
-# The script stages the CURRENT tree (test build), adds dummy programs until
+# The script stages the CURRENT tree (test build), adds empty padding files until
 # the root holds exactly a multiple of 32 entries (the failing layout), then:
 #   1. builds with the stock mkfs rounding restored -> lifecycle suite expected to FAIL
 #   2. builds with the repository mkfs.c            -> lifecycle suite must PASS
@@ -33,16 +33,26 @@ print(f"root size={size} allocated_blocks={len(addrs)} entries={used}")
 PY
 entries=$(python3 rootinfo.py | sed 's/.*entries=//')
 need=$(( (32 - entries % 32) % 32 ))
-echo "current tree: $(python3 rootinfo.py); adding $need dummy programs"
+echo "current tree: $(python3 rootinfo.py); adding $need empty padding files"
 i=0
+padding=""
 while [ $i -lt $need ]; do
-  printf '#include "types.h"\n#include "user.h"\nint main(void){ exit(); }\n' > dummy$i.c
-  python3 -c "
-s = open('Makefile').read()
-s = s.replace('\t_spconflict\\\\\n', '\t_spconflict\\\\\n\t_dummy$i\\\\\n', 1)
-open('Makefile', 'w').write(s)"
+  : > rootpad$i
+  padding="$padding rootpad$i"
   i=$((i + 1))
 done
+# Only directory entries matter here. Executable padding can exhaust the
+# 2000-block image when a new test moves the root just past a block boundary.
+printf '\nROOTPAD :=%s\n' "$padding" >> Makefile
+python3 - <<'PYPAD'
+from pathlib import Path
+p = Path('Makefile')
+s = p.read_text().replace('fs.img: mkfs README $(UPROGS)',
+                          'fs.img: mkfs README $(UPROGS) $(ROOTPAD)')
+s = s.replace('./mkfs fs.img README $(UPROGS)',
+              './mkfs fs.img README $(UPROGS) $(ROOTPAD)')
+p.write_text(s)
+PYPAD
 # 1. stock rounding restored (bug present)
 python3 - <<'PY'
 s = open("mkfs.c").read()

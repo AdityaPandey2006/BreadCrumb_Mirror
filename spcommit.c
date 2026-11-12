@@ -352,7 +352,7 @@ test_conflict(void)
     receive(p2b[0]);
     r1 = xcommit();
     r2 = xcommit();
-    ok = ok && (r1 == -1) && (r2 == -1) && expect_at(0, "BBBB");
+    ok = ok && (r1 == -1) && (r2 == -1) && open(F, O_RDONLY) == -1; // reviewed loser remains frozen
     int a = (xabort() == 0);
     send(b2p[1], ok);
     send(b2p[1], a);

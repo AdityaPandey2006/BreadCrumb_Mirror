@@ -14,6 +14,7 @@ not detect prompt injection and do not decide whether a request is
 trustworthy; the "keep" guard below is a simple rule supplied by the caller.
 """
 import argparse
+import re
 from pathlib import Path
 import sys
 
@@ -61,7 +62,7 @@ def main():
     ap.add_argument("--serial", type=Path, default=None)
     a = ap.parse_args()
     serial = (a.serial or a.transcript.with_suffix(".serial.txt")).open("wb")
-    with a.transcript.open("w") as out, Guest(a.build, qemu=a.qemu, log=serial) as g:
+    with a.transcript.open("w") as out, Guest(a.build, qemu=a.qemu, log=serial, scripted_approval=True) as g:
         d = Demo(g, out)
         d.say("Step 10 demonstrations: externalization barriers for speculative processes")
         d.say(f"build: {a.build}  (disposable image copy; dummy files under /demo)")
@@ -111,19 +112,29 @@ def main():
                   "(no deadlock); only the final console output is held until commit.")
         ordinary = d.sh("cat /demo/report.txt | wc").strip()
         res = d.sh("specrun commit cat,/demo/report.txt,pipe,wc")
-        d.check(ordinary.split()[:3] == res.strip().split("\n")[0].split()[:3],
+        # Approval text now precedes the pipeline's held output. Match the
+        # actual wc result rather than assuming it is the first output line.
+        counts = re.search(r"(?m)^\s*(\d+)\s+(\d+)\s+(\d+)\s*$", res)
+        d.check(counts is not None and ordinary.split()[:3] == list(counts.groups()),
                 "speculative pipeline gives the same counts as the ordinary pipeline")
 
         d.section("6a. Capacity limit follows the documented policy (D22/D25, R01)",
                   "Copying a ~60 KiB binary into a new file inside a speculation: the eight-block cap "
-                  "(inode, bitmap, directory + 5 data blocks) makes the write short. Nothing spills to "
+                  "(shared data and metadata) makes the write short. Nothing spills to "
                   "the public disk; the program sees the short write (cat reports an error).")
         res = d.sh("specrun abort cat,/usertests,into,/demo/big.bin")
         d.check("cannot open" in d.sh("cat /demo/big.bin"), "aborted oversized attempt left no file")
         res = d.sh("specrun commit cat,/usertests,into,/demo/big.bin")
         ls = d.sh("ls /demo/big.bin")
         size = int(ls.split()[-1]) if ls.split() and ls.split()[-1].isdigit() else -1
-        d.check(size == 2560, f"commit published only the 2560-byte prefix that fit (got {size})")
+        # Parent and new-file inodes may occupy different inode blocks, so
+        # the metadata footprint depends on the image layout. Count the file's
+        # reported blocks and require that the shared eight-block cap was full.
+        inode = ls.split()[-2] if len(ls.split()) >= 4 else ""
+        data_blocks = re.findall(r"(?m)^Block \d+: file inode " + re.escape(inode) + r" at offset (\d+)$", res)
+        d.check(0 < size <= 5 * 512 and size == len(data_blocks) * 512 and
+                "Changed blocks: 8." in res,
+                f"commit published only the prefix fitting the full 8-block cap (got {size} bytes)")
         d.say("  Policy note: committing after a short write publishes the written prefix (D25); a "
               "careful program checks the count and aborts instead.")
 

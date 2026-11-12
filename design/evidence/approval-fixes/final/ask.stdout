@@ -1,0 +1,335 @@
+spasktest; echo TESTDONE26545d12
+BEGIN ASK_REFUSALS
+END ASK_REFUSALS
+BEGIN ASK_YES
+
+[review 4 BEGIN]
+[speculation 4] ASKTEST A
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  13 changed bytes; offsets 0..12; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "approved data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create askA (13 bytes)
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00askA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 13; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0d\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 11. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] y
+ASK_HELD_A
+A results: ask=1 write=-1 open=-1 fork=-1 mkdir=-1 unlink=-1 read=-1 again=-1 commit=0
+END ASK_YES
+BEGIN ASK_NO
+
+[review 5 BEGIN]
+[speculation 5] ASKTEST B
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  6 changed bytes; offsets 0..5; preview at 0:
+    before "approved data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "rejected data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create askB (13 bytes)
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00askB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 13; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0d\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 16. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] n
+B results: ask=0 commit=-1 abort=0
+END ASK_NO
+BEGIN ASK_CONFLICT
+
+[review 7 BEGIN]
+[speculation 7] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..7; preview at 0:
+    before "original\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "rival!!!\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] y
+RIVAL_COMMITTED
+
+[review 6 BEGIN]
+[speculation 6] ASKTEST C
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..7; preview at 0:
+    before "original\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "asker!!!\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 22. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] y
+C results: got=513 ask=1 commit=-1 commit2=-1 abort=0
+END ASK_CONFLICT
+BEGIN ASK_KILL
+
+[review 8 BEGIN]
+[speculation 8] ASKTEST E
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  10 changed bytes; offsets 0..10; preview at 0:
+    before "rival!!!\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "killed data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create askE (11 bytes)
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00askE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 11; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0b\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 18. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] END ASK_KILL
+SPASKTEST: ALL TESTS PASSED
+echo keep > askG; echo TESTDONE6490dd19
+specrun ask echo,hi,into,askF rm,askG echo,HELD_SPECRUN_Y; echo TESTDONEd9afc31f
+
+[review 9 BEGIN]
+[speculation 9] specrun requested review
+Kernel change report (saved original -> private):
+Block 1548: file inode 35 at offset 0
+  3 changed bytes; offsets 0..2; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "hi\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x17\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  delete askG
+  create askF (3 bytes)
+  10 changed bytes; offsets 32..53; preview at 32:
+    before "\x22\x00askG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00#\x00askF\x00\x00"
+Block 36: inode metadata
+  inode 34 freed; type 2 -> 0; size 5 -> 0; links 1 -> 0
+  inode 35 created; type 0 -> 2; size 0 -> 3; links 0 -> 1
+  10 changed bytes; offsets 128..205; preview at 128:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x05\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 15. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] y
+HELD_SPECRUN_Y
+SPECRUN: committed: changes published; held output released above
+cat askF; echo TESTDONEf2ddfb97
+hi
+cat askG; echo TESTDONEce653a2c
+cat: cannot open askG
+echo keep > askG; echo TESTDONE405348ef
+specrun ask rm,askG echo,LEAK_SPECRUN_N; echo TESTDONE7e18424c
+
+[review 10 BEGIN]
+[speculation 10] specrun requested review
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x17\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 freed; type 2 -> 0; size 5 -> 0; links 1 -> 0
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x05\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  delete askG
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "\x22\x00askG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00#\x00askF\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00#\x00askF\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 15. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] n
+SPECRUN: aborted by user: private changes and held output discarded
+cat askG; echo TESTDONEef270054
+keep
+rm askF; echo TESTDONE3b437935
+rm askG; echo TESTDONE688bf866
+spasktest; echo TESTDONEded13992
+BEGIN ASK_REFUSALS
+END ASK_REFUSALS
+BEGIN ASK_YES
+
+[review 14 BEGIN]
+[speculation 14] ASKTEST A
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  13 changed bytes; offsets 0..12; preview at 0:
+    before "keep\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "approved data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create askA (13 bytes)
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00askA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 13; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0d\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 11. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] y
+ASK_HELD_A
+A results: ask=1 write=-1 open=-1 fork=-1 mkdir=-1 unlink=-1 read=-1 again=-1 commit=0
+END ASK_YES
+BEGIN ASK_NO
+
+[review 15 BEGIN]
+[speculation 15] ASKTEST B
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  6 changed bytes; offsets 0..5; preview at 0:
+    before "approved data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "rejected data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create askB (13 bytes)
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00askB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 13; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0d\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 16. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] n
+B results: ask=0 commit=-1 abort=0
+END ASK_NO
+BEGIN ASK_CONFLICT
+
+[review 17 BEGIN]
+[speculation 17] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..7; preview at 0:
+    before "original\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "rival!!!\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] y
+RIVAL_COMMITTED
+
+[review 16 BEGIN]
+[speculation 16] ASKTEST C
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..7; preview at 0:
+    before "original\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "asker!!!\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 22. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] y
+C results: got=513 ask=1 commit=-1 commit2=-1 abort=0
+END ASK_CONFLICT
+BEGIN ASK_KILL
+
+[review 18 BEGIN]
+[speculation 18] ASKTEST E
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  10 changed bytes; offsets 0..10; preview at 0:
+    before "rival!!!\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "killed data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create askE (11 bytes)
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00askE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 11; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0b\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 18. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] END ASK_KILL
+SPASKTEST: ALL TESTS PASSED
+echo keep > askG; echo TESTDONE5b56ffba
+specrun ask echo,hi,into,askF rm,askG echo,HELD_SPECRUN_Y; echo TESTDONEa61af4b3
+
+[review 19 BEGIN]
+[speculation 19] specrun requested review
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x17\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  delete askG
+  create askF (3 bytes)
+  10 changed bytes; offsets 32..53; preview at 32:
+    before "\x22\x00askG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00#\x00askF\x00\x00"
+Block 36: inode metadata
+  inode 34 freed; type 2 -> 0; size 5 -> 0; links 1 -> 0
+  inode 35 created; type 0 -> 2; size 0 -> 3; links 0 -> 1
+  10 changed bytes; offsets 128..205; preview at 128:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x05\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 15. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] y
+HELD_SPECRUN_Y
+SPECRUN: committed: changes published; held output released above
+cat askF; echo TESTDONEb6ad4014
+hi
+cat askG; echo TESTDONE003528d2
+cat: cannot open askG
+echo keep > askG; echo TESTDONE3a276e41
+specrun ask rm,askG echo,LEAK_SPECRUN_N; echo TESTDONE52e3eef8
+
+[review 20 BEGIN]
+[speculation 20] specrun requested review
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x17\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 freed; type 2 -> 0; size 5 -> 0; links 1 -> 0
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x05\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  delete askG
+  5 changed bytes; offsets 32..37; preview at 32:
+    before "\x22\x00askG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00#\x00askF\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00#\x00askF\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 15. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.commit? [y/n] n
+SPECRUN: aborted by user: private changes and held output discarded
+cat askG; echo TESTDONE86aa5823
+keep
+rm askF; echo TESTDONEb21c9d3d
+rm askG; echo TESTDONE26e43dae
+PASS: ask, 3 CPU(s); raw log: /tmp/approval-push-final/ask.txt

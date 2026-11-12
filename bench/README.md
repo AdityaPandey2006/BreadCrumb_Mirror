@@ -81,3 +81,12 @@ completion failures after full writes count as `conflicts`. Failed speculative
 writes are aborted. Baseline source hashes are calculated after all source
 patches and before compilation. Existing committed results remain historical
 evidence from their recorded builds.
+
+## Mandatory approval policy (D64-D66)
+
+Every eligible commit now asks for a user decision. The benchmark and demo
+drivers opt into recorded scripted approvals (`scripted_approval=True`); the
+normal agent asks a human. New timing runs include report generation and the
+host-answer round trip. Do not compare them directly with the old Step-10
+performance figures or describe that waiting time as filesystem-only cost.
+See `design/approval-review.md` for report limits and regression commands.

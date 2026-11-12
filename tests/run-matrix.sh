@@ -25,6 +25,11 @@ run() {  # build_dir build_name suite cpus repeat timeout
 }
 
 R=3; [ -n "$QUICK" ] && R=1
+# Approval protocol and channel regressions (scripted answers in this test driver).
+for c in 1 3; do run "$TEST" test ask $c $R 300; done
+for c in 1 3; do run "$TEST" test approval $c $R 300; done
+for c in 1 3; do run "$NORMAL" normal ask $c $R 300; done
+for c in 1 3; do run "$NORMAL" normal approval $c $R 300; done
 # Fault-injection (SHADOW_TEST=1) build
 for c in 1 2 3 4; do run "$TEST" test shadow $c $R 300; done
 for c in 1 3; do run "$TEST" test conflict $c $((R * 3)) 300; done

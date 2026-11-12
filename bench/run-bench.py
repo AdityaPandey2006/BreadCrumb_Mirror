@@ -59,7 +59,7 @@ def parse(out, prefix):
 def boot(args, build, name, cpus):
     args.serial.mkdir(parents=True, exist_ok=True)
     log = (args.serial / f"{name}.txt").open("wb")
-    return Guest(build, qemu=args.qemu, cpus=cpus, log=log), log
+    return Guest(build, qemu=args.qemu, cpus=cpus, log=log, scripted_approval=True), log
 
 
 def micro(args, writer, calw):

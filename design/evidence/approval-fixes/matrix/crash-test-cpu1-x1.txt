@@ -1,0 +1,200 @@
+
+===== HARNESS: crash point 1 (before any log block is written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE71a53e12
+CRASHSETUP OK
+TESTDONE71a53e12
+$ spcommit crash 1
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1675: file inode 36 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "zgnubipwdkryfmtahovcjqxe"
+    after  "EHKNQTWZCFILORUXADGJMPSV"
+Block 1673: file inode 35 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "yfmtahovcjqxelszgnubipwd"
+    after  "DGJMPSVYBEHKNQTWZCFILORU"
+Block 1672: file inode 35 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "bipwdkryfmtahovcjqxelszg"
+    after  "BEHKNQTWZCFILORUXADGJMPS"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 59. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC CRASH POINT 1
+lapicid 0: panic: spec crash point
+===== HARNESS: guest halted at crash point 1; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify old; echo TESTDONEe9f7eaac
+RECOVERED cra=[OO] crb=[OO] (expected all old)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK old
+TESTDONEe9f7eaac
+$
+===== HARNESS: PASS crash point 1: recovered complete old state =====
+
+===== HARNESS: crash point 2 (log blocks written, commit record (log header) not written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE0fe18c52
+CRASHSETUP OK
+TESTDONE0fe18c52
+$ spcommit crash 2
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1675: file inode 36 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "zgnubipwdkryfmtahovcjqxe"
+    after  "EHKNQTWZCFILORUXADGJMPSV"
+Block 1673: file inode 35 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "yfmtahovcjqxelszgnubipwd"
+    after  "DGJMPSVYBEHKNQTWZCFILORU"
+Block 1672: file inode 35 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "bipwdkryfmtahovcjqxelszg"
+    after  "BEHKNQTWZCFILORUXADGJMPS"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 59. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC CRASH POINT 2
+lapicid 0: panic: spec crash point (
+===== HARNESS: guest halted at crash point 2; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify old; echo TESTDONE8aaecebf
+RECOVERED cra=[OO] crb=[OO] (expected all old)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK old
+TESTDONE8aaecebf
+$
+===== HARNESS: PASS crash point 2: recovered complete old state =====
+
+===== HARNESS: crash point 3 (commit record written, nothing installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONE9c970c45
+CRASHSETUP OK
+TESTDONE9c970c45
+$ spcommit crash 3
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1675: file inode 36 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "zgnubipwdkryfmtahovcjqxe"
+    after  "EHKNQTWZCFILORUXADGJMPSV"
+Block 1673: file inode 35 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "yfmtahovcjqxelszgnubipwd"
+    after  "DGJMPSVYBEHKNQTWZCFILORU"
+Block 1672: file inode 35 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "bipwdkryfmtahovcjqxelszg"
+    after  "BEHKNQTWZCFILORUXADGJMPS"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 59. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC CRASH POINT 3
+lapicid 0: panic: spec crash point (
+===== HARNESS: guest halted at crash point 3; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify new; echo TESTDONE9cba2324
+RECOVERED cra=[NN] crb=[ON] (expected all new)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK new
+TESTDONE9cba2324
+$
+===== HARNESS: PASS crash point 3: recovered complete new state =====
+
+===== HARNESS: crash point 4 (first of three blocks installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashsetup; echo TESTDONEb76ed52f
+CRASHSETUP OK
+TESTDONEb76ed52f
+$ spcommit crash 4
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1675: file inode 36 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "zgnubipwdkryfmtahovcjqxe"
+    after  "EHKNQTWZCFILORUXADGJMPSV"
+Block 1673: file inode 35 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "yfmtahovcjqxelszgnubipwd"
+    after  "DGJMPSVYBEHKNQTWZCFILORU"
+Block 1672: file inode 35 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "bipwdkryfmtahovcjqxelszg"
+    after  "BEHKNQTWZCFILORUXADGJMPS"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 59. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC CRASH POINT 4
+lapicid 0: panic: spec crash point (
+===== HARNESS: guest halted at crash point 4; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spcommit crashverify new; echo TESTDONE463f4f35
+RECOVERED cra=[NN] crb=[ON] (expected all new)
+PASS: speculation recovered completely
+PASS: unchanged block untouched
+PASS: sizes intact
+PASS: filesystem usable after recovery
+CRASHVERIFY OK new
+TESTDONE463f4f35
+$
+===== HARNESS: PASS crash point 4: recovered complete new state =====

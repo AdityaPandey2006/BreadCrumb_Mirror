@@ -1,0 +1,1979 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spconflict; echo TESTDONEb3f96f2d
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..8; preview at 0:
+    before "ORIGINAL_DATA_BLOCK_0\x00\x00\x00"
+    after  "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: first committer (A) succeeds
+
+[review 2 BEGIN]
+[speculation 2] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..8; preview at 0:
+    before "ORIGINAL_DATA_BLOCK_0\x00\x00\x00"
+    after  "BBBB_DATADATA_BLOCK_0\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 2] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: both metadata versions staged before either commit
+
+[review 3 BEGIN]
+[speculation 3] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+    after  "FILE_A_CONTENT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_meta_a (14 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_meta_a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 14; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0e\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 3] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec A commits directory and inode block modifications
+
+[review 4 BEGIN]
+[speculation 4] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+    after  "FILE_B_CONTENT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_meta_b (14 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_meta_b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 14; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0e\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 4] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+
+[review 5 BEGIN]
+[speculation 5] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  13 changed bytes; offsets 0..12; preview at 0:
+    before "ORIGINAL_RACE_CONTENT\x00\x00\x00"
+    after  "SPEC_MUTATION_CONTENT\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 5] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+
+[review 6 BEGIN]
+[speculation 6] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AFTER_COMMITN_CONTENT\x00\x00\x00"
+    after  "PART1_BYTESA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_part (12 bytes)
+  8 changed bytes; offsets 32..40; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_part\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 12; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0c\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 113. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 6] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+
+[review 7 BEGIN]
+[speculation 7] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 124. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 7] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+
+[review 10 BEGIN]
+[speculation 10] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  10 changed bytes; offsets 0..11; preview at 0:
+    before "PART1_BYTESA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "REUSE_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 10] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 11 BEGIN]
+[speculation 11] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 11] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 12 BEGIN]
+[speculation 12] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 12] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 13 BEGIN]
+[speculation 13] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 13] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 14 BEGIN]
+[speculation 14] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 14] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 15 BEGIN]
+[speculation 15] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 15] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 16 BEGIN]
+[speculation 16] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 16] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 17 BEGIN]
+[speculation 17] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 17] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 18 BEGIN]
+[speculation 18] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 18] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 19 BEGIN]
+[speculation 19] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 19] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 20 BEGIN]
+[speculation 20] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 20] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 21 BEGIN]
+[speculation 21] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 21] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 22 BEGIN]
+[speculation 22] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 22] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 23 BEGIN]
+[speculation 23] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 23] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 24 BEGIN]
+[speculation 24] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 24] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+
+[review 41 BEGIN]
+[speculation 41] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  9 changed bytes; offsets 0..9; preview at 0:
+    before "BASE_CONTENT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 41] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec B commits first
+
+[review 40 BEGIN]
+[speculation 40] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  10 changed bytes; offsets 0..10; preview at 0:
+    before "BASE_CONTENT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "SPEC_A_DATAT_0000\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 26. Held external-pipe storage bytes (includes record headers): 31. Payloads remain hidden until durable commit.
+[approval 40] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+
+[review 43 BEGIN]
+[speculation 43] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p1 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 43] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 45 BEGIN]
+[speculation 45] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p3 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 45] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 44 BEGIN]
+[speculation 44] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p2 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p2\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 44] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 42 BEGIN]
+[speculation 42] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p0 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 42] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONEb3f96f2d
+$ spconflict; echo TESTDONEb6888e97
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+
+[review 46 BEGIN]
+[speculation 46] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..8; preview at 0:
+    before "ORIGINAL_DATA_BLOCK_0\x00\x00\x00"
+    after  "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 46] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: first committer (A) succeeds
+
+[review 47 BEGIN]
+[speculation 47] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..8; preview at 0:
+    before "ORIGINAL_DATA_BLOCK_0\x00\x00\x00"
+    after  "BBBB_DATADATA_BLOCK_0\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 47] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: both metadata versions staged before either commit
+
+[review 48 BEGIN]
+[speculation 48] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+    after  "FILE_A_CONTENT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_meta_a (14 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_meta_a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 14; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0e\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 48] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec A commits directory and inode block modifications
+
+[review 49 BEGIN]
+[speculation 49] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+    after  "FILE_B_CONTENT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_meta_b (14 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_meta_b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 14; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0e\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 49] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+
+[review 50 BEGIN]
+[speculation 50] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  13 changed bytes; offsets 0..12; preview at 0:
+    before "ORIGINAL_RACE_CONTENT\x00\x00\x00"
+    after  "SPEC_MUTATION_CONTENT\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 50] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+
+[review 51 BEGIN]
+[speculation 51] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AFTER_COMMITN_CONTENT\x00\x00\x00"
+    after  "PART1_BYTESA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_part (12 bytes)
+  8 changed bytes; offsets 32..40; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_part\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 12; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0c\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 113. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 51] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+
+[review 52 BEGIN]
+[speculation 52] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 124. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 52] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+
+[review 55 BEGIN]
+[speculation 55] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  10 changed bytes; offsets 0..11; preview at 0:
+    before "PART1_BYTESA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "REUSE_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 55] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 56 BEGIN]
+[speculation 56] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 56] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 57 BEGIN]
+[speculation 57] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 57] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 58 BEGIN]
+[speculation 58] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 58] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 59 BEGIN]
+[speculation 59] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 59] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 60 BEGIN]
+[speculation 60] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 60] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 61 BEGIN]
+[speculation 61] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 61] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 62 BEGIN]
+[speculation 62] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 62] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 63 BEGIN]
+[speculation 63] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 63] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 64 BEGIN]
+[speculation 64] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 64] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 65 BEGIN]
+[speculation 65] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 65] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 66 BEGIN]
+[speculation 66] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 66] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 67 BEGIN]
+[speculation 67] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 67] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 68 BEGIN]
+[speculation 68] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 68] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 69 BEGIN]
+[speculation 69] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 69] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+
+[review 86 BEGIN]
+[speculation 86] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  9 changed bytes; offsets 0..9; preview at 0:
+    before "BASE_CONTENT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 86] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec B commits first
+
+[review 85 BEGIN]
+[speculation 85] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  10 changed bytes; offsets 0..10; preview at 0:
+    before "BASE_CONTENT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "SPEC_A_DATAT_0000\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 26. Held external-pipe storage bytes (includes record headers): 31. Payloads remain hidden until durable commit.
+[approval 85] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+
+[review 87 BEGIN]
+[speculation 87] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p0 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 87] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 90 BEGIN]
+[speculation 90] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p3 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 90] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 88 BEGIN]
+[speculation 88] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p1 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 88] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 89 BEGIN]
+[speculation 89] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p2 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p2\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 89] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONEb6888e97
+$ spconflict; echo TESTDONE83560e4e
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+
+[review 91 BEGIN]
+[speculation 91] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..8; preview at 0:
+    before "ORIGINAL_DATA_BLOCK_0\x00\x00\x00"
+    after  "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 91] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: first committer (A) succeeds
+
+[review 92 BEGIN]
+[speculation 92] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  8 changed bytes; offsets 0..8; preview at 0:
+    before "ORIGINAL_DATA_BLOCK_0\x00\x00\x00"
+    after  "BBBB_DATADATA_BLOCK_0\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 92] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: both metadata versions staged before either commit
+
+[review 93 BEGIN]
+[speculation 93] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+    after  "FILE_A_CONTENT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_meta_a (14 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_meta_a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 14; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0e\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 93] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec A commits directory and inode block modifications
+
+[review 94 BEGIN]
+[speculation 94] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AAAA_DATADATA_BLOCK_0\x00\x00\x00"
+    after  "FILE_B_CONTENT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_meta_b (14 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_meta_b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 14; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0e\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 94] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+
+[review 95 BEGIN]
+[speculation 95] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  13 changed bytes; offsets 0..12; preview at 0:
+    before "ORIGINAL_RACE_CONTENT\x00\x00\x00"
+    after  "SPEC_MUTATION_CONTENT\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 95] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+
+[review 96 BEGIN]
+[speculation 96] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  20 changed bytes; offsets 0..20; preview at 0:
+    before "AFTER_COMMITN_CONTENT\x00\x00\x00"
+    after  "PART1_BYTESA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_part (12 bytes)
+  8 changed bytes; offsets 32..40; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_part\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 12; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0c\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 113. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 96] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+
+[review 97 BEGIN]
+[speculation 97] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 124. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 97] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+
+[review 100 BEGIN]
+[speculation 100] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  10 changed bytes; offsets 0..11; preview at 0:
+    before "PART1_BYTESA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "REUSE_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 100] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 101 BEGIN]
+[speculation 101] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 101] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 102 BEGIN]
+[speculation 102] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 102] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 103 BEGIN]
+[speculation 103] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 103] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 104 BEGIN]
+[speculation 104] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 104] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 105 BEGIN]
+[speculation 105] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 105] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 106 BEGIN]
+[speculation 106] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 106] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 107 BEGIN]
+[speculation 107] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 107] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 108 BEGIN]
+[speculation 108] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 108] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 109 BEGIN]
+[speculation 109] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 109] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 110 BEGIN]
+[speculation 110] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 110] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 111 BEGIN]
+[speculation 111] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 111] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 112 BEGIN]
+[speculation 112] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 112] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 113 BEGIN]
+[speculation 113] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 113] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 114 BEGIN]
+[speculation 114] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_stress (10 bytes)
+  10 changed bytes; offsets 32..42; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_stress\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 10; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0a\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 114] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+
+[review 131 BEGIN]
+[speculation 131] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  9 changed bytes; offsets 0..9; preview at 0:
+    before "BASE_CONTENT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 131] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec B commits first
+
+[review 130 BEGIN]
+[speculation 130] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  10 changed bytes; offsets 0..10; preview at 0:
+    before "BASE_CONTENT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "SPEC_A_DATAT_0000\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 26. Held external-pipe storage bytes (includes record headers): 31. Payloads remain hidden until durable commit.
+[approval 130] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+
+[review 132 BEGIN]
+[speculation 132] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p0 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 132] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 134 BEGIN]
+[speculation 134] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p2 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p2\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 134] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 133 BEGIN]
+[speculation 133] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p1 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 133] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 135 BEGIN]
+[speculation 135] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1547: file inode 34 at offset 0
+  16 changed bytes; offsets 0..16; preview at 0:
+    before "SPEC_B_WINNT_0000\x00\x00\x00\x00\x00\x00\x00"
+    after  "CONCURRENT_DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 193..193; preview at 193:
+    before "\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1508: directory inode 1 at offset 512
+  create cf_p3 (15 bytes)
+  6 changed bytes; offsets 32..38; preview at 32:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x22\x00cf_p3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 34 created; type 0 -> 2; size 0 -> 15; links 0 -> 1
+  5 changed bytes; offsets 128..141; preview at 128:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0f\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 135] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONE83560e4e
+$

@@ -1,0 +1,220 @@
+
+===== HARNESS: crash point 1 (before any log block is written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE9fb659ec
+NSSETUP OK
+TESTDONE9fb659ec
+$ spnamespace crash 1
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  7 changed bytes; offsets 0..6; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "private\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  create nnew (7 bytes)
+  11 changed bytes; offsets 48..69; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 2 -> 0; size 8 -> 0; links 1 -> 0
+  inode 36 created; type 0 -> 2; size 0 -> 7; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC CRASH POINT 1
+lapicid 0: panic: spec crash point
+===== HARNESS: guest halted at crash point 1; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify old; echo TESTDONE42df3427
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONE42df3427
+$
+===== HARNESS: PASS crash point 1: recovered complete old state =====
+
+===== HARNESS: crash point 2 (log blocks written, commit record (log header) not written); expect complete old state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE4fc593bc
+NSSETUP OK
+TESTDONE4fc593bc
+$ spnamespace crash 2
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  7 changed bytes; offsets 0..6; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "private\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  create nnew (7 bytes)
+  11 changed bytes; offsets 48..69; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 2 -> 0; size 8 -> 0; links 1 -> 0
+  inode 36 created; type 0 -> 2; size 0 -> 7; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC CRASH POINT 2
+lapicid 0: panic: spec crash point (
+===== HARNESS: guest halted at crash point 2; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify old; echo TESTDONE670b9007
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONE670b9007
+$
+===== HARNESS: PASS crash point 2: recovered complete old state =====
+
+===== HARNESS: crash point 3 (commit record written, nothing installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONE49cf44fb
+NSSETUP OK
+TESTDONE49cf44fb
+$ spnamespace crash 3
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  7 changed bytes; offsets 0..6; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "private\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  create nnew (7 bytes)
+  11 changed bytes; offsets 48..69; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 2 -> 0; size 8 -> 0; links 1 -> 0
+  inode 36 created; type 0 -> 2; size 0 -> 7; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC CRASH POINT 3
+lapicid 0: panic: spec crash point (t
+===== HARNESS: guest halted at crash point 3; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify new; echo TESTDONEae7477b4
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONEae7477b4
+$
+===== HARNESS: PASS crash point 3: recovered complete new state =====
+
+===== HARNESS: crash point 4 (first of three blocks installed home); expect complete new state =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashsetup; echo TESTDONEa983551a
+NSSETUP OK
+TESTDONEa983551a
+$ spnamespace crash 4
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 36 at offset 0
+  7 changed bytes; offsets 0..6; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "private\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  delete nbase
+  create nnew (7 bytes)
+  11 changed bytes; offsets 48..69; preview at 48:
+    before "#\x00nbase\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00$\x00nnew\x00\x00"
+Block 36: inode metadata
+  inode 35 freed; type 2 -> 0; size 8 -> 0; links 1 -> 0
+  inode 36 created; type 0 -> 2; size 0 -> 7; links 0 -> 1
+  10 changed bytes; offsets 192..269; preview at 192:
+    before "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC CRASH POINT 4
+lapicid 0: panic: spec crash point
+===== HARNESS: guest halted at crash point 4; caller received a reply: no =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spnamespace crashverify new; echo TESTDONE3e655288
+PASS: recovered whole namespace and contents
+PASS: allocator remains usable after recovery
+NSVERIFY OK
+TESTDONE3e655288
+$
+===== HARNESS: PASS crash point 4: recovered complete new state =====

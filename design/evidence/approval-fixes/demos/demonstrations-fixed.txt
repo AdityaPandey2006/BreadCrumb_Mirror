@@ -1,0 +1,229 @@
+Step 10 demonstrations: externalization barriers for speculative processes
+build: /home/ancientmachine/qemu/xv6-public  (disposable image copy; dummy files under /demo)
+$ mkdir /demo
+$ echo The server handled 100 requests. Five failed. > /demo/report.txt
+$ echo Original important data. > /demo/important.txt
+$ echo original a > /demo/a.txt
+$ echo public version > /demo/a2.txt
+
+========================================================================
+1. Ordinary execution: effects are immediate and persistent
+========================================================================
+No speculation: the write and the deletion are visible at once and cannot be withdrawn.
+$ echo ORDINARY_NOTE > /demo/note.txt
+$ cat /demo/note.txt
+    ORDINARY_NOTE
+  [PASS] ordinary write visible immediately
+$ rm /demo/note.txt
+$ cat /demo/note.txt
+    cat: cannot open /demo/note.txt
+  [PASS] ordinary deletion is immediate; nothing can undo it
+
+========================================================================
+2. Speculative changes stay private while the attempt is live
+========================================================================
+specrun runs in the background: it creates draft.txt, prints a line, then pauses 3 s before committing. An ordinary shell looks in the meantime.
+$ ls /demo
+    .              1 34 112
+    ..             1 1 1024
+    report.txt     2 35 46
+    important.txt  2 36 25
+    a.txt          2 37 11
+    a2.txt         2 38 15
+$ cat /demo/draft.txt
+    cat: cannot open /demo/draft.txt
+  [PASS] outside the speculation draft.txt does not exist yet
+  [PASS] the speculation's console line is held, not printed
+    (background) [review 1 BEGIN] | [speculation 1] specrun requested review | Kernel change report (saved original -> private): | Block 1552: file inode 39 at offset 0 |   12 changed bytes; offsets 0..12; preview at 0: |     before "ORDINARY_NOTE\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  "PRIVATE_DRAFT\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Block 58: allocation bitmap |   1 changed bytes; offsets 194..194; preview at 194: |     before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Block 1547: directory inode 34 at offset 0 |   create draft.txt (14 bytes) |   10 changed bytes; offsets 96..106; preview at 96: |     before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  "'\x00draft.txt\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Block 36: inode metadata |   inode 39 created; type 0 -> 2; size 0 -> 14; links 0 -> 1 |   5 changed bytes; offsets 448..461; preview at 448: |     before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0e\x00\x00\x00\x10\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes. | Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit. | [approval 1] commit? [y/n] y | HELD_LINE_2
+  [PASS] held line released when the attempt committed
+$ cat /demo/draft.txt
+    catzombie !
+    /demo/draft.txt; echo DONE597f5099ba
+    PRIVATE_DRAFT
+  [PASS] after commit the draft is public
+
+========================================================================
+3. Abort: original state preserved, pending output suppressed
+========================================================================
+The handout's case: a speculative child removes a, writes hi into b and prints, then aborts.
+$ specrun abort rm,/demo/a.txt echo,hi,into,/demo/b.txt echo,ABORT_SECRET_LINE
+    SPECRUN: aborted: private changes and held output discarded
+  [PASS] speculation aborted
+$ cat /demo/a.txt
+    original a
+  [PASS] a.txt still exists with its original contents
+$ cat /demo/b.txt
+    cat: cannot open /demo/b.txt
+  [PASS] b.txt was never created publicly
+
+========================================================================
+4. Commit: filesystem changes published, then output released
+========================================================================
+Same steps with commit. Output is released only after the commit record is durable (D37).
+$ specrun commit rm,/demo/a.txt echo,hi,into,/demo/b.txt echo,COMMIT_LINE
+    [review 3 BEGIN]
+    [speculation 3] specrun requested review
+    Kernel change report (saved original -> private):
+    Block 1550: file inode 37 at offset 0
+      11 changed bytes; offsets 0..10; preview at 0:
+        before "original a\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "hi\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    Block 36: inode metadata
+      inode 37 modified; type 2 -> 2; size 11 -> 3; links 1 -> 1
+      1 changed bytes; offsets 328..328; preview at 328:
+        before "\x0b\x00\x00\x00\x0e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\x03\x00\x00\x00\x0e\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    Block 1547: directory inode 34 at offset 0
+      delete a.txt
+      create b.txt (3 bytes)
+      1 changed bytes; offsets 66..66; preview at 66:
+        before "a.txt\x00\x00\x00\x00\x00\x00\x00\x00\x00&\x00a2.txt\x00\x00"
+        after  "b.txt\x00\x00\x00\x00\x00\x00\x00\x00\x00&\x00a2.txt\x00\x00"
+    Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+    Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+    [approval 3] commit? [y/n] y
+    COMMIT_LINE
+    SPECRUN: committed: changes published; held output released above
+  [PASS] held output appears when xcommit completes, before specrun's own report
+$ cat /demo/a.txt
+    cat: cannot open /demo/a.txt
+  [PASS] a.txt removed
+$ cat /demo/b.txt
+    hi
+  [PASS] b.txt created with hi
+
+========================================================================
+5. Internal pipe keeps working inside a speculation
+========================================================================
+cat and wc are both members; the pipe between them is internal, so bytes flow at once (no deadlock); only the final console output is held until commit.
+$ cat /demo/report.txt | wc
+    1 7 46
+$ specrun commit cat,/demo/report.txt,pipe,wc
+    [review 4 BEGIN]
+    [speculation 4] specrun requested review
+    Kernel change report (saved original -> private):
+    No filesystem block changes.
+    Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+    Held console bytes: 8. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+    [approval 4] commit? [y/n] y
+    1 7 46
+    SPECRUN: committed: changes published; held output released above
+  [PASS] speculative pipeline gives the same counts as the ordinary pipeline
+
+========================================================================
+6a. Capacity limit follows the documented policy (D22/D25, R01)
+========================================================================
+Copying a ~60 KiB binary into a new file inside a speculation: the eight-block cap (shared data and metadata) makes the write short. Nothing spills to the public disk; the program sees the short write (cat reports an error).
+$ specrun abort cat,/usertests,into,/demo/big.bin
+    SPECRUN: aborted: private changes and held output discarded
+$ cat /demo/big.bin
+    cat: cannot open /demo/big.bin
+  [PASS] aborted oversized attempt left no file
+$ specrun commit cat,/usertests,into,/demo/big.bin
+    [review 6 BEGIN]
+    [speculation 6] specrun requested review
+    Kernel change report (saved original -> private):
+    Block 1556: file inode 40 at offset 1536
+      350 changed bytes; offsets 0..509; preview at 0:
+        before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\xd0\x07\x00\x00\x0f\x85\x94\x00\x00\x00\x83\xec\x08h1?\x00\x00\xff58^\x00\x00"
+    Block 1555: file inode 40 at offset 1024
+      365 changed bytes; offsets 1..511; preview at 1:
+        before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\xe8\x9d5\x00\x00\x83\xc4\x10\x85\xc0uV\xe8I5\x00\x00\x83\xec\x08h >\x00"
+    Block 1554: file inode 40 at offset 512
+      356 changed bytes; offsets 2..510; preview at 2:
+        before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\x83\xc4\x10\x85\xc0x/\x83\xec\x08h$>\x00\x00\xff58^\x00\x00\xe8\xb48"
+    Block 1553: file inode 40 at offset 0
+      297 changed bytes; offsets 0..511; preview at 0:
+        before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x03\x00\x01\x00\x00\x00"
+    Block 58: allocation bitmap
+      1 changed bytes; offsets 194..194; preview at 194:
+        before "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    Block 36: inode metadata
+      inode 34 modified; type 1 -> 1; size 112 -> 128; links 1 -> 1
+      1 changed bytes; offsets 136..136; preview at 136:
+        before "p\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\x80\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    Block 1547: directory inode 34 at offset 0
+      create big.bin (2048 bytes)
+      8 changed bytes; offsets 112..120; preview at 112:
+        before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "(\x00big.bin\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    Block 37: inode metadata
+      inode 40 created; type 0 -> 2; size 0 -> 2048; links 0 -> 1
+      11 changed bytes; offsets 0..25; preview at 0:
+        before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\x02\x00\x00\x00\x00\x00\x01\x00\x00\x08\x00\x00\x11\x06\x00\x00\x12\x06\x00\x00\x13\x06\x00\x00"
+    Changed blocks: 8. Every changed block listed; byte previews limited to 24 bytes.
+    Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+    [approval 6] commit? [y/n] y
+    SPECRUN: committed: changes published; held output released above
+$ ls /demo/big.bin
+    big.bin        2 40 2048
+  [PASS] commit published only the prefix fitting the full 8-block cap (got 2048 bytes)
+  Policy note: committing after a short write publishes the written prefix (D25); a careful program checks the count and aborts instead.
+
+========================================================================
+6b. Conflict: first committer wins (D24/D45)
+========================================================================
+A background speculation creates c.txt and pauses; meanwhile an ordinary process creates its own c.txt. The outside change is published first, so the speculation's commit is refused and it aborts. Nothing of the losing attempt is published.
+$ echo OUTSIDE_VERSION > /demo/c.txt
+    (background) [review 7 BEGIN] | [speculation 7] specrun requested review | Kernel change report (saved original -> private): | Block 1557: file inode 41 at offset 0 |   13 changed bytes; offsets 0..12; preview at 0: |     before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  "SPEC_VERSION\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Block 58: allocation bitmap |   1 changed bytes; offsets 194..194; preview at 194: |     before "\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  "?\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Block 36: inode metadata |   inode 34 modified; type 1 -> 1; size 128 -> 144; links 1 -> 1 |   1 changed bytes; offsets 136..136; preview at 136: |     before "\x80\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  "\x90\x00\x00\x00\x0b\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Block 1547: directory inode 34 at offset 0 |   create c.txt (13 bytes) |   6 changed bytes; offsets 128..134; preview at 128: |     before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  ")\x00c.txt\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Block 37: inode metadata |   inode 41 created; type 0 -> 2; size 0 -> 13; links 0 -> 1 |   5 changed bytes; offsets 64..77; preview at 64: |     before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" |     after  "\x02\x00\x00\x00\x00\x00\x01\x00\x0d\x00\x00\x00\x15\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" | Changed blocks: 5. Every changed block listed; byte previews limited to 24 bytes. | Held console bytes: 11. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit. | [approval 7] commit? [y/n] y
+  [PASS] loser's held output was discarded
+$ cat /demo/c.txt
+    catzombie!
+     /demo/c.txt; echo DONE31efcf005c
+    OUTSIDE_VERSION
+  [PASS] public c.txt is the outside version
+
+========================================================================
+6c. Outside write to a privately copied block is refused (D20)
+========================================================================
+A speculation overwrites a2.txt and pauses; an ordinary write to the same block is refused (the shell's echo ignores the error), and the speculation then commits.
+$ echo OUTSIDER > /demo/a2.txt
+$ cat /demo/a2.txt
+    public version
+  [PASS] outside write had no effect while the copy exists
+$ cat /demo/a2.txt
+    cat zomb/ie!
+    demo/a2.txt; echo DONE8d34b5fdab
+    SPEC_A2
+    ersion
+  [PASS] speculation committed its version
+
+========================================================================
+7. What the barrier does NOT do
+========================================================================
+The rule-based agent's injected deletion is contained only because the caller's guard decides to abort (see: python3 agent/agent.py demo speculative). The kernel does not recognise malicious instructions; an owner that commits a harmful attempt publishes it.
+$ specrun commit rm,/demo/important.txt echo,INJECTED_AND_COMMITTED
+    [review 9 BEGIN]
+    [speculation 9] specrun requested review
+    Kernel change report (saved original -> private):
+    Block 58: allocation bitmap
+      1 changed bytes; offsets 193..193; preview at 193:
+        before "\xff_\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\xdf_\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    Block 36: inode metadata
+      inode 36 freed; type 2 -> 0; size 25 -> 0; links 1 -> 0
+      5 changed bytes; offsets 256..269; preview at 256:
+        before "\x02\x00\x00\x00\x00\x00\x01\x00\x19\x00\x00\x00\x0d\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    Block 1547: directory inode 34 at offset 0
+      delete important.txt
+      14 changed bytes; offsets 48..62; preview at 48:
+        before "$\x00important.txt\x00%\x00b.txt\x00"
+        after  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00%\x00b.txt\x00"
+    Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+    Held console bytes: 23. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+    [approval 9] commit? [y/n] y
+    INJECTED_AND_COMMITTED
+    SPECRUN: committed: changes published; held output released above
+$ cat /demo/important.txt
+    cat: cannot open /demo/important.txt
+  [PASS] an unguarded commit publishes the injected deletion: containment is not detection
+
+All 20 demonstration checks passed.

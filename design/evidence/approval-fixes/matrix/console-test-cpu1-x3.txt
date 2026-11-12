@@ -1,0 +1,276 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spconsoletest; echo TESTDONE90640e64
+SPCONSOLETEST: START
+BEGIN TEST_COMMIT
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 40. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC_COMMIT_MSG_FD1
+SPEC_COMMIT_MSG_FD2
+END TEST_COMMIT
+BEGIN TEST_ABORT
+END TEST_ABORT
+BEGIN TEST_KILL
+END TEST_KILL
+BEGIN TEST_CHILD_SHARE
+
+[review 4 BEGIN]
+[speculation 4] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 35. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 4] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PARENT_START-CHILD_PART-PARENT_END
+END TEST_CHILD_SHARE
+BEGIN TEST_DUP
+
+[review 5 BEGIN]
+[speculation 5] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 29. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 5] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+DUP_WRITE_MSG-OPEN_WRITE_MSG
+END TEST_DUP
+BEGIN TEST_EMPTY_COMMIT
+
+[review 6 BEGIN]
+[speculation 6] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 20. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 6] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+EMPTY_COMMIT_OUTPUT
+END TEST_EMPTY_COMMIT
+BEGIN TEST_OVERFLOW
+END TEST_OVERFLOW
+BEGIN TEST_DURABLE_ORDER
+
+[review 8 BEGIN]
+[speculation 8] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  8 changed bytes; offsets 0..7; preview at 0:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "DURABLE!\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create durable_test.t (8 bytes)
+  15 changed bytes; offsets 48..63; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00durable_test.t\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 8; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 4. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 25. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 8] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+CONSOLE_AFTER_FS_DURABLE
+END TEST_DURABLE_ORDER
+SPCONSOLETEST: ALL TESTS PASSED
+TESTDONE90640e64
+$ spconsoletest; echo TESTDONEbe416de1
+SPCONSOLETEST: START
+BEGIN TEST_COMMIT
+
+[review 9 BEGIN]
+[speculation 9] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 40. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 9] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC_COMMIT_MSG_FD1
+SPEC_COMMIT_MSG_FD2
+END TEST_COMMIT
+BEGIN TEST_ABORT
+END TEST_ABORT
+BEGIN TEST_KILL
+END TEST_KILL
+BEGIN TEST_CHILD_SHARE
+
+[review 12 BEGIN]
+[speculation 12] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 35. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 12] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PARENT_START-CHILD_PART-PARENT_END
+END TEST_CHILD_SHARE
+BEGIN TEST_DUP
+
+[review 13 BEGIN]
+[speculation 13] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 29. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 13] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+DUP_WRITE_MSG-OPEN_WRITE_MSG
+END TEST_DUP
+BEGIN TEST_EMPTY_COMMIT
+
+[review 14 BEGIN]
+[speculation 14] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 20. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 14] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+EMPTY_COMMIT_OUTPUT
+END TEST_EMPTY_COMMIT
+BEGIN TEST_OVERFLOW
+END TEST_OVERFLOW
+BEGIN TEST_DURABLE_ORDER
+
+[review 16 BEGIN]
+[speculation 16] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create durable_test.t (8 bytes)
+  15 changed bytes; offsets 48..63; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00durable_test.t\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 8; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 25. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 16] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+CONSOLE_AFTER_FS_DURABLE
+END TEST_DURABLE_ORDER
+SPCONSOLETEST: ALL TESTS PASSED
+TESTDONEbe416de1
+$ spconsoletest; echo TESTDONEa75e16b1
+SPCONSOLETEST: START
+BEGIN TEST_COMMIT
+
+[review 17 BEGIN]
+[speculation 17] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 40. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 17] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+SPEC_COMMIT_MSG_FD1
+SPEC_COMMIT_MSG_FD2
+END TEST_COMMIT
+BEGIN TEST_ABORT
+END TEST_ABORT
+BEGIN TEST_KILL
+END TEST_KILL
+BEGIN TEST_CHILD_SHARE
+
+[review 20 BEGIN]
+[speculation 20] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 35. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 20] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PARENT_START-CHILD_PART-PARENT_END
+END TEST_CHILD_SHARE
+BEGIN TEST_DUP
+
+[review 21 BEGIN]
+[speculation 21] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 29. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 21] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+DUP_WRITE_MSG-OPEN_WRITE_MSG
+END TEST_DUP
+BEGIN TEST_EMPTY_COMMIT
+
+[review 22 BEGIN]
+[speculation 22] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 20. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 22] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+EMPTY_COMMIT_OUTPUT
+END TEST_EMPTY_COMMIT
+BEGIN TEST_OVERFLOW
+END TEST_OVERFLOW
+BEGIN TEST_DURABLE_ORDER
+
+[review 24 BEGIN]
+[speculation 24] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create durable_test.t (8 bytes)
+  15 changed bytes; offsets 48..63; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00durable_test.t\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 8; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x08\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 25. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 24] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+CONSOLE_AFTER_FS_DURABLE
+END TEST_DURABLE_ORDER
+SPCONSOLETEST: ALL TESTS PASSED
+TESTDONEa75e16b1
+$

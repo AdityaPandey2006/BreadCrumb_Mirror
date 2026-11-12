@@ -1,0 +1,161 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ sppipetest; echo TESTDONEfd4e5bfe
+SPPIPETEST: STARTING ALL TESTS
+BEGIN TEST_INTERNAL_PIPELINE
+
+[review 1 BEGIN]
+[speculation 1] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+END TEST_INTERNAL_PIPELINE
+BEGIN TEST_EXTERNAL_COMMIT
+
+[review 2 BEGIN]
+[speculation 2] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 41. Payloads remain hidden until durable commit.
+[approval 2] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+COMMITTED: SPEC_PIPE_COMMIT_MSG
+END TEST_EXTERNAL_COMMIT
+BEGIN TEST_EXTERNAL_ABORT
+END TEST_EXTERNAL_ABORT
+BEGIN TEST_EXTERNAL_KILL
+END TEST_EXTERNAL_KILL
+BEGIN TEST_CHILD_WRITER_OWNER_COMMIT
+
+[review 5 BEGIN]
+[speculation 5] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 5] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+DELIVERED: CHILD_EXTERNAL_PIPE_MSG-OWNER_EXTERNAL_PIPE_MSG
+END TEST_CHILD_WRITER_OWNER_COMMIT
+BEGIN TEST_OVERFLOW
+END TEST_OVERFLOW
+BEGIN TEST_BROKEN_PIPE
+END TEST_BROKEN_PIPE
+BEGIN TEST_ORDINARY
+END TEST_ORDINARY
+SPPIPETEST: ALL TESTS PASSED
+TESTDONEfd4e5bfe
+$ sppipetest; echo TESTDONE5e6145c5
+SPPIPETEST: STARTING ALL TESTS
+BEGIN TEST_INTERNAL_PIPELINE
+
+[review 8 BEGIN]
+[speculation 8] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 8] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+END TEST_INTERNAL_PIPELINE
+BEGIN TEST_EXTERNAL_COMMIT
+
+[review 9 BEGIN]
+[speculation 9] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 41. Payloads remain hidden until durable commit.
+[approval 9] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+COMMITTED: SPEC_PIPE_COMMIT_MSG
+END TEST_EXTERNAL_COMMIT
+BEGIN TEST_EXTERNAL_ABORT
+END TEST_EXTERNAL_ABORT
+BEGIN TEST_EXTERNAL_KILL
+END TEST_EXTERNAL_KILL
+BEGIN TEST_CHILD_WRITER_OWNER_COMMIT
+
+[review 12 BEGIN]
+[speculation 12] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 12] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+DELIVERED: CHILD_EXTERNAL_PIPE_MSG-OWNER_EXTERNAL_PIPE_MSG
+END TEST_CHILD_WRITER_OWNER_COMMIT
+BEGIN TEST_OVERFLOW
+END TEST_OVERFLOW
+BEGIN TEST_BROKEN_PIPE
+END TEST_BROKEN_PIPE
+BEGIN TEST_ORDINARY
+END TEST_ORDINARY
+SPPIPETEST: ALL TESTS PASSED
+TESTDONE5e6145c5
+$ sppipetest; echo TESTDONEee9e9c39
+SPPIPETEST: STARTING ALL TESTS
+BEGIN TEST_INTERNAL_PIPELINE
+
+[review 15 BEGIN]
+[speculation 15] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 15] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+END TEST_INTERNAL_PIPELINE
+BEGIN TEST_EXTERNAL_COMMIT
+
+[review 16 BEGIN]
+[speculation 16] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 41. Payloads remain hidden until durable commit.
+[approval 16] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+COMMITTED: SPEC_PIPE_COMMIT_MSG
+END TEST_EXTERNAL_COMMIT
+BEGIN TEST_EXTERNAL_ABORT
+END TEST_EXTERNAL_ABORT
+BEGIN TEST_EXTERNAL_KILL
+END TEST_EXTERNAL_KILL
+BEGIN TEST_CHILD_WRITER_OWNER_COMMIT
+
+[review 19 BEGIN]
+[speculation 19] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 19] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+DELIVERED: CHILD_EXTERNAL_PIPE_MSG-OWNER_EXTERNAL_PIPE_MSG
+END TEST_CHILD_WRITER_OWNER_COMMIT
+BEGIN TEST_OVERFLOW
+END TEST_OVERFLOW
+BEGIN TEST_BROKEN_PIPE
+END TEST_BROKEN_PIPE
+BEGIN TEST_ORDINARY
+END TEST_ORDINARY
+SPPIPETEST: ALL TESTS PASSED
+TESTDONEee9e9c39
+$

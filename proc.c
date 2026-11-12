@@ -292,7 +292,7 @@ spec_complete(int commit)
     return -1;
   }
   // D63: once the owner has asked, only a "yes" answer can be committed.
-  if(commit && sc->asked && !sc->approved){
+  if(commit && (!sc->asked || !sc->approved)){
     release(&ptable.lock);
     fs_leave();
     return -1;
@@ -410,6 +410,19 @@ spec_current(void)
 int
 spec_commit(void)
 {
+  struct proc *p = myproc();
+  struct spec_context *sc;
+  int ask = 0;
+  acquire(&ptable.lock);
+  sc = spec_lookup_locked(p->spec);
+  if(sc && sc->state == SPEC_ACTIVE && sc->owner_pid == p->pid &&
+     sc->members == 1 && sc->refs == 1 && !sc->abort_only && !sc->asked && !p->killed)
+    ask = 1;
+  release(&ptable.lock);
+  // Old callers cannot bypass approval: an eligible direct commit opens the
+  // same review exchange. No answer is ever manufactured by the kernel.
+  if(ask && spec_ask("commit requested by owner") != 1)
+    return -1;
   return spec_complete(1);
 }
 
@@ -432,29 +445,40 @@ spec_ask(char *msg)
 {
   struct proc *p = myproc();
   struct spec_context *sc;
+  char *report;
   int r;
 
-  if(strlen(msg) > XASK_MAX)
+  if(strlen(msg) > XASK_MAX || (report = kalloc()) == 0)
     return -1;
+  fs_enter();
   acquire(&ptable.lock);
-  if(p->spec == 0 || p->killed || p->spec_frozen){
-    release(&ptable.lock);
-    return -1;
-  }
   sc = spec_lookup_locked(p->spec);
-  if(sc == 0 || sc->state != SPEC_ACTIVE || sc->owner_pid != p->pid ||
-     sc->members != 1 || sc->refs != 1 || sc->abort_only || sc->asked){
+  if(p->killed || p->spec_frozen || sc == 0 || sc->state != SPEC_ACTIVE ||
+     sc->owner_pid != p->pid || sc->members != 1 || sc->refs != 1 ||
+     sc->abort_only || sc->asked){
     release(&ptable.lock);
+    fs_leave(); kfree(report);
     return -1;
   }
-  p->spec_frozen = 1;      // before printing: what is shown is what commits
+  release(&ptable.lock);
+  // Sole participant and refs==1: no context operation can run concurrently.
+  // Build from existing original/private block images under the view gate.
+  // Report/allocation failure leaves the attempt unchanged and unapproved.
+  r = shadow_report(sc, report, PGSIZE);
+  acquire(&ptable.lock);
+  if(r < 0 || p->killed){
+    release(&ptable.lock);
+    fs_leave(); kfree(report);
+    return -1;
+  }
+  p->spec_frozen = 1;
   sc->asked = 1;
   sc->approved = 0;
   release(&ptable.lock);
+  fs_leave();
 
-  // sc stays valid: the owner is a member, and a frozen owner cannot fork.
-  r = console_ask(sc->id, msg);
-
+  r = console_ask(sc->id, msg, report);
+  kfree(report);
   acquire(&ptable.lock);
   if(r == 1 && sc->state == SPEC_ACTIVE && !p->killed)
     sc->approved = 1;

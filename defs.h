@@ -37,7 +37,7 @@ void            cprintf(char*, ...);
 void            consoleintr(int(*)(void));
 void            panic(char*) __attribute__((noreturn));
 int             spec_console_write(int, char*, int);
-int             console_ask(int, char*);
+int             console_ask(int, char*, char*);
 void            spec_console_take(struct spec_context*, char**, uint*);
 void            spec_console_emit(char*, uint);
 void            spec_console_discard(struct spec_context*);
@@ -171,6 +171,7 @@ int             shadow_inode_busy(uint, uint);
 #define SP_CONFLICT    (-2) // D24: a public block changed since it was copied
 #define SP_KILLED      (-3) // D23: owner killed before the point of no return
 int             shadow_publish(struct spec_context*);
+int             shadow_report(struct spec_context*, char*, int);
 int             shadow_count(struct spec_context*);
 void            shadow_discard(struct spec_context*);
 #define SH_META 0xffffffffU

@@ -1,0 +1,8 @@
+test_benchmark_attempt_outcomes_are_mutually_exclusive (test_step10_tools.Step10ToolTests.test_benchmark_attempt_outcomes_are_mutually_exclusive) ... ok
+test_matrix_exit_status_tracks_failed_runs (test_step10_tools.Step10ToolTests.test_matrix_exit_status_tracks_failed_runs) ... ok
+test_original_baseline_hash_covers_final_sources (test_step10_tools.Step10ToolTests.test_original_baseline_hash_covers_final_sources) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.350s
+
+OK

@@ -53,6 +53,8 @@ def assert_no_leaks(out):
             raise RuntimeError(f"FAIL: leak detected: {token} appeared in guest output")
 
 
+APPROVAL_PROMPT = rb"(?:^|\n)\[approval [1-9][0-9]*\] commit\? \[y/n\] "
+
 class Guest:
     """One QEMU boot of the images in `folder`, logging all serial output."""
 
@@ -71,14 +73,22 @@ class Guest:
     def until(self, pattern, timeout=180):
         return self.until_match(pattern, timeout)[0]
 
-    def until_match(self, pattern, timeout=180):
+    def until_match(self, pattern, timeout=180, auto_approve=True):
         deadline = time.monotonic() + timeout
+        collected = b""
         while True:
             match = re.search(pattern, self.pending)
+            approval = re.search(APPROVAL_PROMPT, self.pending) if auto_approve else None
+            if approval and (not match or approval.start() < match.start()):
+                collected += self.pending[:approval.end()]
+                self.pending = self.pending[approval.end():]
+                self.log.write(b"\n===== HARNESS: explicit scripted approval y =====\n")
+                self.type("y")
+                continue
             if match:
                 out = self.pending[:match.start()]
                 self.pending = self.pending[match.end():]
-                return out.decode(errors="replace"), match.group(0)
+                return (collected + out).decode(errors="replace"), match.group(0)
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeError(f"Guest timeout; inspect {self.logpath}")
@@ -118,10 +128,10 @@ class Guest:
         """
         marker = "TESTDONE" + uuid.uuid4().hex[:8]
         self.type(f"{command}; echo {marker}")
-        pattern = rb"commit\? \[y/n\] |(?:^|\n)" + marker.encode() + rb"\r?\n"
+        pattern = APPROVAL_PROMPT + rb"|(?:^|\n)" + marker.encode() + rb"\r?\n"
         output, asked = "", []
         while True:
-            out, hit = self.until_match(pattern, timeout=self.timeout)
+            out, hit = self.until_match(pattern, timeout=self.timeout, auto_approve=False)
             output += out
             if marker.encode() in hit:
                 break
@@ -159,7 +169,7 @@ class Guest:
 
 def strip_prompts(text):
     """Remove single-line xask prompts (printed atomically by the kernel)."""
-    return re.sub(r"\r?\n\[speculation \d+\] [^\r\n]*\r?\ncommit\? \[y/n\] ", "", text)
+    return re.sub(r"\r?\n\[review (\d+) BEGIN\]\r?\n.*?\[approval \1\] commit\? \[y/n\] ", "", text, flags=re.S)
 
 
 def note(log, text):
@@ -262,12 +272,12 @@ def ask_suite(guest):
     """D63: owner approval prompt, answered from the host like a human would."""
     out, asked = guest.run_answering("spasktest", {"ASKTEST A": "y", "ASKTEST B": "n",
                                                    "ASKTEST C": ("y", "RIVAL_COMMITTED"),
-                                                   "ASKTEST E": None},
+                                                   "ASKTEST E": None, "commit requested by owner": "y"},
                                      "SPASKTEST: ALL TESTS PASSED")
     for token in ASK_LEAKS:
         if token in out:
             raise RuntimeError(f"FAIL: {token} appeared in guest output")
-    if [q for q, _ in asked][:3] != ["ASKTEST A", "ASKTEST B", "ASKTEST C"]:
+    if [q for q, _ in asked if q.startswith("ASKTEST")][:3] != ["ASKTEST A", "ASKTEST B", "ASKTEST C"]:
         raise RuntimeError(f"FAIL: unexpected prompts {asked}")
     # C: the yes was typed after the rival's commit, and the commit still failed.
     plain = strip_prompts(out)
@@ -282,9 +292,9 @@ def ask_suite(guest):
     # specrun ask: the summary describes the private changes; y publishes.
     guest.run("echo keep > askG", "")
     out, asked = guest.run_answering("specrun ask echo,hi,into,askF rm,askG echo,HELD_SPECRUN_Y",
-                                     {"proposed changes": "y"}, "committed")
+                                     {"specrun requested review": "y"}, "committed")
     question = asked[0][0] if asked else ""
-    body = out.split("proposed changes", 1)[-1]
+    body = out.split("Kernel change report", 1)[-1]
     for needle in ("create askF (3 bytes)", "delete askG"):
         if needle not in body.split("commit? [y/n]")[0]:
             raise RuntimeError(f"FAIL: summary lacks '{needle}': {question!r}")
@@ -299,12 +309,59 @@ def ask_suite(guest):
     # n discards: file kept, held output never shown (only the echoed command line).
     guest.run("echo keep > askG", "")
     out, _ = guest.run_answering("specrun ask rm,askG echo,LEAK_SPECRUN_N",
-                                 {"proposed changes": "n"}, "aborted by user")
+                                 {"specrun requested review": "n"}, "aborted by user")
     if out.count("LEAK_SPECRUN_N") != 1:
         raise RuntimeError("FAIL: held output of a rejected attempt was released")
     guest.run("cat askG", "keep")
     guest.run("rm askF", "")
     guest.run("rm askG", "")
+
+
+def approval_suite(guest):
+    # The recorded yes/no belongs to each labelled request, not another owner.
+    out, asked = guest.run_answering("spapproval", {"PAIR_A": "y", "PAIR_B": "n"}, "PAIR_DONE")
+    if len(asked) != 2 or "A_RESULT_1" not in strip_prompts(out) or "B_RESULT_0" not in strip_prompts(out):
+        raise RuntimeError("approval answers crossed between owners")
+    if "HELD_PAIR_B" in out:
+        raise RuntimeError("rejected owner's output leaked")
+    out, _ = guest.run_answering("spapproval kill", {"PAIR_A": None, "PAIR_B": "y"}, "PAIR_DONE")
+    if "B_RESULT_1" not in strip_prompts(out) or "HELD_PAIR_A" in out:
+        raise RuntimeError("killed approval owner did not release the channel cleanly")
+
+    # A competing ordinary read must not steal the answer. Its own input is
+    # sent only AFTER the owner has successfully received yes and committed.
+    marker = "READDONE" + uuid.uuid4().hex[:8]
+    guest.type(f"spapproval reader; echo {marker}")
+    out, _ = guest.until_match(APPROVAL_PROMPT, auto_approve=False)
+    guest.type("y")
+    out += guest.until(rb"READ_OWNER_OK\r?\n") + "READ_OWNER_OK\n"
+    guest.type("z")
+    out += guest.until(rb"(?:^|\n)"+marker.encode()+rb"\r?\n")
+    guest.until(rb"\$ ")
+    if "READER_Z_OK" not in out or "FAIL:" in out:
+        raise RuntimeError("ordinary reader stole the approval answer")
+
+    guest.run("echo OLD > same", "")
+    out, _ = guest.run_answering("specrun ask echo,NEW,into,same", {"specrun requested review": "y"}, "committed")
+    report = out.split("Kernel change report",1)[-1].split("commit? [y/n]",1)[0]
+    if "before" not in report or "OLD" not in report or "NEW" not in report:
+        raise RuntimeError("same-size rewrite missing from kernel report")
+    guest.run("cat same", "NEW")
+    guest.run("rm same", "")
+
+    out, _ = guest.run_answering("spapproval direct", {"commit requested by owner": "n"}, "DIRECT_ABORT_OK")
+    if "DIRECT_HELD_SECRET" in out:
+        raise RuntimeError("direct commit bypassed a no answer")
+    guest.run("cat directf", "cannot open")
+    out, _ = guest.run_answering("spapproval direct", {"commit requested by owner": "y"}, "DIRECT_COMMIT_OK")
+    if "DIRECT_HELD_SECRET" not in out.split("commit? [y/n]")[-1]:
+        raise RuntimeError("direct commit did not release after approval")
+    guest.run("cat directf", "NEW")
+    guest.run("rm directf", "")
+    # Generic run auto-answers only valid prompts. If an incomplete report
+    # incorrectly asks and publishes, the guest prints FAIL instead.
+    guest.run("spapproval overflow", "REPORT_OVERFLOW_REFUSED")
+    print("APPROVAL REGRESSIONS PASSED", flush=True)
 
 
 def main():
@@ -315,7 +372,7 @@ def main():
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--suite", default="shadow",
                         choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "pipe", "conflict", "usertests",
-                                 "failure", "drainfull", "output-crash", "ask"))
+                                 "failure", "drainfull", "output-crash", "ask", "approval"))
     parser.add_argument("--timeout", type=int, default=180,
                         help="seconds to wait for one guest command (hang detection)")
     args = parser.parse_args()
@@ -423,6 +480,9 @@ def main():
             elif args.suite == "drainfull":
                 for _ in range(args.repeat):
                     run("spfailure drainfull", "SPFAILURE DRAINFULL PASSED")
+            elif args.suite == "approval":
+                for _ in range(args.repeat):
+                    approval_suite(guest)
             elif args.suite == "ask":
                 for _ in range(args.repeat):
                     ask_suite(guest)

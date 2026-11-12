@@ -1,0 +1,360 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spectest; echo TESTDONE0baa840a
+PASS: completion outside speculation is rejected
+PASS: owner abort succeeds
+PASS: second completion is rejected
+
+[review 2 BEGIN]
+[speculation 2] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 2] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: a completed process can begin and commit again
+
+[review 3 BEGIN]
+[speculation 3] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 188. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 3] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: shared-membership owner begins
+PASS: inherited child rejects nested begin and completion
+PASS: owner abort is refused while child lives
+PASS: owner cannot complete while child lives
+PASS: fork inheritance shares one context until child detaches
+
+[review 4 BEGIN]
+[speculation 4] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 134. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 4] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: exec-membership owner begins
+PASS: exec preserves inherited non-owner membership
+PASS: exec'd member remains counted until exit
+PASS: owner completes after exec'd member detaches
+
+[review 5 BEGIN]
+[speculation 5] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 35. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 5] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: unreaped-zombie owner begins
+PASS: detached zombie no longer counts before wait reaps it
+PASS: unreaped zombie remains waitable
+
+[review 6 BEGIN]
+[speculation 6] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 67. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 6] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: member-kill owner begins
+PASS: ordinary member can be killed
+PASS: killed non-owner detaches without cancelling owner
+zombie!
+
+[review 7 BEGIN]
+[speculation 7] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 131. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 7] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: grandchild owner begins
+PASS: living grandchild still counts after its parent exits
+PASS: grandchild can be cancelled by pid
+PASS: owner completes after grandchild detaches
+zombie!
+PASS: owner exits voluntarily
+PASS: owner exit wakes and terminates sleeping member
+PASS: owner kill request succeeds
+zombie!
+PASS: killed owner exits
+PASS: owner kill wakes and terminates sleeping member
+PASS: all bounded context slots can be allocated
+PASS: begin fails cleanly when context table is full
+PASS: cancelled contexts are reclaimed and reusable
+
+[review 19 BEGIN]
+[speculation 19] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 94. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 19] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: fork-failure owner begins
+PASS: fork failure is reached under process/resource pressure
+PASS: failed fork and child exits leave no leaked membership references
+
+[review 20 BEGIN]
+[speculation 20] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 20] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 21 BEGIN]
+[speculation 21] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 21] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 22 BEGIN]
+[speculation 22] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 22] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 23 BEGIN]
+[speculation 23] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 23] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 24 BEGIN]
+[speculation 24] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 24] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 25 BEGIN]
+[speculation 25] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 25] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 26 BEGIN]
+[speculation 26] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 26] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 27 BEGIN]
+[speculation 27] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 27] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 28 BEGIN]
+[speculation 28] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 28] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 29 BEGIN]
+[speculation 29] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 29] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 30 BEGIN]
+[speculation 30] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 30] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 31 BEGIN]
+[speculation 31] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 31] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 32 BEGIN]
+[speculation 32] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 32] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 33 BEGIN]
+[speculation 33] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 33] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 34 BEGIN]
+[speculation 34] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 34] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 35 BEGIN]
+[speculation 35] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 35] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 36 BEGIN]
+[speculation 36] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 36] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 37 BEGIN]
+[speculation 37] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 37] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 38 BEGIN]
+[speculation 38] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 38] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 39 BEGIN]
+[speculation 39] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 39] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 40 BEGIN]
+[speculation 40] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 40] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 41 BEGIN]
+[speculation 41] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 41] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 42 BEGIN]
+[speculation 42] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 42] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 43 BEGIN]
+[speculation 43] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 43] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: repeated begin/complete and process-slot reuse
+PASS: isolation example file prepared
+PASS: lifecycle abort succeeds
+FAIL: speculative overwrite discarded by xabort (Step 4 isolation)
+PASS: rejected creation left no public file
+SPEC TESTS FAILED: 3
+TESTDONE0baa840a
+$

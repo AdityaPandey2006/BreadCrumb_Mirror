@@ -1,0 +1,416 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spapproval; echo TESTDONEccec1d41
+
+[review 1 BEGIN]
+[speculation 1] PAIR_A
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 1] commit? [y/n] y
+
+[review 2 BEGIN]
+[speculation 2] PAIR_B
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 2] commit? [y/n] nHELD_PAIR_A
+
+A_RESULT_1
+B_RESULT_0
+PAIR_DONE
+TESTDONEccec1d41
+$ spapproval kill; echo TESTDONE7a3a59bf
+
+[review 3 BEGIN]
+[speculation 3] PAIR_A
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 3] commit? [y/n]
+[review 4 BEGIN]
+[speculation 4] PAIR_B
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 4] commit? [y/n] y
+HELD_PAIR_B
+B_RESULT_1
+PAIR_DONE
+TESTDONE7a3a59bf
+$ spapproval reader; echo READDONEa7416bdb
+
+[review 5 BEGIN]
+[speculation 5] READER_OWNER
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 5] commit? [y/n] y
+READ_OWNER_OK
+z
+READER_Z_OK
+READER_DONE
+READDONEa7416bdb
+$ echo OLD > same; echo TESTDONE08e7c8f4
+TESTDONE08e7c8f4
+$ specrun ask echo,NEW,into,same; echo TESTDONE1652833e
+
+[review 6 BEGIN]
+[speculation 6] specrun requested review
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  3 changed bytes; offsets 0..2; preview at 0:
+    before "OLD\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "NEW\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 6] commit? [y/n] y
+SPECRUN: committed: changes published; held output released above
+TESTDONE1652833e
+$ cat same; echo TESTDONE3a7d6af1
+NEW
+TESTDONE3a7d6af1
+$ rm same; echo TESTDONE51517d7f
+TESTDONE51517d7f
+$ spapproval direct; echo TESTDONEdc1bb6df
+
+[review 7 BEGIN]
+[speculation 7] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create directf (4 bytes)
+  8 changed bytes; offsets 48..56; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00directf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x04\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 19. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 7] commit? [y/n] n
+DIRECT_ABORT_OK
+TESTDONEdc1bb6df
+$ cat directf; echo TESTDONE7c04b3f5
+cat: cannot open directf
+TESTDONE7c04b3f5
+$ spapproval direct; echo TESTDONE1ddf9542
+
+[review 8 BEGIN]
+[speculation 8] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create directf (4 bytes)
+  8 changed bytes; offsets 48..56; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00directf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x04\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 19. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 8] commit? [y/n] y
+DIRECT_HELD_SECRET
+DIRECT_COMMIT_OK
+TESTDONE1ddf9542
+$ cat directf; echo TESTDONEb2ddf0a2
+NEW
+TESTDONEb2ddf0a2
+$ rm directf; echo TESTDONEa530be4f
+TESTDONEa530be4f
+$ spapproval overflow; echo TESTDONE92616a91
+REPORT_OVERFLOW_REFUSED
+TESTDONE92616a91
+$ spapproval; echo TESTDONEd870795a
+
+[review 10 BEGIN]
+[speculation 10] PAIR_A
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 10] commit? [y/n] y
+HELD_PAIR_A
+A_RESULT_1
+
+[review 11 BEGIN]
+[speculation 11] PAIR_B
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 11] commit? [y/n] n
+B_RESULT_0
+PAIR_DONE
+TESTDONEd870795a
+$ spapproval kill; echo TESTDONE984e0457
+
+[review 12 BEGIN]
+[speculation 12] PAIR_A
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 12] commit? [y/n]
+[review 13 BEGIN]
+[speculation 13] PAIR_B
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 13] commit? [y/n] y
+HELD_PAIR_B
+B_RESULT_1
+PAIR_DONE
+TESTDONE984e0457
+$ spapproval reader; echo READDONE752210f3
+
+[review 14 BEGIN]
+[speculation 14] READER_OWNER
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 14] commit? [y/n] y
+READ_OWNER_OK
+z
+READER_Z_OK
+READER_DONE
+READDONE752210f3
+$ echo OLD > same; echo TESTDONE73bac703
+TESTDONE73bac703
+$ specrun ask echo,NEW,into,same; echo TESTDONE935c7126
+
+[review 15 BEGIN]
+[speculation 15] specrun requested review
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  3 changed bytes; offsets 0..2; preview at 0:
+    before "OLD\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "NEW\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 15] commit? [y/n] y
+SPECRUN: committed: changes published; held output released above
+TESTDONE935c7126
+$ cat same; echo TESTDONE3a07839e
+NEW
+TESTDONE3a07839e
+$ rm same; echo TESTDONE0e04c049
+TESTDONE0e04c049
+$ spapproval direct; echo TESTDONEab9c112d
+
+[review 16 BEGIN]
+[speculation 16] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create directf (4 bytes)
+  8 changed bytes; offsets 48..56; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00directf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x04\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 19. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 16] commit? [y/n] n
+DIRECT_ABORT_OK
+TESTDONEab9c112d
+$ cat directf; echo TESTDONEfca1757c
+cat: cannot open directf
+TESTDONEfca1757c
+$ spapproval direct; echo TESTDONEffee9a8a
+
+[review 17 BEGIN]
+[speculation 17] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create directf (4 bytes)
+  8 changed bytes; offsets 48..56; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00directf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x04\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 19. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 17] commit? [y/n] y
+DIRECT_HELD_SECRET
+DIRECT_COMMIT_OK
+TESTDONEffee9a8a
+$ cat directf; echo TESTDONE462a4e1b
+NEW
+TESTDONE462a4e1b
+$ rm directf; echo TESTDONE3f74138f
+TESTDONE3f74138f
+$ spapproval overflow; echo TESTDONE66b24c28
+REPORT_OVERFLOW_REFUSED
+TESTDONE66b24c28
+$ spapproval; echo TESTDONE70baee3e
+
+[review 19 BEGIN]
+[speculation 19] PAIR_A
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 19] commit? [y/n] y
+HELD_PAIR_A
+A_RESULT_1
+
+[review 20 BEGIN]
+[speculation 20] PAIR_B
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 20] commit? [y/n] n
+B_RESULT_0
+PAIR_DONE
+TESTDONE70baee3e
+$ spapproval kill; echo TESTDONE15f7d212
+
+[review 21 BEGIN]
+[speculation 21] PAIR_A
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 21] commit? [y/n]
+[review 22 BEGIN]
+[speculation 22] PAIR_B
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 12. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 22] commit? [y/n] y
+HELD_PAIR_B
+B_RESULT_1
+PAIR_DONE
+TESTDONE15f7d212
+$ spapproval reader; echo READDONE21a932ed
+
+[review 23 BEGIN]
+[speculation 23] READER_OWNER
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 23] commit? [y/n] y
+READ_OWNER_OK
+z
+READER_Z_OK
+READER_DONE
+READDONE21a932ed
+$ echo OLD > same; echo TESTDONE483511a4
+TESTDONE483511a4
+$ specrun ask echo,NEW,into,same; echo TESTDONEc848c4ed
+
+[review 24 BEGIN]
+[speculation 24] specrun requested review
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  3 changed bytes; offsets 0..2; preview at 0:
+    before "OLD\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "NEW\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 24] commit? [y/n] y
+SPECRUN: committed: changes published; held output released above
+TESTDONEc848c4ed
+$ cat same; echo TESTDONE8cac07cc
+NEW
+TESTDONE8cac07cc
+$ rm same; echo TESTDONE82613ac6
+TESTDONE82613ac6
+$ spapproval direct; echo TESTDONE6b72a742
+
+[review 25 BEGIN]
+[speculation 25] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create directf (4 bytes)
+  8 changed bytes; offsets 48..56; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00directf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x04\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 19. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 25] commit? [y/n] n
+DIRECT_ABORT_OK
+TESTDONE6b72a742
+$ cat directf; echo TESTDONEb716768c
+cat: cannot open directf
+TESTDONEb716768c
+$ spapproval direct; echo TESTDONE56c1114c
+
+[review 26 BEGIN]
+[speculation 26] commit requested by owner
+Kernel change report (saved original -> private):
+Block 58: allocation bitmap
+  1 changed bytes; offsets 209..209; preview at 209:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 1566: directory inode 1 at offset 512
+  create directf (4 bytes)
+  8 changed bytes; offsets 48..56; preview at 48:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "#\x00directf\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Block 36: inode metadata
+  inode 35 created; type 0 -> 2; size 0 -> 4; links 0 -> 1
+  5 changed bytes; offsets 192..205; preview at 192:
+    before "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    after  "\x02\x00\x00\x00\x00\x00\x01\x00\x04\x00\x00\x00\x88\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 19. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 26] commit? [y/n] y
+DIRECT_HELD_SECRET
+DIRECT_COMMIT_OK
+TESTDONE56c1114c
+$ cat directf; echo TESTDONE8efa193a
+NEW
+TESTDONE8efa193a
+$ rm directf; echo TESTDONEc6e602ab
+TESTDONEc6e602ab
+$ spapproval overflow; echo TESTDONE72ad5188
+REPORT_OVERFLOW_REFUSED
+TESTDONE72ad5188
+$

@@ -1244,3 +1244,13 @@ Action:
   distinct bytes per worker and attempt and the concurrency phase was re-run.
   The invalid first data set is kept as conc-identical-bytes-invalid.csv.
 - Nothing was committed, as requested.
+
+
+Approval follow-up: D64-D66
+User asked to record the fixes for the shared-answer race and missing same-size
+changes, and to fix all three approval issues. The agreed decisions are one
+exclusive question/answer exchange, a kernel-generated report comparing existing
+private and saved-original blocks, and mandatory user approval for every commit.
+The report reuses shadow images; a bounded text page is the added memory cost.
+Verification is completed before reporting the implementation as tested.
+See approval-review.md for the implementation and limitations.

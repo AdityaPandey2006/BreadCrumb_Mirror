@@ -297,6 +297,192 @@ shadow_inode_new(struct spec_context *sc, uint inum)
   return fresh;
 }
 
+// Approval report: caller owns the filesystem gate and is the sole participant.
+// No resource operation is in flight (refs==1). Existing shadow images remain
+// stable; only the bounded text page is new storage, not another file copy.
+struct report_text { char *p; int n, cap, failed; };
+
+static void
+rp(struct report_text *r, char *s)
+{
+  while(*s){
+    if(r->n >= r->cap-1){ r->failed = 1; return; }
+    r->p[r->n++] = *s++;
+  }
+  r->p[r->n] = 0;
+}
+
+static void
+rn(struct report_text *r, uint n)
+{
+  char b[12]; int i = 0;
+  do { b[i++] = '0'+n%10; n /= 10; } while(n);
+  while(i){ char c[2] = {b[--i], 0}; rp(r, c); }
+}
+
+static void
+rbytes(struct report_text *r, uchar *p, int n)
+{
+  static char hex[] = "0123456789abcdef";
+  int i;
+  rp(r, "\"");
+  for(i = 0; i < n; i++){
+    uint c = p[i];
+    char b[5] = {'\\', 'x', hex[c>>4], hex[c&15], 0};
+    if(c >= 32 && c < 127 && c != '"' && c != '\\'){
+      b[0] = c; b[1] = 0;
+    }
+    rp(r, b);
+  }
+  rp(r, "\"");
+}
+
+static void
+report_image(struct spec_context *sc, uint block, int after, uint off,
+             void *dst, uint n)
+{
+  struct shadow *s = find(sc, ROOTDEV, block);
+  struct buf *b;
+  if(s){
+    memmove(dst, (after ? s->data : s->orig)+off, n);
+    return;
+  }
+  b = bread_original(ROOTDEV, block);
+  memmove(dst, b->data+off, n);
+  brelse(b);
+}
+
+static void
+report_inode(struct spec_context *sc, uint ino, int after, struct dinode *d)
+{
+  report_image(sc, IBLOCK(ino, sb), after, (ino%IPB)*sizeof(*d), d, sizeof(*d));
+}
+
+// Identify a data/indirect block without invoking bmap() or allocating blocks.
+static int
+report_owner(struct spec_context *sc, uint block, int after,
+             uint *ino, uint *offset, int *indirect)
+{
+  struct dinode d;
+  struct shadow *s;
+  struct buf *bp;
+  uint *ptrs;
+  uint i, j, addr;
+  for(i = 1; i < sb.ninodes; i++){
+    report_inode(sc, i, after, &d);
+    if(d.type != T_FILE && d.type != T_DIR) continue;
+    for(j = 0; j < NDIRECT; j++)
+      if(d.addrs[j] && d.addrs[j] == block){
+        *ino=i; *offset=j*BSIZE; *indirect=0; return d.type;
+      }
+    if(d.addrs[NDIRECT]){
+      if(d.addrs[NDIRECT] == block){
+        *ino=i; *offset=NDIRECT*BSIZE; *indirect=1; return d.type;
+      }
+      s = find(sc, ROOTDEV, d.addrs[NDIRECT]);
+      bp = s ? 0 : bread_original(ROOTDEV, d.addrs[NDIRECT]);
+      ptrs = (uint*)(s ? (after ? s->data : s->orig) : bp->data);
+      for(j = 0; j < NINDIRECT; j++){
+        addr = ptrs[j];
+        if(addr && addr == block){
+          if(bp) brelse(bp);
+          *ino=i; *offset=(NDIRECT+j)*BSIZE; *indirect=0; return d.type;
+        }
+      }
+      if(bp) brelse(bp);
+    }
+  }
+  return 0;
+}
+
+static void
+report_name(struct report_text *r, char *name)
+{
+  int i;
+  for(i=0; i<DIRSIZ && name[i]; i++){
+    uchar c = name[i];
+    if(c >= 33 && c < 127 && c != '\\' && c != '"'){
+      char b[2] = {c, 0}; rp(r,b);
+    } else rbytes(r, &c, 1);
+  }
+}
+
+int
+shadow_report(struct spec_context *sc, char *dst, int cap)
+{
+  struct report_text r = {dst, 0, cap, 0};
+  struct shadow *s;
+  struct dinode old, now;
+  struct dirent a, b;
+  uint i, changed=0, count, first, last, ino, off, oldino, oldoff;
+  int kind, ind, oldind, oldkind;
+  if(cap < 1) return -1;
+  dst[0] = 0;
+  // Refuse unsupported raw test blocks BEFORE freezing the owner.
+  for(s=sc->resources; s; s=s->next)
+    if(s->state != SH_READY || s->inum == 0 || s->dev != ROOTDEV) return -1;
+  rp(&r, "Kernel change report (saved original -> private):\n");
+  for(s=sc->resources; s; s=s->next){
+    count=0; first=BSIZE; last=0;
+    for(i=0; i<BSIZE; i++) if(s->orig[i] != s->data[i]){
+      if(!count) first=i;
+      last=i; count++;
+    }
+    if(!count) continue;
+    changed++;
+    rp(&r, "Block "); rn(&r,s->blockno); rp(&r, ": ");
+    if(s->blockno >= sb.inodestart && s->blockno < sb.bmapstart){
+      rp(&r,"inode metadata\n");
+      for(i=0; i<IPB; i++){
+        memmove(&old,s->orig+i*sizeof(old),sizeof(old));
+        memmove(&now,s->data+i*sizeof(now),sizeof(now));
+        if(memcmp(&old,&now,sizeof(old)) == 0) continue;
+        ino=(s->blockno-sb.inodestart)*IPB+i;
+        rp(&r,"  inode ");rn(&r,ino);
+        rp(&r,old.type == 0 ? " created" : now.type == 0 ? " freed" : " modified");
+        rp(&r,"; type ");rn(&r,old.type);rp(&r," -> ");rn(&r,now.type);
+        rp(&r,"; size ");rn(&r,old.size);rp(&r," -> ");rn(&r,now.size);
+        rp(&r,"; links ");rn(&r,old.nlink);rp(&r," -> ");rn(&r,now.nlink);rp(&r,"\n");
+      }
+    } else if(s->blockno >= sb.bmapstart &&
+              s->blockno < sb.bmapstart + (sb.size+BPB-1)/BPB){
+      rp(&r,"allocation bitmap\n");
+    } else {
+      ino=off=oldino=oldoff=0; ind=oldind=0;
+      kind=report_owner(sc,s->blockno,1,&ino,&off,&ind);
+      oldkind=report_owner(sc,s->blockno,0,&oldino,&oldoff,&oldind);
+      if(!kind){kind=oldkind;ino=oldino;off=oldoff;ind=oldind;}
+      if(kind){
+        rp(&r,ind ? "indirect pointers for inode " : kind==T_DIR ? "directory inode " : "file inode ");
+        rn(&r,ino);rp(&r," at offset ");rn(&r,off);rp(&r,"\n");
+      } else rp(&r,"unmapped data or metadata (raw byte changes listed below)\n");
+      if(kind == T_DIR && !ind){
+        for(i=0; i<BSIZE; i+=sizeof(a)){
+          memset(&a,0,sizeof(a));memmove(&b,s->data+i,sizeof(b));
+          if(oldkind == T_DIR && !oldind) memmove(&a,s->orig+i,sizeof(a));
+          if(a.inum==b.inum && memcmp(a.name,b.name,DIRSIZ)==0) continue;
+          if(a.inum){rp(&r,"  delete ");report_name(&r,a.name);rp(&r,"\n");}
+          if(b.inum){
+            report_inode(sc,b.inum,1,&now);
+            rp(&r,"  create ");report_name(&r,b.name);rp(&r," (");rn(&r,now.size);rp(&r," bytes)\n");
+          }
+        }
+      }
+    }
+    rp(&r,"  ");rn(&r,count);rp(&r," changed bytes; offsets ");rn(&r,first);rp(&r,"..");rn(&r,last);
+    rp(&r,"; preview at ");rn(&r,first);rp(&r,":\n    before ");
+    rbytes(&r,s->orig+first,(BSIZE-first < 24 ? BSIZE-first : 24));
+    rp(&r,"\n    after  ");rbytes(&r,s->data+first,(BSIZE-first < 24 ? BSIZE-first : 24));rp(&r,"\n");
+  }
+  if(!changed) rp(&r,"No filesystem block changes.\n");
+  rp(&r,"Changed blocks: ");rn(&r,changed);rp(&r,". Every changed block listed; byte previews limited to 24 bytes.\n");
+  rp(&r,"Held console bytes: ");rn(&r,sc->console_len);
+  rp(&r,". Held external-pipe storage bytes (includes record headers): ");rn(&r,sc->pipe_len);
+  rp(&r,". Payloads remain hidden until durable commit.\n");
+  // A missing/truncated report can never authorize publication.
+  return r.failed ? -1 : r.n;
+}
+
 // Return 1 if copied/updated, 0 for a read with no private version, -1 on
 // invalid input, capacity/allocation failure, or cancellation. Never public-write.
 // data may be a user address already validated by argptr() (as readi/writei

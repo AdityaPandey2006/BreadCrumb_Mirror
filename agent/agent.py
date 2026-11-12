@@ -105,8 +105,9 @@ def plan(request):
 
 
 class Bridge:
-    def __init__(self, qemu, log, timeout=20):
+    def __init__(self, qemu, log, timeout=20, approval=None):
         self.qemu, self.log, self.timeout = qemu, log, timeout
+        self.approval = approval
         self.pending = b""
         self.proc = None
         self.temp = None
@@ -193,16 +194,17 @@ class Bridge:
             raise ValueError("Command exceeds xv6 shell input limit")
         self.type(line)
         done = rb"(?:^|\n)" + marker.encode() + rb"\r?\n"
-        prompt = rb"commit\? \[y/n\] "
+        prompt = rb"(?:^|\n)\[approval [1-9][0-9]*\] commit\? \[y/n\] "
         output = ""
         while True:
-            chunk = self.until(prompt + b"|" + done if ask else done, keep_match=True)
+            chunk = self.until(prompt + b"|" + done, keep_match=True)
             text, matched = chunk
             output += text
-            if not ask or marker in matched:
+            if marker in matched:
                 break
             question = re.split(r"\[speculation \d+\] ", text)[-1].strip()
-            answer = "y" if ask(question) else "n"
+            decide = ask or self.approval or ask_human
+            answer = "y" if decide(question) else "n"
             self.record(question=question, answer=answer)
             self.type(answer)
             output += f"commit? [y/n] {answer}"
@@ -307,11 +309,18 @@ def demo_speculative(bridge, injection=True):
             raise RuntimeError("Speculative containment check failed")
         print("Verified: deletion and APPROVED were held, then discarded by abort; file intact.")
     else:
-        ok = "committed" in result and "APPROVED" in result and "draft.txt" in listing
-        bridge.record(check="benign attempt committed and output released", passed=ok)
-        if not ok:
-            raise RuntimeError("Speculative commit check failed")
-        print("Verified: draft published and APPROVED released only after durable commit.")
+        if "aborted by user" in result:
+            ok = "APPROVED" not in result and "draft.txt" not in listing
+            bridge.record(check="benign attempt declined by human", passed=ok)
+            if not ok:
+                raise RuntimeError("Declined attempt leaked an effect")
+            print("Verified: user declined; draft and held output discarded.")
+        else:
+            ok = "committed" in result and "APPROVED" in result and "draft.txt" in listing
+            bridge.record(check="benign attempt committed and output released", passed=ok)
+            if not ok:
+                raise RuntimeError("Speculative commit check failed")
+            print("Verified: draft published and APPROVED released only after durable commit.")
 
 
 def ask_human(question):
@@ -389,7 +398,7 @@ def main():
     parser.add_argument("--qemu", default=find_qemu())
     parser.add_argument("--log", type=Path, default=ROOT / "agent/logs/latest.jsonl")
     parser.add_argument("--answer", choices=("y", "n"),
-                        help="scripted human answer for 'demo ask' (default: ask at this terminal)")
+                        help="explicit scripted approval for automated demos (default: ask the human)")
     opts = parser.parse_args()
     request = " ".join(opts.request)
     try:
@@ -402,7 +411,9 @@ def main():
             if not (ROOT / name).is_file():
                 raise ValueError(f"Missing {name}; run make in {ROOT}")
         opts.log.parent.mkdir(parents=True, exist_ok=True)
-        with opts.log.open("w") as log, Bridge(opts.qemu, log) as bridge:
+        with opts.log.open("w") as log, Bridge(
+                opts.qemu, log,
+                approval=(lambda question: opts.answer == "y") if opts.answer else None) as bridge:
             print(f"Disposable x86 xv6 guest ready. Log: {opts.log}")
             if request:
                 if request in ("demo speculative", "demo speculative-benign"):

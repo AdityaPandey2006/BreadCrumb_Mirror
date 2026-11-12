@@ -1,0 +1,1432 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spectest; echo TESTDONEad630ad1
+PASS: completion outside speculation is rejected
+PASS: owner abort succeeds
+PASS: second completion is rejected
+
+[review 2 BEGIN]
+[speculation 2] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 2] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: a completed process can begin and commit again
+
+[review 3 BEGIN]
+[speculation 3] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 188. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 3] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: shared-membership owner begins
+PASS: inherited child rejects nested begin and completion
+PASS: owner abort is refused while child lives
+PASS: owner cannot complete while child lives
+PASS: fork inheritance shares one context until child detaches
+
+[review 4 BEGIN]
+[speculation 4] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 134. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 4] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: exec-membership owner begins
+PASS: exec preserves inherited non-owner membership
+PASS: exec'd member remains counted until exit
+PASS: owner completes after exec'd member detaches
+
+[review 5 BEGIN]
+[speculation 5] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 35. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 5] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: unreaped-zombie owner begins
+PASS: detached zombie no longer counts before wait reaps it
+PASS: unreaped zombie remains waitable
+
+[review 6 BEGIN]
+[speculation 6] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 67. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 6] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: member-kill owner begins
+PASS: ordinary member can be killed
+PASS: killed non-owner detaches without cancelling owner
+zombie!
+
+[review 7 BEGIN]
+[speculation 7] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 131. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 7] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: grandchild owner begins
+PASS: living grandchild still counts after its parent exits
+PASS: grandchild can be cancelled by pid
+PASS: owner completes after grandchild detaches
+zombie!
+PASS: owner exits voluntarily
+PASS: owner exit wakes and terminates sleeping member
+PASS: owner kill request suczombie!
+ceeds
+PASS: killed owner exits
+PASS: owner kill wakes and terminates sleeping member
+PASS: all bounded context slots can be allocated
+PASS: begin fails cleanly when context table is full
+PASS: cancelled contexts are reclaimed and reusable
+
+[review 19 BEGIN]
+[speculation 19] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 94. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 19] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: fork-failure owner begins
+PASS: fork failure is reached under process/resource pressure
+PASS: failed fork and child exits leave no leaked membership references
+
+[review 20 BEGIN]
+[speculation 20] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 20] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 21 BEGIN]
+[speculation 21] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 21] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 22 BEGIN]
+[speculation 22] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 22] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 23 BEGIN]
+[speculation 23] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 23] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 24 BEGIN]
+[speculation 24] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 24] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 25 BEGIN]
+[speculation 25] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 25] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 26 BEGIN]
+[speculation 26] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 26] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 27 BEGIN]
+[speculation 27] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 27] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 28 BEGIN]
+[speculation 28] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 28] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 29 BEGIN]
+[speculation 29] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 29] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 30 BEGIN]
+[speculation 30] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 30] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 31 BEGIN]
+[speculation 31] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 31] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 32 BEGIN]
+[speculation 32] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 32] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 33 BEGIN]
+[speculation 33] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 33] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 34 BEGIN]
+[speculation 34] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 34] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 35 BEGIN]
+[speculation 35] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 35] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 36 BEGIN]
+[speculation 36] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 36] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 37 BEGIN]
+[speculation 37] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 37] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 38 BEGIN]
+[speculation 38] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 38] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 39 BEGIN]
+[speculation 39] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 39] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 40 BEGIN]
+[speculation 40] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 40] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 41 BEGIN]
+[speculation 41] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 41] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 42 BEGIN]
+[speculation 42] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 42] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 43 BEGIN]
+[speculation 43] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 43] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: repeated begin/complete and process-slot reuse
+PASS: isolation example file prepared
+PASS: lifecycle abort succeeds
+PASS: speculative overwrite discarded by xabort (Step 4 isolation)
+PASS: rejected creation left no public file
+SPEC TESTS PASSED
+TESTDONEad630ad1
+$ spfiletest; echo TESTDONE6a3a50a4
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: fill readiness pipe
+PASS: abort succeeds
+PASS: abort preserves the original public bytes
+PASS: outside write allowed again after abort
+PASS: outside unlink allowed again after abort
+-- parent and child share private updates
+PASS: abort succeeds
+PASS: abort discards both members' changes
+-- independent speculations do not see each other
+PASS: speculation A writes block 0 privately
+PASS: speculation B sees original bytes, then its own
+PASS: outsider still sees original bytes
+PASS: each speculation keeps only its own private bytes
+PASS: each speculation keeps only its own private bytes
+PASS: both aborts preserve the original
+-- reads without copies, cross-block, reuse, cap, partial write
+PASS: abort succeeds
+PASS: abort restores every original byte
+-- allocation failure (SHADOW_TEST build)
+PASS: abort succeeds
+PASS: public file unchanged after allocation failures
+PASS: no shadow pages leaked
+-- owner exit discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- owner kill discards private work
+zombie!
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+PASS: private copies discarded after owner death and member exit
+zombie!
+PASS: public file holds only original bytes
+-- Step 6 private creation and extension, discarded on abort
+PASS: abort succeeds
+PASS: aborted name absent publicly
+PASS: original file restored after abort
+-- descriptor rule: only files opened in the same speculation
+PASS: abort succeeds
+PASS: pre-xbegin descriptor usable again, offset untouched
+PASS: abort succeeds
+PASS: original preserved
+PASS: no log_write() (dirty public buffer) by any speculative process
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+SPFILE TESTS PASSED
+TESTDONE6a3a50a4
+$ spcommit; echo TESTDONEdaf9e6db
+-- abort restores the original view
+PASS: abort succeeds
+PASS: every original byte restored
+PASS: outside write allowed after abort
+-- commit publishes private changes durably
+
+[review 57 BEGIN]
+[speculation 57] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1679: file inode 35 at offset 3584
+  1 changed bytes; offsets 511..511; preview at 511:
+    before "u"
+    after  "N"
+Block 1675: file inode 35 at offset 1536
+  4 changed bytes; offsets 100..103; preview at 100:
+    before "pwdkryfmtahovcjqxelszgnu"
+    after  "NEW3ryfmtahovcjqxelszgnu"
+Block 1672: file inode 35 at offset 0
+  5 changed bytes; offsets 0..5; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "NEW0cxqxelszgnubipwdkryf"
+Changed blocks: 3. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 110. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 57] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: speculation begins
+PASS: private writes to three blocks
+PASS: repeated write to an already-copied block
+PASS: nonempty commit returns 0
+PASS: all private bytes published
+PASS: untouched bytes unchanged
+PASS: size unchanged
+PASS: owner is no longer speculative after commit
+PASS: descriptor opened in the speculation usable after commit
+PASS: new outside process sees committed bytes
+PASS: outside write allowed after commit
+PASS: a new speculation can start afterwards
+-- shared child changes survive child exit and are committed
+
+[review 59 BEGIN]
+[speculation 59] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1677: file inode 35 at offset 2560
+  3 changed bytes; offsets 0..2; preview at 0:
+    before "lszgnubipwdkryfmtahovcjq"
+    after  "MOMgnubipwdkryfmtahovcjq"
+Block 1674: file inode 35 at offset 1024
+  3 changed bytes; offsets 0..2; preview at 0:
+    before "ubipwdkryfmtahovcjqxelsz"
+    after  "KIDpwdkryfmtahovcjqxelsz"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 102. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 59] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: speculation begins
+PASS: parent sees exited child's private bytes
+PASS: parent writes privately
+PASS: commit succeeds after child exit
+PASS: child's and parent's changes both published
+-- permission, live-member and repeated-completion checks
+
+[review 60 BEGIN]
+[speculation 60] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  4 changed bytes; offsets 0..3; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "PERMcjqxelszgnubipwdkryf"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 185. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 60] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: speculation begins
+PASS: private write
+PASS: non-owner member cannot commit or abort
+PASS: owner cannot commit while a member lives
+PASS: refused commit keeps the private attempt
+PASS: owner commits after the member exits
+PASS: repeated completion fails
+PASS: commit published
+-- commit-time conflict between speculations (D24)
+PASS: both speculations copied block 0
+
+[review 61 BEGIN]
+[speculation 61] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 35 at offset 512
+  2 changed bytes; offsets 0..1; preview at 0:
+    before "xelszgnubipwdkryfmtahovc"
+    after  "A1lszgnubipwdkryfmtahovc"
+Block 1672: file inode 35 at offset 0
+  4 changed bytes; offsets 0..3; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "AAAAcjqxelszgnubipwdkryf"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 61] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: first committer (A) succeeds
+
+[review 62 BEGIN]
+[speculation 62] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1678: file inode 35 at offset 3072
+  2 changed bytes; offsets 0..1; preview at 0:
+    before "ipwdkryfmtahovcjqxelszgn"
+    after  "B6wdkryfmtahovcjqxelszgn"
+Block 1672: file inode 35 at offset 0
+  4 changed bytes; offsets 0..3; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "BBBBcjqxelszgnubipwdkryf"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 62] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: second committer (B) gets -1 twice (abort-only), view kept
+PASS: abort-only speculation can still abort
+PASS: A's changes published
+PASS: none of B's changes published (not even block 6)
+-- speculations on different blocks both commit
+
+[review 63 BEGIN]
+[speculation 63] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 35 at offset 512
+  2 changed bytes; offsets 0..1; preview at 0:
+    before "xelszgnubipwdkryfmtahovc"
+    after  "C1lszgnubipwdkryfmtahovc"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 63] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 64 BEGIN]
+[speculation 64] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1676: file inode 35 at offset 2048
+  2 changed bytes; offsets 0..1; preview at 0:
+    before "ovcjqxelszgnubipwdkryfmt"
+    after  "D4cjqxelszgnubipwdkryfmt"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 64] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: disjoint speculation commits
+PASS: disjoint speculation commits
+PASS: both changes published
+-- empty commit, capacity and short write then commit (D25)
+
+[review 65 BEGIN]
+[speculation 65] commit requested by owner
+Kernel change report (saved original -> private):
+No filesystem block changes.
+Changed blocks: 0. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 65] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: read-only speculation commits (empty)
+PASS: empty commit changed nothing
+
+[review 66 BEGIN]
+[speculation 66] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1679: file inode 35 at offset 3584
+  5 changed bytes; offsets 1..511; preview at 1:
+    before "mtahovcjqxelszgnubipwdkr"
+    after  "Qtahovcjqxelszgnubipwdkr"
+Block 1678: file inode 35 at offset 3072
+  1 changed bytes; offsets 1..1; preview at 1:
+    before "pwdkryfmtahovcjqxelszgnu"
+    after  "Qwdkryfmtahovcjqxelszgnu"
+Block 1677: file inode 35 at offset 2560
+  1 changed bytes; offsets 1..1; preview at 1:
+    before "szgnubipwdkryfmtahovcjqx"
+    after  "Qzgnubipwdkryfmtahovcjqx"
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 1..1; preview at 1:
+    before "vcjqxelszgnubipwdkryfmta"
+    after  "Qcjqxelszgnubipwdkryfmta"
+Block 1675: file inode 35 at offset 1536
+  1 changed bytes; offsets 1..1; preview at 1:
+    before "yfmtahovcjqxelszgnubipwd"
+    after  "Qfmtahovcjqxelszgnubipwd"
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 1..1; preview at 1:
+    before "bipwdkryfmtahovcjqxelszg"
+    after  "Qipwdkryfmtahovcjqxelszg"
+Block 1673: file inode 35 at offset 512
+  1 changed bytes; offsets 1..1; preview at 1:
+    before "elszgnubipwdkryfmtahovcj"
+    after  "Qlszgnubipwdkryfmtahovcj"
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 1..1; preview at 1:
+    before "hovcjqxelszgnubipwdkryfm"
+    after  "Qovcjqxelszgnubipwdkryfm"
+Changed blocks: 8. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 120. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 66] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: speculation begins
+PASS: eight distinct blocks copied
+PASS: ninth block refused
+PASS: short write returns 4 bytes
+PASS: commit after a refused block and a short write (D25)
+PASS: all eight blocks published in one transaction
+PASS: short write published exactly; ninth block untouched
+-- outside writer refused until commit (D20)
+
+[review 67 BEGIN]
+[speculation 67] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  4 changed bytes; offsets 0..3; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "SPECcjqxelszgnubipwdkryf"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 85. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 67] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: speculation copies block 0
+PASS: outside write and unlink refused while copied
+PASS: commit succeeds
+PASS: outside write allowed after commit
+PASS: outsider wrote after the committed bytes
+-- 40 alternating commit/abort cycles reuse contexts and memory
+
+[review 68 BEGIN]
+[speculation 68] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "Ahovcjqxelszgnubipwdkryf"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 68] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 70 BEGIN]
+[speculation 70] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "ubipwdkryfmtahovcjqxelsz"
+    after  "Cbipwdkryfmtahovcjqxelsz"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 70] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 72 BEGIN]
+[speculation 72] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "ovcjqxelszgnubipwdkryfmt"
+    after  "Evcjqxelszgnubipwdkryfmt"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 72] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 74 BEGIN]
+[speculation 74] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1678: file inode 35 at offset 3072
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "ipwdkryfmtahovcjqxelszgn"
+    after  "Gpwdkryfmtahovcjqxelszgn"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 74] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 76 BEGIN]
+[speculation 76] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Ahovcjqxelszgnubipwdkryf"
+    after  "Ihovcjqxelszgnubipwdkryf"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 76] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 78 BEGIN]
+[speculation 78] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Cbipwdkryfmtahovcjqxelsz"
+    after  "Kbipwdkryfmtahovcjqxelsz"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 78] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 80 BEGIN]
+[speculation 80] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Evcjqxelszgnubipwdkryfmt"
+    after  "Mvcjqxelszgnubipwdkryfmt"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 80] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 82 BEGIN]
+[speculation 82] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1678: file inode 35 at offset 3072
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Gpwdkryfmtahovcjqxelszgn"
+    after  "Opwdkryfmtahovcjqxelszgn"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 82] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 84 BEGIN]
+[speculation 84] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Ihovcjqxelszgnubipwdkryf"
+    after  "Qhovcjqxelszgnubipwdkryf"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 84] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 86 BEGIN]
+[speculation 86] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Kbipwdkryfmtahovcjqxelsz"
+    after  "Sbipwdkryfmtahovcjqxelsz"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 86] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 88 BEGIN]
+[speculation 88] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Mvcjqxelszgnubipwdkryfmt"
+    after  "Uvcjqxelszgnubipwdkryfmt"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 88] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 90 BEGIN]
+[speculation 90] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1678: file inode 35 at offset 3072
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Opwdkryfmtahovcjqxelszgn"
+    after  "Wpwdkryfmtahovcjqxelszgn"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 90] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 92 BEGIN]
+[speculation 92] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Qhovcjqxelszgnubipwdkryf"
+    after  "Yhovcjqxelszgnubipwdkryf"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 92] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 94 BEGIN]
+[speculation 94] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Sbipwdkryfmtahovcjqxelsz"
+    after  "Abipwdkryfmtahovcjqxelsz"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 94] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 96 BEGIN]
+[speculation 96] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Uvcjqxelszgnubipwdkryfmt"
+    after  "Cvcjqxelszgnubipwdkryfmt"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 96] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 98 BEGIN]
+[speculation 98] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1678: file inode 35 at offset 3072
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Wpwdkryfmtahovcjqxelszgn"
+    after  "Epwdkryfmtahovcjqxelszgn"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 98] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 100 BEGIN]
+[speculation 100] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Yhovcjqxelszgnubipwdkryf"
+    after  "Ghovcjqxelszgnubipwdkryf"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 100] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 102 BEGIN]
+[speculation 102] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Abipwdkryfmtahovcjqxelsz"
+    after  "Ibipwdkryfmtahovcjqxelsz"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 102] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 104 BEGIN]
+[speculation 104] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Cvcjqxelszgnubipwdkryfmt"
+    after  "Kvcjqxelszgnubipwdkryfmt"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 104] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 106 BEGIN]
+[speculation 106] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1678: file inode 35 at offset 3072
+  1 changed bytes; offsets 0..0; preview at 0:
+    before "Epwdkryfmtahovcjqxelszgn"
+    after  "Mpwdkryfmtahovcjqxelszgn"
+Changed blocks: 1. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 106] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: every cycle begins and completes
+PASS: public file holds exactly the committed cycles' bytes
+PASS: no shadow pages leaked
+-- commits interleaved with a busy ordinary writer
+
+[review 108 BEGIN]
+[speculation 108] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "ubipwdkryfmtahovcjqxelsz"
+    after  "Abipwdkryfmtahovcjqxelsz"
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "vcjqxelszgnubipwdkryfmta"
+    after  "Acjqxelszgnubipwdkryfmta"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 108] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 109 BEGIN]
+[speculation 109] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Abipwdkryfmtahovcjqxelsz"
+    after  "Bbipwdkryfmtahovcjqxelsz"
+Block 1673: file inode 35 at offset 512
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "szgnubipwdkryfmtahovcjqx"
+    after  "Bzgnubipwdkryfmtahovcjqx"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 109] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 110 BEGIN]
+[speculation 110] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Bbipwdkryfmtahovcjqxelsz"
+    after  "Cbipwdkryfmtahovcjqxelsz"
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "pwdkryfmtahovcjqxelszgnu"
+    after  "Cwdkryfmtahovcjqxelszgnu"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 110] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 111 BEGIN]
+[speculation 111] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Cbipwdkryfmtahovcjqxelsz"
+    after  "Dbipwdkryfmtahovcjqxelsz"
+Block 1675: file inode 35 at offset 1536
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "mtahovcjqxelszgnubipwdkr"
+    after  "Dtahovcjqxelszgnubipwdkr"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 111] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 112 BEGIN]
+[speculation 112] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Dbipwdkryfmtahovcjqxelsz"
+    after  "Ebipwdkryfmtahovcjqxelsz"
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "jqxelszgnubipwdkryfmtaho"
+    after  "Eqxelszgnubipwdkryfmtaho"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 112] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 113 BEGIN]
+[speculation 113] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Ebipwdkryfmtahovcjqxelsz"
+    after  "Fbipwdkryfmtahovcjqxelsz"
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Acjqxelszgnubipwdkryfmta"
+    after  "Fcjqxelszgnubipwdkryfmta"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 113] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 114 BEGIN]
+[speculation 114] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Fbipwdkryfmtahovcjqxelsz"
+    after  "Gbipwdkryfmtahovcjqxelsz"
+Block 1673: file inode 35 at offset 512
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Bzgnubipwdkryfmtahovcjqx"
+    after  "Gzgnubipwdkryfmtahovcjqx"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 114] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 115 BEGIN]
+[speculation 115] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Gbipwdkryfmtahovcjqxelsz"
+    after  "Hbipwdkryfmtahovcjqxelsz"
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Cwdkryfmtahovcjqxelszgnu"
+    after  "Hwdkryfmtahovcjqxelszgnu"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 115] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 116 BEGIN]
+[speculation 116] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Hbipwdkryfmtahovcjqxelsz"
+    after  "Ibipwdkryfmtahovcjqxelsz"
+Block 1675: file inode 35 at offset 1536
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Dtahovcjqxelszgnubipwdkr"
+    after  "Itahovcjqxelszgnubipwdkr"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 116] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 117 BEGIN]
+[speculation 117] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Ibipwdkryfmtahovcjqxelsz"
+    after  "Jbipwdkryfmtahovcjqxelsz"
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Eqxelszgnubipwdkryfmtaho"
+    after  "Jqxelszgnubipwdkryfmtaho"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 117] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 118 BEGIN]
+[speculation 118] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Jbipwdkryfmtahovcjqxelsz"
+    after  "Kbipwdkryfmtahovcjqxelsz"
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Fcjqxelszgnubipwdkryfmta"
+    after  "Kcjqxelszgnubipwdkryfmta"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 118] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 119 BEGIN]
+[speculation 119] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Kbipwdkryfmtahovcjqxelsz"
+    after  "Lbipwdkryfmtahovcjqxelsz"
+Block 1673: file inode 35 at offset 512
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Gzgnubipwdkryfmtahovcjqx"
+    after  "Lzgnubipwdkryfmtahovcjqx"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 119] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 120 BEGIN]
+[speculation 120] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Lbipwdkryfmtahovcjqxelsz"
+    after  "Mbipwdkryfmtahovcjqxelsz"
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Hwdkryfmtahovcjqxelszgnu"
+    after  "Mwdkryfmtahovcjqxelszgnu"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 120] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 121 BEGIN]
+[speculation 121] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Mbipwdkryfmtahovcjqxelsz"
+    after  "Nbipwdkryfmtahovcjqxelsz"
+Block 1675: file inode 35 at offset 1536
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Itahovcjqxelszgnubipwdkr"
+    after  "Ntahovcjqxelszgnubipwdkr"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 121] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 122 BEGIN]
+[speculation 122] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Nbipwdkryfmtahovcjqxelsz"
+    after  "Obipwdkryfmtahovcjqxelsz"
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Jqxelszgnubipwdkryfmtaho"
+    after  "Oqxelszgnubipwdkryfmtaho"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 122] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 123 BEGIN]
+[speculation 123] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Obipwdkryfmtahovcjqxelsz"
+    after  "Pbipwdkryfmtahovcjqxelsz"
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Kcjqxelszgnubipwdkryfmta"
+    after  "Pcjqxelszgnubipwdkryfmta"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 123] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 124 BEGIN]
+[speculation 124] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Pbipwdkryfmtahovcjqxelsz"
+    after  "Qbipwdkryfmtahovcjqxelsz"
+Block 1673: file inode 35 at offset 512
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Lzgnubipwdkryfmtahovcjqx"
+    after  "Qzgnubipwdkryfmtahovcjqx"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 124] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 125 BEGIN]
+[speculation 125] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Qbipwdkryfmtahovcjqxelsz"
+    after  "Rbipwdkryfmtahovcjqxelsz"
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Mwdkryfmtahovcjqxelszgnu"
+    after  "Rwdkryfmtahovcjqxelszgnu"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 125] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 126 BEGIN]
+[speculation 126] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Rbipwdkryfmtahovcjqxelsz"
+    after  "Sbipwdkryfmtahovcjqxelsz"
+Block 1675: file inode 35 at offset 1536
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Ntahovcjqxelszgnubipwdkr"
+    after  "Stahovcjqxelszgnubipwdkr"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 126] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 127 BEGIN]
+[speculation 127] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Sbipwdkryfmtahovcjqxelsz"
+    after  "Tbipwdkryfmtahovcjqxelsz"
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Oqxelszgnubipwdkryfmtaho"
+    after  "Tqxelszgnubipwdkryfmtaho"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 127] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 128 BEGIN]
+[speculation 128] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Tbipwdkryfmtahovcjqxelsz"
+    after  "Ubipwdkryfmtahovcjqxelsz"
+Block 1672: file inode 35 at offset 0
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Pcjqxelszgnubipwdkryfmta"
+    after  "Ucjqxelszgnubipwdkryfmta"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 128] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 129 BEGIN]
+[speculation 129] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Ubipwdkryfmtahovcjqxelsz"
+    after  "Vbipwdkryfmtahovcjqxelsz"
+Block 1673: file inode 35 at offset 512
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Qzgnubipwdkryfmtahovcjqx"
+    after  "Vzgnubipwdkryfmtahovcjqx"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 129] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 130 BEGIN]
+[speculation 130] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Vbipwdkryfmtahovcjqxelsz"
+    after  "Wbipwdkryfmtahovcjqxelsz"
+Block 1674: file inode 35 at offset 1024
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Rwdkryfmtahovcjqxelszgnu"
+    after  "Wwdkryfmtahovcjqxelszgnu"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 130] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 131 BEGIN]
+[speculation 131] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Wbipwdkryfmtahovcjqxelsz"
+    after  "Xbipwdkryfmtahovcjqxelsz"
+Block 1675: file inode 35 at offset 1536
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Stahovcjqxelszgnubipwdkr"
+    after  "Xtahovcjqxelszgnubipwdkr"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 131] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+
+[review 132 BEGIN]
+[speculation 132] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1681: file inode 35 at offset 4608
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Xbipwdkryfmtahovcjqxelsz"
+    after  "Ybipwdkryfmtahovcjqxelsz"
+Block 1676: file inode 35 at offset 2048
+  1 changed bytes; offsets 3..3; preview at 3:
+    before "Tqxelszgnubipwdkryfmtaho"
+    after  "Yqxelszgnubipwdkryfmtaho"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 132] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: 25 commits succeed while an ordinary writer runs
+PASS: 300 ordinary writes succeed concurrently
+PASS: final committed bytes and sizes correct
+-- live outside reader during publication (test build)
+PASS: reader opened the file before the commit
+PASS: owner wrote two private blocks
+
+[review 133 BEGIN]
+[speculation 133] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 35 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "xelszgnubipwdkryfmtahovc"
+    after  "LLLLLLLLLLLLLLLLLLLLLLLL"
+Block 1672: file inode 35 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "LLLLLLLLLLLLLLLLLLLLLLLL"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 133] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: committer paused after installing the first block
+PASS: commit completed after the pause
+PASS: reader saw all-new bytes, never a partial or undurable view
+PASS: both blocks published
+-- owner killed during commit at hold point 1 (D23)
+PASS: owner wrote two private blocks
+
+[review 134 BEGIN]
+[speculation 134] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 35 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "xelszgnubipwdkryfmtahovc"
+    after  "KKKKKKKKKKKKKKKKKKKKKKKK"
+Block 1672: file inode 35 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "KKKKKKKKKKKKKKKKKKKKKKKK"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 134] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: committer reached the hold point
+PASS: killed before the point of no return: no public change
+PASS: cancelled speculation's copies released after owner exit
+-- owner killed during commit at hold point 2 (D23)
+PASS: owner wrote two private blocks
+
+[review 135 BEGIN]
+[speculation 135] commit requested by owner
+Kernel change report (saved original -> private):
+Block 1673: file inode 35 at offset 512
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "xelszgnubipwdkryfmtahovc"
+    after  "KKKKKKKKKKKKKKKKKKKKKKKK"
+Block 1672: file inode 35 at offset 0
+  512 changed bytes; offsets 0..511; preview at 0:
+    before "ahovcjqxelszgnubipwdkryf"
+    after  "KKKKKKKKKKKKKKKKKKKKKKKK"
+Changed blocks: 2. Every changed block listed; byte previews limited to 24 bytes.
+Held console bytes: 0. Held external-pipe storage bytes (includes record headers): 0. Payloads remain hidden until durable commit.
+[approval 135] commit? [y/n]
+===== HARNESS: explicit scripted approval y =====
+y
+PASS: committer reached the hold point
+PASS: killed after the point of no return: commit completed and is visible
+PASS: copies released after the committed owner died
+PASS: no log_write() by a speculative process outside its own publication
+SPCOMMIT TESTS PASSED
+TESTDONEdaf9e6db
+$ addtest; echo TESTDONEb1c8299c
+add(3, 4) = 7
+add(-3, 4) = 1
+TESTDONEb1c8299c
+$ hello_test; echo TESTDONE0d5be4a6
+surprise
+hello() returned 0
+TESTDONE0d5be4a6
+$ mytest; echo TESTDONE11ba767a
+Hey, I am trying xv6
+TESTDONE11ba767a
+$

@@ -22,8 +22,9 @@ DEFAULT_QEMU = str(Path.home() / "qemu/build/qemu-system-i386")
 
 
 class Guest:
-    def __init__(self, build, qemu=DEFAULT_QEMU, cpus=1, log=None, folder=None, copy=True):
+    def __init__(self, build, qemu=DEFAULT_QEMU, cpus=1, log=None, folder=None, copy=True, scripted_approval=False):
         self.log = log
+        self.scripted_approval = scripted_approval
         self.pending = b""
         self.events = []          # (host monotonic time, line) for marked lines
         self.tmp = None
@@ -60,12 +61,23 @@ class Guest:
 
     def until(self, pattern, timeout=600):
         deadline = time.monotonic() + timeout
+        collected = b""
         while True:
             m = re.search(pattern, self.pending)
+            approval = re.search(rb"(?:^|\n)\[approval [1-9][0-9]*\] commit\? \[y/n\] ", self.pending)
+            if approval and (not m or approval.start() < m.start()):
+                if not self.scripted_approval:
+                    raise RuntimeError("Approval required: enable scripted_approval only for controlled test/demo runs")
+                collected += self.pending[:approval.end()]
+                self.pending = self.pending[approval.end():]
+                if self.log:
+                    self.log.write(b"\nHARNESS: explicit scripted approval y\n")
+                self.type("y")
+                continue
             if m:
                 out = self.pending[:m.start()]
                 self.pending = self.pending[m.end():]
-                return out.decode(errors="replace").replace("\r", "")
+                return (collected + out).decode(errors="replace").replace("\r", "")
             left = deadline - time.monotonic()
             if left <= 0:
                 raise RuntimeError(f"guest timeout waiting for {pattern!r}")

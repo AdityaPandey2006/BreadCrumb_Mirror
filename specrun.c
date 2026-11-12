@@ -27,12 +27,9 @@
 // trustworthy or detect prompt injection.
 //
 // The "ask" mode hands the decision to the human at the console. After every
-// step has finished, the owner compares each path the steps touch (rm/mkdir
-// arguments and "into" targets) in the public view before xbegin with its own
-// private view, and passes that summary to xask(). The kernel prints it
-// immediately, freezes the attempt and reads y/n. The summary is written by
-// the owner, so it is only as trustworthy as specrun itself; held console and
-// pipe output is not part of it and stays held until commit.
+// step has finished, xask asks the kernel to compare saved original and
+// private block bytes and freeze the attempt. Ordinary output stays held.
+// Direct commit/keep modes also require a user answer through xcommit().
 #include "types.h"
 #include "stat.h"
 #include "user.h"
@@ -40,92 +37,10 @@
 
 #define MAXCMD 8
 #define MAXW   12
-#define MAXPATHS 16
-
 static char *cmds[MAXCMD][MAXW];
 static char *into[MAXCMD];
-static int pipeto[MAXCMD];     // 1: stdout of this command feeds the next one
+static int pipeto[MAXCMD];
 static int ncmd;
-
-static char *paths[MAXPATHS];  // paths the steps may change (ask mode)
-static struct stat before[MAXPATHS];
-static int existed[MAXPATHS];
-static int npaths;
-static char summary[1024];
-static int slen;
-
-static void
-addpath(char *path)
-{
-  int i;
-  for(i = 0; i < npaths; i++)
-    if(strcmp(paths[i], path) == 0)
-      return;
-  if(npaths < MAXPATHS)
-    paths[npaths++] = path;
-}
-
-static void
-put(char *s)
-{
-  while(*s && slen < (int)sizeof(summary) - 1)
-    summary[slen++] = *s++;
-  summary[slen] = 0;
-}
-
-static void
-putnum(uint n)
-{
-  char buf[12];
-  int i = sizeof(buf) - 1;
-  buf[i] = 0;
-  do {
-    buf[--i] = '0' + n % 10;
-    n /= 10;
-  } while(n && i > 0);
-  put(buf + i);
-}
-
-// Compare the public "before" state with the owner's private view (reading
-// your own writes is not an externalization).
-static void
-summarize(void)
-{
-  struct stat st;
-  int i, now, changes = 0;
-
-  put("proposed changes (summary by specrun):");
-  for(i = 0; i < npaths; i++){
-    now = stat(paths[i], &st) == 0;
-    if(!existed[i] && !now)
-      continue;
-    if(existed[i] && now && st.ino == before[i].ino && st.size == before[i].size)
-      continue;   // size-only check: a same-size rewrite is not detected
-    changes++;
-    put("\n  ");
-    if(!existed[i]){
-      put("create ");
-      put(paths[i]);
-      put(" (");
-      putnum(st.size);
-      put(" bytes)");
-    } else if(!now){
-      put("delete ");
-      put(paths[i]);
-    } else {
-      put("modify ");
-      put(paths[i]);
-      put(" (");
-      putnum(before[i].size);
-      put(" -> ");
-      putnum(st.size);
-      put(" bytes)");
-    }
-  }
-  if(changes == 0)
-    put("\n  no file changes detected");
-  put("\n  console/pipe output stays held until commit");
-}
 
 static void
 say(char *msg, char *arg)
@@ -215,18 +130,6 @@ main(int argc, char *argv[])
     }
   }
 
-  if(ask){
-    for(i = 0; i < ncmd; i++){
-      if(into[i])
-        addpath(into[i]);
-      if(strcmp(cmds[i][0], "rm") == 0 || strcmp(cmds[i][0], "mkdir") == 0)
-        for(a = 1; cmds[i][a]; a++)
-          addpath(cmds[i][a]);
-    }
-    for(i = 0; i < npaths; i++)
-      existed[i] = stat(paths[i], &before[i]) == 0;   // public view
-  }
-
   if(xbegin() != 0){
     say("xbegin failed (already speculative or no free context)", 0);
     exit();
@@ -250,13 +153,17 @@ main(int argc, char *argv[])
       wait();
   }
   if(ask){
-    summarize();
-    answer = xask(summary);     // all members have exited; owner is alone
+    answer = xask("specrun requested review");     // all members have exited; owner is alone
     commit = answer == 1;
   } else if(keep)
     commit = stat(keep, &st) == 0;      // private view: our own effects
   else
     commit = strcmp(mode, "commit") == 0;
+  if(commit && !ask){
+    ask = 1;
+    answer = xask("specrun requested review");
+    commit = answer == 1;
+  }
   rc = commit ? xcommit() : xabort();
   if(commit && rc == 0)
     say("committed: changes published; held output released above", 0);

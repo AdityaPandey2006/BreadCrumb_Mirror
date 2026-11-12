@@ -34,8 +34,8 @@ class Step10ToolTests(unittest.TestCase):
                 with (log / 'matrix.tsv').open() as stream:
                     rows = list(csv.DictReader(stream, delimiter='\t'))
                 failed = sum(r['result'] == 'FAIL' for r in rows)
-                self.assertEqual(len(rows), 37)
-                self.assertEqual(failed, 0 if outcome == '0' else 36, result.stdout + result.stderr + (log / 'agent-unittest.txt').read_text())
+                self.assertEqual(len(rows), 45)
+                self.assertEqual(failed, 0 if outcome == '0' else 44, result.stdout + result.stderr + (log / 'agent-unittest.txt').read_text())
                 self.assertEqual(result.returncode, int(outcome), result.stdout + result.stderr)
 
     def test_original_baseline_hash_covers_final_sources(self):

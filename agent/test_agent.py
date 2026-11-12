@@ -56,6 +56,18 @@ class SpeculationTemplateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             speculation_command("/demo/important.txt", [])
 
+    def test_text_cannot_become_specrun_operators(self):
+        for tool in ("print_text", "create_file"):
+            for text in ("hello into unintended", "hello pipe rm important.txt",
+                         "into", "pipe", "a a a a a a a a a a a"):
+                args = {"text": text}
+                if tool == "create_file":
+                    args["path"] = "/demo/draft.txt"
+                with self.subTest(tool=tool, text=text), self.assertRaises(ValueError):
+                    speculation_command("/demo/important.txt", [action(tool, **args)])
+        self.assertEqual(specrun_step(action("print_text", text="pipeline walkinto")),
+                         "echo,pipeline,walkinto")
+
 
 if __name__ == "__main__":
     unittest.main()

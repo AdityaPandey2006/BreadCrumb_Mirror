@@ -91,6 +91,11 @@ The default `agent/logs/latest.jsonl` is overwritten each invocation; use `--log
 with distinct filenames to preserve evidence. Empty output alone is never proof
 that a mutation succeeded: the demos inspect the resulting file state.
 
+Speculative effect text rejects commas and the exact words `into` and `pipe`,
+because `specrun` treats them as operators. Text is limited to ten words so
+the guest argument array cannot silently truncate it. Ordinary read-only
+requests and the existing fixed demonstration text are unaffected.
+
 Run the validator boundary tests with:
 
 ```sh

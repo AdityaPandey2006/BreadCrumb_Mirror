@@ -61,3 +61,23 @@ The committed copies of the evidence produced this way are under
 
 Guest programs: `spbench` (measurements), `specrun` (demo utility),
 `spfailure` (failure tests).
+
+## Tooling regression checks
+
+```sh
+python3 -m unittest discover -s agent
+python3 -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+The host checks cover failing and passing matrix exit statuses, the final
+patched baseline's source hash, and benchmark counters under open, short-write,
+begin and completion failures. They use temporary fixtures and a C compiler;
+they do not run a complete QEMU test matrix.
+
+The matrix now exits nonzero if any run fails, stopping `run-all.sh` before
+measurements. Concurrency outcomes are mutually exclusive: a full write plus
+successful completion counts as success; write/begin errors count as `other`;
+completion failures after full writes count as `conflicts`. Failed speculative
+writes are aborted. Baseline source hashes are calculated after all source
+patches and before compilation. Existing committed results remain historical
+evidence from their recorded builds.

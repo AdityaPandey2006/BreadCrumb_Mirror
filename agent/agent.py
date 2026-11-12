@@ -47,17 +47,23 @@ def specrun_step(action):
     """Translate one validated effect action into a specrun STEP (Step 10).
 
     specrun takes one shell argument per step with words separated by commas,
-    so text containing commas is rejected rather than escaped.
+    so commas and words used as specrun operators are rejected rather than
+    interpreted as command structure.
     """
     tool, args = validate(action, destructive=True)
     if "," in args.get("text", ""):
         raise ValueError("Text inside a speculation cannot contain commas")
+    words = args.get("text", "").split()
+    if any(word in {"into", "pipe"} for word in words):
+        raise ValueError("Text inside a speculation cannot contain the words into or pipe")
+    if len(words) > 10:  # specrun MAXW=12: echo + ten words + terminating null
+        raise ValueError("Text inside a speculation is limited to ten words")
     if tool == "delete_file":
         return "rm," + args["path"]
     if tool == "create_file":
-        return "echo," + ",".join(args["text"].split()) + ",into," + args["path"]
+        return "echo," + ",".join(words) + ",into," + args["path"]
     if tool == "print_text":
-        return "echo," + ",".join(args["text"].split())
+        return "echo," + ",".join(words)
     raise ValueError("Only effect tools can run inside a speculation")
 
 

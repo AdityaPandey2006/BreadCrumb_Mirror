@@ -58,5 +58,9 @@ then res=PASS; else res=FAIL; fi
 printf 'agent-unittest\thost\t-\t1\t%s\t%s\tagent-unittest.txt\n' "$res" "$(( $(date +%s) - start ))" >> "$TSV"
 echo "$res  agent unit tests"
 echo "matrix written to $TSV"
-grep -c PASS "$TSV" | sed 's/^/PASS rows: /'
-grep -c FAIL "$TSV" | sed 's/^/FAIL rows: /'
+awk -F '\t' 'NR > 1 {
+  if ($5 == "PASS") passed++; else failed++;
+} END {
+  printf "PASS rows: %d\nFAIL rows: %d\n", passed, failed;
+  exit (failed != 0);
+}' "$TSV"

@@ -404,10 +404,17 @@ conc(int P, int R, int shared, int mode)
           continue;
         }
         fd = open(shared ? "cs" : name, O_RDWR);
-        if(fd < 0 || write(fd, big, 512) != 512)
+        if(fd < 0 || write(fd, big, 512) != 512){
+          if(fd >= 0)
+            close(fd);
           other++;
-        if(fd >= 0)
-          close(fd);
+          // A successful completion of an empty/partial attempt is not a
+          // successful write. Discard speculative work and count it once.
+          if(mode != M_ORD)
+            complete(M_ABORT);
+          continue;
+        }
+        close(fd);
         if(complete(mode) == 0)
           commits++;
         else {

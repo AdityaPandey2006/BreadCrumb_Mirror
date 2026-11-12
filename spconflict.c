@@ -165,28 +165,62 @@ test_metadata_false_conflict(void)
 {
   int a2p[2], b2p[2], p2a[2], p2b[2];
   int pid_a, pid_b;
+  int ready_a[2], ready_b[2];
+  char fill[512];
 
   printf(1, "-- 2. Metadata false conflict (directory / dinode sharing)\n");
   clean();
   pipe(a2p); pipe(b2p); pipe(p2a); pipe(p2b);
+  // PIPESIZE is 512 in pipe.c. Fill each readiness pipe before fork.
+  // The parent's extra write blocks until that child consumes one byte,
+  // which it does only AFTER staging its metadata. This uses immediate
+  // input consumption, not an outgoing speculative signal held until commit.
+  // Keep each child's reader open until its commit signal so the parent's
+  // readiness write cannot fail because the reader closed immediately.
+  if(pipe(ready_a) < 0 || pipe(ready_b) < 0){
+    check(0, "metadata readiness pipes");
+    exit();
+  }
+  memset(fill, 'P', sizeof(fill));
+  if(write(ready_a[1], fill, sizeof(fill)) != sizeof(fill) ||
+     write(ready_b[1], fill, sizeof(fill)) != sizeof(fill)){
+    check(0, "fill metadata readiness pipes");
+    exit();
+  }
 
   pid_a = fork();
+  if(pid_a < 0){
+    check(0, "fork metadata participant A");
+    exit();
+  }
   if(pid_a == 0){
     close(a2p[0]); close(p2a[1]);
+    close(ready_a[1]); close(ready_b[0]); close(ready_b[1]);
     int ok = (xbegin() == 0) && make("cf_meta_a", "FILE_A_CONTENT");
     char sig;
+    if(read(ready_a[0], &sig, 1) != 1) ok = 0;
     read(p2a[0], &sig, 1);
+    close(ready_a[0]);
     int c = (xcommit() == 0);
     send(a2p[1], ok && c);
     exit();
   }
 
   pid_b = fork();
+  if(pid_b < 0){
+    kill(pid_a);
+    wait();
+    check(0, "fork metadata participant B");
+    exit();
+  }
   if(pid_b == 0){
     close(b2p[0]); close(p2b[1]);
+    close(ready_b[1]); close(ready_a[0]); close(ready_a[1]);
     int ok = (xbegin() == 0) && make("cf_meta_b", "FILE_B_CONTENT");
     char sig;
+    if(read(ready_b[0], &sig, 1) != 1) ok = 0;
     read(p2b[0], &sig, 1);
+    close(ready_b[0]);
     int c1 = xcommit();
     int c2 = xcommit();
     int a = (xabort() == 0);
@@ -197,7 +231,10 @@ test_metadata_false_conflict(void)
   close(a2p[1]); close(p2a[0]);
   close(b2p[1]); close(p2b[0]);
 
-  sleep(5);
+  close(ready_a[0]); close(ready_b[0]);
+  check(write(ready_a[1], "P", 1) == 1 && write(ready_b[1], "P", 1) == 1,
+        "both metadata versions staged before either commit");
+  close(ready_a[1]); close(ready_b[1]);
 
   write(p2a[1], "C", 1);       // A commits first
   check(receive(a2p[0]), "spec A commits directory and inode block modifications");

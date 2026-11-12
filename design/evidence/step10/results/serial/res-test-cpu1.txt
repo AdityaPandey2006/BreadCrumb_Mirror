@@ -1,0 +1,39 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spbench res; echo DONE5b0c7c480c
+RES start
+RES,empty,0,0,0,0,0,0
+RES,overwrite,1,512,0,1,1,0
+RES,overwrite,2,1024,0,2,2,0
+RES,overwrite,3,1536,0,3,3,0
+RES,overwrite,4,2048,0,4,4,0
+RES,overwrite,5,2560,0,5,5,0
+RES,overwrite,6,3072,0,6,6,0
+RES,overwrite,7,3584,0,7,7,0
+RES,overwrite,8,4096,0,8,8,0
+RES,overwrite,9,4096,0,8,8,0
+RES,create,0,0,0,2,2,0
+RES,create,1,512,0,4,4,0
+RES,create,2,1024,0,5,5,0
+RES,create,3,1536,0,6,6,0
+RES,create,4,2048,0,7,7,0
+RES,create,5,2560,0,8,8,0
+RES,create,6,2560,0,8,8,0
+RES,extend,1,512,0,3,3,0
+RES,extend,2,1024,0,4,4,0
+RES,extend,3,1536,0,5,5,0
+RES,extend,4,2048,0,6,6,0
+RES,extend,5,2560,0,7,7,0
+RES,extend,6,3072,0,8,8,0
+RES,extend,7,3072,0,8,8,0
+RES,unlink,0,0,0,3,3,0
+RES,console,64,64,0,0,1,0
+RES,console,4096,4096,0,0,1,0
+RES,pipe_ext,64,64,0,0,1,0
+RES,pipe_ext,4000,4000,0,0,1,0
+RES done
+SPBENCH DONE
+DONE5b0c7c480c
+$ 

@@ -94,3 +94,20 @@ kalloc(void)
   return (char*)r;
 }
 
+
+#ifdef SHADOW_TEST
+// Test-only (Step 10): count free physical pages, for leak and resource
+// measurements. Walks the free list under kmem.lock; O(free pages).
+int
+kfreepages(void)
+{
+  struct run *r;
+  int n = 0;
+
+  acquire(&kmem.lock);
+  for(r = kmem.freelist; r; r = r->next)
+    n++;
+  release(&kmem.lock);
+  return n;
+}
+#endif

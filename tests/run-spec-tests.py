@@ -26,6 +26,32 @@ CRASH_POINTS = [
     (4, "new", "first of three blocks installed home"),
 ]
 
+# Step 10: crash points in the output-release window, after the durable
+# point. Filesystem must recover the complete NEW state at every point.
+# Console expectation: "none" = no held console byte reached the serial log
+# before the crash; "prefix" = exactly the first 16 held bytes and not the
+# rest. Pipe delivery is recorded (observed), not asserted, because the
+# outside reader may or may not run before the halted machine stops.
+OUTPUT_CRASH_POINTS = [
+    (5, "none", "filesystem durable, no held output released"),
+    (6, "none", "first held pipe record delivered, second not"),
+    (7, "none", "pipe output released, console not yet"),
+    (8, "prefix", "first 16 held console bytes emitted, rest not"),
+]
+CONSOLE_TOKEN = "CONSOLE_TOKEN_0123456789_END"
+CONSOLE_PREFIX = CONSOLE_TOKEN[:16]
+
+LEAK_TOKENS = ["LEAK_ABORT_SECRET_999", "LEAK_KILL_SECRET_888", "LEAK_ABORT_PIPE_SECRET_777",
+               "LEAK_KILL_PIPE_SECRET_666", "LEAK_CONFLICT_CONSOLE_555", "LEAK_CONFLICT_PIPE_444",
+               "LEAK_EXIT_PIPE_222", "LEAK_EXIT_CONSOLE_333", "LEAK_BLOCKED_ABORT_111",
+               "LEAK_FULLPIPE_000", "LEAK_CONSFAIL_A", "LEAK_PIPEFAIL_B", "LEAK_CYCLE_ABORT"]
+
+
+def assert_no_leaks(out):
+    for token in LEAK_TOKENS:
+        if token in out:
+            raise RuntimeError(f"FAIL: leak detected: {token} appeared in guest output")
+
 
 class Guest:
     """One QEMU boot of the images in `folder`, logging all serial output."""
@@ -34,6 +60,7 @@ class Guest:
         self.log = log
         self.logpath = args.log
         self.pending = b""
+        self.timeout = getattr(args, "timeout", 180)
         cmd = [args.qemu, "-display", "none", "-monitor", "none", "-serial", "stdio",
                "-no-reboot", "-smp", str(args.cpus), "-m", "512",
                "-drive", f"file={folder/'xv6.img'},index=0,format=raw",
@@ -71,7 +98,7 @@ class Guest:
     def run(self, command, expected):
         marker = "TESTDONE" + uuid.uuid4().hex[:8]
         self.type(f"{command}; echo {marker}")
-        output = self.until(rb"(?:^|\n)" + marker.encode() + rb"\r?\n")
+        output = self.until(rb"(?:^|\n)" + marker.encode() + rb"\r?\n", timeout=self.timeout)
         self.until(rb"\$ ")
         print(output, flush=True)
         if expected not in output or "FAIL:" in output or "panic:" in output:
@@ -125,6 +152,62 @@ def crash_suite(args, folder, log, namespace=False):
         note(log, f"PASS crash point {point}: recovered complete {expect} state")
 
 
+def output_crash_suite(args, folder, log):
+    """Crash after the durable point while held output is being released."""
+    results = []
+    for point, console, meaning in OUTPUT_CRASH_POINTS:
+        for name in ("xv6.img", "fs.img"):
+            shutil.copyfile(ROOT / name, folder / name)
+        note(log, f"output crash point {point} ({meaning}); expect complete new filesystem, console {console}")
+        guest = Guest(args, folder, log)
+        try:
+            guest.until(rb"\$ ")
+            guest.run("spfailure outcrash setup", "OCSETUP OK")
+            guest.type(f"spfailure outcrash {point}")
+            out = guest.until(rb"SPEC CRASH POINT " + str(point).encode() + rb"\r?\n", timeout=120)
+            out += guest.until(rb"panic: spec crash point", timeout=30)
+            # Collect whatever else the halted machine printed (other CPUs).
+            time.sleep(1)
+            if select.select([guest.proc.stdout], [], [], 0.5)[0]:
+                data = os.read(guest.proc.stdout.fileno(), 65536)
+                log.write(data)
+                out += data.decode(errors="replace")
+        finally:
+            guest.stop()
+        flat = out.replace("\r", "")
+        full = CONSOLE_TOKEN in flat
+        prefix = CONSOLE_PREFIX in flat
+        pipes = [t for t in ("PIPE_TOKEN_FIRST", "PIPE_TOKEN_SECOND") if t in flat]
+        if "xcommit returned" in flat or "unexpected commit reply" in flat:
+            raise RuntimeError("caller received a reply before the crash point")
+        if console == "none" and prefix:
+            raise RuntimeError(f"FAIL: held console bytes appeared before crash point {point}")
+        if console == "prefix" and (not prefix or full):
+            raise RuntimeError(f"FAIL: crash point {point} expected exactly a 16-byte console prefix")
+        if point == 5 and pipes:
+            raise RuntimeError("FAIL: held pipe bytes delivered before crash point 5")
+        if point == 6 and "PIPE_TOKEN_SECOND" in pipes:
+            raise RuntimeError("FAIL: second pipe record delivered before crash point 6")
+        note(log, f"crash point {point}: console {'full' if full else 'prefix' if prefix else 'none'}; "
+                  f"pipe tokens seen by the outside reader before halt: {pipes or 'none'}")
+        note(log, "rebooting the SAME fs.img (no rebuild, no copy)")
+        guest = Guest(args, folder, log)
+        try:
+            guest.until(rb"\$ ")
+            after = guest.run("spfailure outcrash verify", "OCVERIFY OK new")
+        finally:
+            guest.stop()
+        if CONSOLE_TOKEN in after or "PIPE_TOKEN" in after:
+            raise RuntimeError("FAIL: held output reappeared after reboot")
+        results.append((point, meaning, "new", 'full' if full else 'prefix' if prefix else 'none',
+                        "+".join(pipes) or "none"))
+        note(log, f"PASS output crash point {point}: recovered complete new state; "
+                  "lost output was not replayed after reboot")
+    note(log, "SUMMARY point | meaning | recovered fs | console before halt | pipe seen before halt")
+    for row in results:
+        note(log, "SUMMARY " + " | ".join(str(x) for x in row))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cpus", type=int, choices=(1, 2, 3, 4), default=1)
@@ -132,13 +215,21 @@ def main():
     parser.add_argument("--qemu", default=str(ROOT.parent / "build/qemu-system-i386"))
     parser.add_argument("--log", type=Path, required=True)
     parser.add_argument("--suite", default="shadow",
-                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "pipe", "conflict", "usertests"))
+                        choices=("shadow", "lifecycle", "files", "commit", "crash", "namespace", "namespace-crash", "console", "pipe", "conflict", "usertests",
+                                 "failure", "drainfull", "output-crash"))
+    parser.add_argument("--timeout", type=int, default=180,
+                        help="seconds to wait for one guest command (hang detection)")
     args = parser.parse_args()
     if args.repeat < 1:
         parser.error("--repeat must be positive")
     args.log.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="xv6-spec-tests-") as tmp, args.log.open("wb") as log:
         folder = Path(tmp)
+        if args.suite == "output-crash":
+            for _ in range(args.repeat):
+                output_crash_suite(args, folder, log)
+            print(f"PASS: output-crash, {args.cpus} CPU(s); raw log: {args.log}")
+            return
         if args.suite in ("crash", "namespace-crash"):
             for _ in range(args.repeat):
                 crash_suite(args, folder, log, args.suite == "namespace-crash")
@@ -223,6 +314,16 @@ def main():
             elif args.suite == "commit":
                 for _ in range(args.repeat):
                     run("spcommit", "SPCOMMIT TESTS PASSED")
+            elif args.suite == "failure":
+                for _ in range(args.repeat):
+                    out = run("spfailure", "SPFAILURE TESTS PASSED")
+                    assert_no_leaks(out)
+                    for needle in ("CONSFAIL_OK_LINE", "F8 PIPEFAIL GOT PIPEFAIL_OK",) if "F8" in out else ():
+                        if needle not in out:
+                            raise RuntimeError(f"FAIL: expected '{needle}' in output")
+            elif args.suite == "drainfull":
+                for _ in range(args.repeat):
+                    run("spfailure drainfull", "SPFAILURE DRAINFULL PASSED")
             elif args.suite == "namespace":
                 for _ in range(args.repeat):
                     run("spnamespace", "NAMESPACE TESTS PASSED")

@@ -1,0 +1,194 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure; echo TESTDONE233e74d2
+BEGIN F7 lifecycle error matrix
+PASS: F7 completion without a speculation fails
+PASS: F7 owner commits after the member exits (nested, member and live-peer checks held)
+PASS: F7 second completion fails
+PASS: F7 begin after completion allowed
+BEGIN F3 owner exit discards held output
+PASS: F3 pipe
+PASS: F3 fork
+PASS: F3 fork
+PASS: F3 owner exited
+PASS: F3 outside reader sees EOF, no held bytes
+PASS: F3 private file discarded
+BEGIN F4 blocked outside reader
+PASS: F4 pipe
+PASS: F4 fork readePASS: F4 fork reader
+r
+PASS: F4 commit
+PASS: F4 blocked reader got 18 expected bytes
+PASS: F4 reader finished
+PASS: F4 pipe
+PASS: F4 fork reader
+PASS: F4 fork reader
+PASS: F4 abort
+PASS: F4 blocked reader got 0 expected bytes
+PASS: F4 reader finished
+BEGIN F5 outside writer, speculative reader
+PASS: F5 pipe
+PASS: F5 fork writer
+PASS: F5 fork writer
+PASS: F5 abort; member consumed 1024 outside bytes
+PASS: F5 outside writer completed
+PASS: F5 consumed input is not restored by abort (D44)
+BEGIN F6 held write to a full outside pipe
+PASS: F6 pipe
+PASS: F6 ordinary bytes fill the pipe
+PASS: F6 fork
+PASS: F6 fork
+PASS: F6 speculative writer did not sleep on the full pipe
+PASS: F6 reader got only the 512 ordinary bytes
+BEGIN F2 cancelled sleepers
+PASS: F2 pipes
+PASS: F2 fork owner
+PASS: F2 fork owner
+PASS: F2 owner started
+PASS: F2 kill owner
+zombie!
+zombie!
+PASS: F2 owner reaped
+F2 all participants gone after 1 ticks
+PASS: F2 sleeping and blocked members were woken and exited
+PASS: F2 new speculation after cancellation
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: F1 fork reader
+PASS: F1 fork reader
+rrrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+rrrr
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE TESTS PASSED
+TESTDONE233e74d2
+$ spfailure; echo TESTDONEbda8be21
+BEGIN F7 lifecycle error matrix
+PASS: F7 completion without a speculation fails
+PASS: F7 owner commits after the member exits (nested, member and live-peer checks held)
+PASS: F7 second completion fails
+PASS: F7 begin after completion allowed
+BEGIN F3 owner exit discards held output
+PASS: F3 pipe
+PASS: F3 fork
+PASS: F3 fork
+PASS: F3 owner exited
+PASS: F3 outside reader sees EOF, no held bytes
+PASS: F3 private file discarded
+BEGIN F4 blocked outside reader
+PASS: F4 pipe
+PASS: F4 fork reader
+PASS: F4 fork reader
+PASS: F4 commit
+PASS: F4 blocked reader got 18 expected bytes
+PASS: F4 reader finished
+PASS: F4 pipe
+PASS: F4 fork reader
+PASS: F4 fork reader
+PASS: F4 abort
+PASS: F4 blocked reader got 0 expected bytes
+PASS: F4 reader finished
+BEGIN F5 outside writer, speculative reader
+PASS: F5 pipe
+PASS: F5 fork writer
+PASS: F5 fork writer
+PASS: F5 abort; member consumed 1024 outside bytes
+PASS: F5 outside writer completed
+PASS: F5 consumed input is not restored by abort (D44)
+BEGIN F6 held write to a full outside pipe
+PASS: F6 pipe
+PASS: F6 ordinary bytes fill the pipe
+PASS: F6 fork
+PASS: F6 fork
+PASS: F6 speculative writer did not sleep on the full pipe
+PASS: F6 reader got only the 512 ordinary bytes
+BEGIN F2 cancelled sleepers
+PASS: F2 pipes
+PASS: F2 fork owner
+PASS: F2 fork owner
+PASS: F2 owner started
+PASS: F2 kill owner
+zombie!
+zombie!
+PASS: F2 owner reaped
+F2 all participants gone after 1 ticks
+PASS: F2 sleeping and blocked members were woken and exited
+PASS: F2 new speculation after cancellation
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: PASS: F1 fork reader
+F1 fork reader
+rrrrrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+rrr
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE TESTS PASSED
+TESTDONEbda8be21
+$ spfailure; echo TESTDONE5a3865ab
+BEGIN F7 lifecycle error matrix
+PASS: F7 completion without a speculation fails
+PASS: F7 owner commits after the member exits (nested, member and live-peer checks held)
+PASS: F7 second completion fails
+PASS: F7 begin after completion allowed
+BEGIN F3 owner exit discards held output
+PASS: F3 pipe
+PASS: F3 forkPASS: F3 fork
+
+PASS: F3 owner exited
+PASS: F3 outside reader sees EOF, no held bytes
+PASS: F3 private file discarded
+BEGIN F4 blocked outside reader
+PASS: F4 pipe
+PASS: F4 fork reader
+PASS: F4 fork reader
+PASS: F4 commit
+PASS: F4 blocked reader got 18 expected bytes
+PASS: F4 reader finished
+PASS: F4 pipe
+PASSPASS: F4 fork reader
+: F4 fork reader
+PASS: F4 abort
+PASS: F4 blocked reader got 0 expected bytes
+PASS: F4 reader finished
+BEGIN F5 outside writer, speculative reader
+PASS: F5 pipe
+PASS: F5 fork writer
+PASS: F5 fork writer
+PASS: F5 abort; member consumed 1024 outside bytes
+PASS: F5 outside writer completed
+PASS: F5 consumed input is not restored by abort (D44)
+BEGIN F6 held write to a full outside pipe
+PASS: F6 pipe
+PASS: F6 ordinary bytes fill the pipe
+PASS: F6 fork
+PASS: F6 fork
+PASS: F6 speculative writer did not sleep on the full pipe
+PASS: F6 reader got only the 512 ordinary bytes
+BEGIN F2 cancelled sleepers
+PASS: F2 pipes
+PASS: F2 fork owner
+PASS: F2 fork owner
+PASS: F2 owner started
+PASS: F2 kill owner
+zombie!
+zombie!
+PASS: F2 owner reaped
+F2 all participants gone after 1 ticks
+PASS: F2 sleeping and blocked members were woken and exited
+PASS: F2 new speculation after cancellation
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: PASS: F1 fork reader
+F1 fork reader
+rrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+rrrrr
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE TESTS PASSED
+TESTDONE5a3865ab
+$ 

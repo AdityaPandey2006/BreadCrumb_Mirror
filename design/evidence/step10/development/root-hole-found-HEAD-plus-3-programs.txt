@@ -1,0 +1,50 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spectest; echo TESTDONE5ba341f0
+PASS: completion outside speculation is rejected
+PASS: owner abort succeeds
+PASS: second completion is rejected
+PASS: a completed process can begin and commit again
+PASS: shared-membership owner begins
+PASS: inherited child rejects nested begin and completion
+PASS: owner abort is refused while child lives
+PASS: owner cannot complete while child lives
+PASS: fork inheritance shares one context until child detaches
+PASS: exec-membership owner begins
+PASS: exec preserves inherited non-owner membership
+PASS: exec'd member remains counted until exit
+PASS: owner completes after exec'd member detaches
+PASS: unreaped-zombie owner begins
+PASS: detached zombie no longer counts before wait reaps it
+PASS: unreaped zombie remains waitable
+PASS: member-kill owner begins
+PASS: ordinary member can be killed
+PASS: killed non-owner detaches without cancelling owner
+PASS: grandchild owner begins
+PASS: living grandchild still counts after its parent exits
+PASS: grandchild can be cancelled by pid
+PASS: owner completes after grandchild detaches
+zombie!
+zombie!
+PASS: owner exits voluntarily
+PASS: owner exit wakes and terminates sleeping member
+PASS: owner kill request succeeds
+zombie!
+PASS: killed owner exits
+PASS: owner kill wakes and terminates sleeping member
+PASS: all bounded context slots can be allocated
+PASS: begin fails cleanly when context table is full
+PASS: cancelled contexts are reclaimed and reusable
+PASS: fork-failure owner begins
+PASS: fork failure is reached under process/resource pressure
+PASS: failed fork and child exits leave no leaked membership references
+PASS: repeated begin/complete and process-slot reuse
+PASS: isolation example file prepared
+PASS: lifecycle abort succeeds
+FAIL: speculative overwrite discarded by xabort (Step 4 isolation)
+PASS: rejected creation left no public file
+SPEC TESTS FAILED: 3
+TESTDONE5ba341f0
+$ 

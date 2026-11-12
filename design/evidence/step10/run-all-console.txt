@@ -1,0 +1,212 @@
+PASS  shadow test cpus=1 x3
+PASS  shadow test cpus=2 x3
+PASS  shadow test cpus=3 x3
+PASS  shadow test cpus=4 x3
+PASS  conflict test cpus=1 x9
+PASS  conflict test cpus=3 x9
+PASS  failure test cpus=1 x3
+PASS  failure test cpus=2 x3
+PASS  failure test cpus=3 x3
+PASS  failure test cpus=4 x3
+PASS  namespace test cpus=1 x3
+PASS  namespace test cpus=4 x3
+PASS  console test cpus=1 x3
+PASS  console test cpus=3 x3
+PASS  pipe test cpus=1 x3
+PASS  pipe test cpus=3 x3
+PASS  crash test cpus=1 x1
+PASS  crash test cpus=3 x1
+PASS  namespace-crash test cpus=1 x1
+PASS  namespace-crash test cpus=3 x1
+PASS  output-crash test cpus=1 x3
+PASS  output-crash test cpus=3 x3
+PASS  lifecycle test cpus=1 x1
+PASS  usertests test cpus=1 x1
+PASS  lifecycle normal cpus=1 x1
+PASS  lifecycle normal cpus=3 x1
+PASS  failure normal cpus=1 x3
+PASS  failure normal cpus=3 x3
+PASS  drainfull normal cpus=1 x3
+PASS  drainfull normal cpus=3 x3
+PASS  namespace normal cpus=3 x3
+PASS  conflict normal cpus=3 x3
+PASS  usertests normal cpus=1 x1
+PASS  usertests normal cpus=2 x1
+PASS  usertests orig cpus=1 x1
+PASS  root-hole regression
+PASS  agent unit tests
+matrix written to /home/ishaan/bc10/final/matrix/matrix.tsv
+PASS rows: 37
+FAIL rows: 0
+micro orig boot 1: 2380 rows, 46s
+micro orig boot 2: 2380 rows, 48s
+micro orig boot 3: 2380 rows, 47s
+micro orig boot 4: 2380 rows, 46s
+micro orig boot 5: 2380 rows, 47s
+micro normal boot 1: 7140 rows, 85s
+micro normal boot 2: 7140 rows, 84s
+micro normal boot 3: 7140 rows, 87s
+micro normal boot 4: 7140 rows, 85s
+micro normal boot 5: 7140 rows, 90s
+conc orig cpus 1 boot 1 done
+conc orig cpus 1 boot 2 done
+conc orig cpus 1 boot 3 done
+conc orig cpus 2 boot 1 done
+conc orig cpus 2 boot 2 done
+conc orig cpus 2 boot 3 done
+conc orig cpus 4 boot 1 done
+conc orig cpus 4 boot 2 done
+conc orig cpus 4 boot 3 done
+conc normal cpus 1 boot 1 done
+conc normal cpus 1 boot 2 done
+conc normal cpus 1 boot 3 done
+conc normal cpus 2 boot 1 done
+conc normal cpus 2 boot 2 done
+conc normal cpus 2 boot 3 done
+conc normal cpus 4 boot 1 done
+conc normal cpus 4 boot 2 done
+conc normal cpus 4 boot 3 done
+res done
+figures written to /home/ishaan/bc10/final/figures
+Step 10 demonstrations: externalization barriers for speculative processes
+build: /home/ishaan/bc10/final/normal  (disposable image copy; dummy files under /demo)
+$ mkdir /demo
+$ echo The server handled 100 requests. Five failed. > /demo/report.txt
+$ echo Original important data. > /demo/important.txt
+$ echo original a > /demo/a.txt
+$ echo public version > /demo/a2.txt
+
+========================================================================
+1. Ordinary execution: effects are immediate and persistent
+========================================================================
+No speculation: the write and the deletion are visible at once and cannot be withdrawn.
+$ echo ORDINARY_NOTE > /demo/note.txt
+$ cat /demo/note.txt
+    ORDINARY_NOTE
+  [PASS] ordinary write visible immediately
+$ rm /demo/note.txt
+$ cat /demo/note.txt
+    cat: cannot open /demo/note.txt
+  [PASS] ordinary deletion is immediate; nothing can undo it
+
+========================================================================
+2. Speculative changes stay private while the attempt is live
+========================================================================
+specrun runs in the background: it creates draft.txt, prints a line, then pauses 3 s before committing. An ordinary shell looks in the meantime.
+$ ls /demo
+    .              1 32 112
+    ..             1 1 528
+    report.txt     2 33 46
+    important.txt  2 34 25
+    a.txt          2 35 11
+    a2.txt         2 36 15
+$ cat /demo/draft.txt
+    cat: cannot open /demo/draft.txt
+  [PASS] outside the speculation draft.txt does not exist yet
+  [PASS] the speculation's console line is held, not printed
+    (background) HELD_LINE_2
+  [PASS] held line released when the attempt committed
+$ cat /demo/draft.txt
+    czombie!
+    at /demo/draft.txt; echo DONE8b03d15430
+    PRIVATE_DRAFT
+  [PASS] after commit the draft is public
+
+========================================================================
+3. Abort: original state preserved, pending output suppressed
+========================================================================
+The handout's case: a speculative child removes a, writes hi into b and prints, then aborts.
+$ specrun abort rm,/demo/a.txt echo,hi,into,/demo/b.txt echo,ABORT_SECRET_LINE
+    SPECRUN: aborted: private changes and held output discarded
+  [PASS] speculation aborted
+$ cat /demo/a.txt
+    original a
+  [PASS] a.txt still exists with its original contents
+$ cat /demo/b.txt
+    cat: cannot open /demo/b.txt
+  [PASS] b.txt was never created publicly
+
+========================================================================
+4. Commit: filesystem changes published, then output released
+========================================================================
+Same steps with commit. Output is released only after the commit record is durable (D37).
+$ specrun commit rm,/demo/a.txt echo,hi,into,/demo/b.txt echo,COMMIT_LINE
+    COMMIT_LINE
+    SPECRUN: committed: changes published; held output released above
+  [PASS] held output appears when xcommit completes, before specrun's own report
+$ cat /demo/a.txt
+    cat: cannot open /demo/a.txt
+  [PASS] a.txt removed
+$ cat /demo/b.txt
+    hi
+  [PASS] b.txt created with hi
+
+========================================================================
+5. Internal pipe keeps working inside a speculation
+========================================================================
+cat and wc are both members; the pipe between them is internal, so bytes flow at once (no deadlock); only the final console output is held until commit.
+$ cat /demo/report.txt | wc
+    1 7 46 
+$ specrun commit cat,/demo/report.txt,pipe,wc
+    1 7 46 
+    SPECRUN: committed: changes published; held output released above
+  [PASS] speculative pipeline gives the same counts as the ordinary pipeline
+
+========================================================================
+6a. Capacity limit follows the documented policy (D22/D25, R01)
+========================================================================
+Copying a ~60 KiB binary into a new file inside a speculation: the eight-block cap (inode, bitmap, directory + 5 data blocks) makes the write short. Nothing spills to the public disk; the program sees the short write (cat reports an error).
+$ specrun abort cat,/usertests,into,/demo/big.bin
+    SPECRUN: aborted: private changes and held output discarded
+$ cat /demo/big.bin
+    cat: cannot open /demo/big.bin
+  [PASS] aborted oversized attempt left no file
+$ specrun commit cat,/usertests,into,/demo/big.bin
+    SPECRUN: committed: changes published; held output released above
+$ ls /demo/big.bin
+    big.bin        2 38 2560
+  [PASS] commit published only the 2560-byte prefix that fit (got 2560)
+  Policy note: committing after a short write publishes the written prefix (D25); a careful program checks the count and aborts instead.
+
+========================================================================
+6b. Conflict: first committer wins (D24/D45)
+========================================================================
+A background speculation creates c.txt and pauses; meanwhile an ordinary process creates its own c.txt. The outside change is published first, so the speculation's commit is refused and it aborts. Nothing of the losing attempt is published.
+$ echo OUTSIDE_VERSION > /demo/c.txt
+    (background) 
+  [PASS] loser's held output was discarded
+$ cat /demo/c.txt
+    czombie!
+    at /demo/c.txt; echo DONE5035177167
+    OUTSIDE_VERSION
+  [PASS] public c.txt is the outside version
+
+========================================================================
+6c. Outside write to a privately copied block is refused (D20)
+========================================================================
+A speculation overwrites a2.txt and pauses; an ordinary write to the same block is refused (the shell's echo ignores the error), and the speculation then commits.
+$ echo OUTSIDER > /demo/a2.txt
+$ cat /demo/a2.txt
+    public version
+  [PASS] outside write had no effect while the copy exists
+$ cat /demo/a2.txt
+    czombie!
+    at /demo/a2.txt; echo DONEf63c8ba78a
+    SPEC_A2
+    ersion
+  [PASS] speculation committed its version
+
+========================================================================
+7. What the barrier does NOT do
+========================================================================
+The rule-based agent's injected deletion is contained only because the caller's guard decides to abort (see: python3 agent/agent.py demo speculative). The kernel does not recognise malicious instructions; an owner that commits a harmful attempt publishes it.
+$ specrun commit rm,/demo/important.txt echo,INJECTED_AND_COMMITTED
+    INJECTED_AND_COMMITTED
+    SPECRUN: committed: changes published; held output released above
+$ cat /demo/important.txt
+    cat: cannot open /demo/important.txt
+  [PASS] an unguarded commit publishes the injected deletion: containment is not detection
+
+All 20 demonstration checks passed.
+serial log check: suppressed tokens appear only in the echoed command lines
+done: /home/ishaan/bc10/final

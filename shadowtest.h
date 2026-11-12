@@ -14,4 +14,11 @@
 #define ST_PUBHELD   12  // which hold point a committer is paused at (0 none)
 #define ST_CRASH     13  // value N: halt at crash point N of the next
                          // speculative publication (SPC_* in defs.h)
+#define ST_FREEPAGES 14  // number of free physical pages (kalloc free list)
 #define ST_ABSENT  256
+
+// ST_FAIL value: which next allocation fails (Step 10 selector).
+// 0 or 1 keep the original meaning (next shadow/savepoint/buffer page).
+#define STF_SHADOW   1
+#define STF_CONSOLE  2   // next held-console page (spec_console_write)
+#define STF_PIPE     3   // next held-pipe page (spec_pipe_write)

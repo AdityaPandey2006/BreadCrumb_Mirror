@@ -1,0 +1,310 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfiletest; echo TESTDONEce1633bc
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: abort succeeds
+PASS: abort preserves the original public bytes
+PASS: outside write allowed again after abort
+PASS: outside unlink allowed again after abort
+-- parent and child share private updates
+PASS: abort succeeds
+PASS: abort discards both members' changes
+-- independent speculations do not see each other
+PASS: speculation A writes block 0 privately
+PASS: speculation B sees original bytes, then its own
+PASS: outsider still sees original bytes
+PASS: each speculation keeps only its own private bytes
+PASS: each speculation keeps only its own private bytes
+PASS: both aborts preserve the original
+-- reads without copies, cross-block, reuse, cap, partial write
+PASS: abort succeeds
+PASS: abort restores every original byte
+-- allocation failure (SHADOW_TEST build)
+PASS: abort succeeds
+PASS: public file unchanged after allocation failures
+PASS: no shadow pages leaked
+-- owner exit discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- owner kill discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- Step 6 private creation and extension, discarded on abort
+PASS: abort succeeds
+PASS: aborted name absent publicly
+PASS: original file restored after abort
+-- descriptor rule: only files opened in the same speculation
+PASS: abort succeeds
+PASS: pre-xbegin descriptor usable again, offset untouched
+PASS: abort succeeds
+PASS: original preserved
+PASS: no log_write() (dirty public buffer) by any speculative process
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+SPFILE TESTS PASSED
+TESTDONEce1633bc
+$ spfiletest; echo TESTDONE17b5303c
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: abort succeeds
+PASS: abort preserves the original public bytes
+PASS: outside write allowed again after abort
+PASS: outside unlink allowed again after abort
+-- parent and child share private updates
+PASS: abort succeeds
+PASS: abort discards both members' changes
+-- independent speculations do not see each other
+PASS: speculation A writes block 0 privately
+PASS: speculation B sees original bytes, then its own
+PASS: outsider still sees original bytes
+PASS: each speculation keeps only its own private bytes
+PASS: each speculation keeps only its own private bytes
+PASS: both aborts preserve the original
+-- reads without copies, cross-block, reuse, cap, partial write
+PASS: abort succeeds
+PASS: abort restores every original byte
+-- allocation failure (SHADOW_TEST build)
+PASS: abort succeeds
+PASS: public file unchanged after allocation failures
+PASS: no shadow pages leaked
+-- owner exit discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- owner kill discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+PASS: private copies discarded after owner death andzombie!
+ member exit
+PASS: public file holds only original bytes
+-- Step 6 private creation and extension, discarded on abort
+PASS: abort succeeds
+PASS: aborted name absent publicly
+PASS: original file restored after abort
+-- descriptor rule: only files opened in the same speculation
+PASS: abort succeeds
+PASS: pre-xbegin descriptor usable again, offset untouched
+PASS: abort succeeds
+PASS: original preserved
+PASS: no log_write() (dirty public buffer) by any speculative process
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+SPFILE TESTS PASSED
+TESTDONE17b5303c
+$ spfiletest; echo TESTDONE8360e7ae
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: abort succeeds
+PASS: abort preserves the original public bytes
+PASS: outside write allowed again after abort
+PASS: outside unlink allowed again after abort
+-- parent and child share private updates
+PASS: abort succeeds
+PASS: abort discards both members' changes
+-- independent speculations do not see each other
+PASS: speculation A writes block 0 privately
+PASS: speculation B sees original bytes, then its own
+PASS: outsider still sees original bytes
+PASS: each speculation keeps only its own private bytes
+PASS: each speculation keeps only its own private bytes
+PASS: both aborts preserve the original
+-- reads without copies, cross-block, reuse, cap, partial write
+PASS: abort succeeds
+PASS: abort restores every original byte
+-- allocation failure (SHADOW_TEST build)
+PASS: abort succeeds
+PASS: public file unchanged after allocation failures
+PASS: no shadow pages leaked
+-- owner exit discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- owner kill discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- Step 6 private creation and extension, discarded on abort
+PASS: abort succeeds
+PASS: aborted name absent publicly
+PASS: original file restored after abort
+-- descriptor rule: only files opened in the same speculation
+PASS: abort succeeds
+PASS: pre-xbegin descriptor usable again, offset untouched
+PASS: abort succeeds
+PASS: original preserved
+PASS: no log_write() (dirty public buffer) by any speculative process
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+SPFILE TESTS PASSED
+TESTDONE8360e7ae
+$ spfiletest; echo TESTDONEf347867e
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: abort succeeds
+PASS: abort preserves the original public bytes
+PASS: outside write allowed again after abort
+PASS: outside unlink allowed again after abort
+-- parent and child share private updates
+PASS: abort succeeds
+PASS: abort discards both members' changes
+-- independent speculations do not see each other
+PASS: speculation A writes block 0 privately
+PASS: speculation B sees original bytes, then its own
+PASS: outsider still sees original bytes
+PASS: each speculation keeps only its own private bytes
+PASS: each speculation keeps only its own private bytes
+PASS: both aborts preserve the original
+-- reads without copies, cross-block, reuse, cap, partial write
+PASS: abort succeeds
+PASS: abort restores every original byte
+-- allocation failure (SHADOW_TEST build)
+PASS: abort succeeds
+PASS: public file unchanged after allocation failures
+PASS: no shadow pages leaked
+-- owner exit discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- owner kill discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+PASS: privatzombie!
+e copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- Step 6 private creation and extension, discarded on abort
+PASS: abort succeeds
+PASS: aborted name absent publicly
+PASS: original file restored after abort
+-- descriptor rule: only files opened in the same speculation
+PASS: abort succeeds
+PASS: pre-xbegin descriptor usable again, offset untouched
+PASS: abort succeeds
+PASS: original preserved
+PASS: no log_write() (dirty public buffer) by any speculative process
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+SPFILE TESTS PASSED
+TESTDONEf347867e
+$ spfiletest; echo TESTDONEae29e583
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: abort succeeds
+PASS: abort preserves the original public bytes
+PASS: outside write allowed again after abort
+PASS: outside unlink allowed again after abort
+-- parent and child share private updates
+PASS: abort succeeds
+PASS: abort discards both members' changes
+-- independent speculations do not see each other
+PASS: speculation A writes block 0 privately
+PASS: speculation B sees original bytes, then its own
+PASS: outsider still sees original bytes
+PASS: each speculation keeps only its own private bytes
+PASS: each speculation keeps only its own private bytes
+PASS: both aborts preserve the original
+-- reads without copies, cross-block, reuse, cap, partial write
+PASS: abort succeeds
+PASS: abort restores every original byte
+-- allocation failure (SHADOW_TEST build)
+PASS: abort succeeds
+PASS: public file unchanged after allocation failures
+PASS: no shadow pages leaked
+-- owner exit discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- owner kill discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- Step 6 private creation and extension, discarded on abort
+PASS: abort succeeds
+PASS: aborted name absent publicly
+PASS: original file restored after abort
+-- descriptor rule: only files opened in the same speculation
+PASS: abort succeeds
+PASS: pre-xbegin descriptor usable again, offset untouched
+PASS: abort succeeds
+PASS: original preserved
+PASS: no log_write() (dirty public buffer) by any speculative process
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+SPFILE TESTS PASSED
+TESTDONEae29e583
+$ 

@@ -43,6 +43,37 @@ def validate(action, destructive=False):
     return tool, args
 
 
+def specrun_step(action):
+    """Translate one validated effect action into a specrun STEP (Step 10).
+
+    specrun takes one shell argument per step with words separated by commas,
+    so text containing commas is rejected rather than escaped.
+    """
+    tool, args = validate(action, destructive=True)
+    if "," in args.get("text", ""):
+        raise ValueError("Text inside a speculation cannot contain commas")
+    if tool == "delete_file":
+        return "rm," + args["path"]
+    if tool == "create_file":
+        return "echo," + ",".join(args["text"].split()) + ",into," + args["path"]
+    if tool == "print_text":
+        return "echo," + ",".join(args["text"].split())
+    raise ValueError("Only effect tools can run inside a speculation")
+
+
+def speculation_command(guard, actions):
+    """Fixed template: specrun keep GUARD STEP... (commit only if GUARD survives).
+
+    The guard is a rule-based policy check made by the owner on its own private
+    view before deciding; the kernel barrier only contains the effects until
+    then. Neither detects prompt injection.
+    """
+    validate(action("read_file", path=guard))
+    if not actions:
+        raise ValueError("Empty speculation")
+    return "specrun keep " + guard + " " + " ".join(specrun_step(a) for a in actions)
+
+
 def plan(request):
     if request == "list":
         return {"tool": "list_files", "args": {}}
@@ -193,6 +224,55 @@ def demo(bridge, injection=False):
     print("Verified: deletion survived abandonment; console output was already released.")
 
 
+def demo_speculative(bridge, injection=True):
+    """Step 10: the same effects as the baseline demos, run behind the barrier.
+
+    The scripted vulnerable rule still proposes the injected deletion; nothing
+    here detects the injection. The agent runs every proposed effect inside one
+    speculation with a guard: files the user did not ask to change
+    (/demo/important.txt) must still exist in the private view. The owner checks
+    that before deciding, so the injected deletion is contained and discarded,
+    while a benign attempt is committed and its output released.
+    """
+    def show(label, result):
+        print(f"{label}: {result or '(no output)'}")
+        return result
+
+    show("read_file /demo/important.txt", bridge.execute(action("read_file", path="/demo/important.txt")))
+    if injection:
+        show("read_file /demo/inbox.txt", bridge.execute(action("read_file", path="/demo/inbox.txt")))
+        print("Scripted vulnerable rule: inbox read -> propose deletion + APPROVED. No LLM involved.")
+        proposed = [action("delete_file", path="/demo/important.txt"),
+                    action("print_text", text="APPROVED")]
+    else:
+        # Short text: the whole specrun line must fit xv6 sh's 100-byte buffer.
+        proposed = [action("create_file", path="/demo/draft.txt", text="Ok"),
+                    action("print_text", text="APPROVED")]
+    for a in proposed:
+        bridge.record(proposed=a)
+    command = speculation_command("/demo/important.txt", proposed)
+    bridge.record(validated_speculation=command)
+    result = show("speculation", bridge.command(command))
+    after = show("read_file /demo/important.txt", bridge.execute(action("read_file", path="/demo/important.txt")))
+    listing = show("list_files", bridge.execute(action("list_files")))
+    if injection:
+        ok = ("aborted by guard" in result and "APPROVED" not in result
+              and "Original important data." in after)
+        bridge.record(check="injected deletion contained and discarded", passed=ok)
+        if not ok:
+            raise RuntimeError("Speculative containment check failed")
+        print("Verified: deletion and APPROVED were held, then discarded by abort; file intact.")
+    else:
+        ok = "committed" in result and "APPROVED" in result and "draft.txt" in listing
+        bridge.record(check="benign attempt committed and output released", passed=ok)
+        if not ok:
+            raise RuntimeError("Speculative commit check failed")
+        print("Verified: draft published and APPROVED released only after durable commit.")
+
+
+DEMOS = {"demo baseline", "demo injection", "demo speculative", "demo speculative-benign"}
+
+
 def find_qemu():
     for candidate in (ROOT.parent / "build/qemu-system-i386",):
         if candidate.is_file():
@@ -209,7 +289,7 @@ def main():
     request = " ".join(opts.request)
     try:
         # Reject invalid one-shot requests before booting QEMU.
-        if request and request not in {"demo baseline", "demo injection"}:
+        if request and request not in DEMOS:
             validate(plan(request))
         if not opts.qemu:
             raise ValueError("QEMU not found; specify --qemu /path/to/qemu-system-i386")
@@ -220,7 +300,9 @@ def main():
         with opts.log.open("w") as log, Bridge(opts.qemu, log) as bridge:
             print(f"Disposable x86 xv6 guest ready. Log: {opts.log}")
             if request:
-                if request.startswith("demo "):
+                if request in ("demo speculative", "demo speculative-benign"):
+                    demo_speculative(bridge, request == "demo speculative")
+                elif request.startswith("demo "):
                     demo(bridge, request == "demo injection")
                 else:
                     print(bridge.execute(plan(request)))

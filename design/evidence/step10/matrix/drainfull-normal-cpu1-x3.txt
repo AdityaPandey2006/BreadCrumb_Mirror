@@ -1,0 +1,41 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure drainfull; echo TESTDONE83a80fe5
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: F1 fork reader
+PASS: F1 fork reader
+rrrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+rrrr
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE DRAINFULL PASSED
+TESTDONE83a80fe5
+$ spfailure drainfull; echo TESTDONE9b89ebf4
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: F1 fork reader
+PASS: F1 fork reader
+rrrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+rrrr
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE DRAINFULL PASSED
+TESTDONE9b89ebf4
+$ spfailure drainfull; echo TESTDONEb037980a
+BEGIN F1 drain into a full outside pipe
+PASS: F1 pipe
+PASS: F1 fork reader
+PASS: F1 fork reader
+rrrrrrrrPASS: F1 commit releases more than PIPESIZE bytes
+rrrr
+F1 READER GOT 1500
+PASS: F1 reader exits
+PASS: F1 outside reader received all 1500 bytes and kept working
+SPFAILURE DRAINFULL PASSED
+TESTDONEb037980a
+$ 

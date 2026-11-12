@@ -1,0 +1,86 @@
+root after mkfs: root size=512 allocated_blocks=1 entries=32
+The target architecture is set to "i386".
+0x0000fff0 in ?? ()
+Breakpoint 1 at 0x80101d20: bmap. (2 locations)
+Breakpoint 2 at 0x80103360: file fsview.c, line 114.
+
+[gdb] hit 1: bmap(root inode 1, bn=1) with addrs[1]=0, cached size=512, current pid=1 spec=0
+[gdb]   size 512 covers block 1 although it is not allocated: normal extension (size grows, writei iupdates)
+#0  bmap (ip=0x80113c34 <icache+52>, bn=1) at fs.c:439
+#1  0x80102a41 in writei (ip=0x80113c34 <icache+52>, src=0x8dfffe90 " ", off=512, n=16) at fs.c:657
+#2  0x80102fc4 in dirlink (dp=0x80113c34 <icache+52>, name=0x8dfffee2 "console", inum=32) at fs.c:742
+#3  0x801085d6 in create (path=<optimized out>, type=type@entry=3, major=1, minor=1) at sysfile.c:288
+#4  0x80108e13 in sys_mknod () at sysfile.c:381
+
+[gdb] fs_finish(committed=0) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=0) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=1) by pid 3: completion cleanup, calls inode_invalidate()
+
+[gdb] fs_finish(committed=0) by pid 3: completion cleanup, calls inode_invalidate()
+Cannot execute this command while the target is running.
+Use the "interrupt" command to stop the target
+and then try again.
+---- guest serial result ----
+SPEC TESTS PASSED

@@ -1,0 +1,12 @@
+Disposable x86 xv6 guest ready. Log: /home/ishaan/bc10/final/demo/agent-speculative-benign.jsonl
+read_file /demo/important.txt: Original important data.
+speculation: APPROVED
+SPECRUN: committed: changes published; held output released above
+read_file /demo/important.txt: Original important data.
+list_files: .              1 32 96
+..             1 1 528
+report.txt     2 33 27
+important.txt  2 34 25
+inbox.txt      2 35 47
+draft.txt      2 36 3
+Verified: draft published and APPROVED released only after durable commit.

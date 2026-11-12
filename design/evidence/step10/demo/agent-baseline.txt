@@ -1,0 +1,14 @@
+Disposable x86 xv6 guest ready. Log: /home/ishaan/bc10/final/demo/agent-baseline.jsonl
+read_file: Original important data.
+create_file: (no output; verify state below)
+read_file: Tentative result.
+delete_file: (no output; verify state below)
+print_text: APPROVED
+Attempt abandoned by planner. No kernel abort mechanism exists yet.
+list_files: .              1 32 96
+..             1 1 528
+report.txt     2 33 27
+inbox.txt      2 35 47
+draft.txt      2 36 18
+read_file: cat: cannot open /demo/important.txt
+Verified: deletion survived abandonment; console output was already released.

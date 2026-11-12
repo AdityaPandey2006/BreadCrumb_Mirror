@@ -22,7 +22,12 @@ static struct spec_context spectable[NSPEC];
 static uint nextspecid = 1;
 
 static void spec_context_free_locked(struct spec_context *sc);
-static void spec_commit_durable(struct spec_context *sc);
+struct held_output {          // output detached at the durable point
+  char *pipe, *cons;
+  uint pipelen, conslen;
+};
+static void spec_commit_durable(struct spec_context *sc, struct held_output *h);
+static void spec_release_held(struct held_output *h);
 
 static struct proc *initproc;
 
@@ -257,6 +262,7 @@ spec_complete(int commit)
 {
   struct proc *p = myproc();
   struct spec_context *sc;
+  struct held_output held = {0, 0, 0, 0};
 
   fs_enter();
   acquire(&ptable.lock);
@@ -307,7 +313,11 @@ spec_complete(int commit)
       fs_leave();
       return -1;
     }
-    spec_commit_durable(sc);
+    // Durable point reached: detach held output so cleanup cannot discard it.
+#ifdef SHADOW_TEST
+    shadow_crash_point(SPC_AFTER_DURABLE);
+#endif
+    spec_commit_durable(sc, &held);
   }
   fs_finish(sc, commit);
   shadow_discard(sc);
@@ -318,19 +328,33 @@ spec_complete(int commit)
   release(&ptable.lock);
   spec_unpin(sc);
   fs_leave();
+  // Step 10 fix: release held output only after the filesystem gate is
+  // dropped. Pipe delivery may sleep until an outside reader makes room, and
+  // that reader may itself need the gate (any begin_op, e.g. console printf).
+  if(commit)
+    spec_release_held(&held);
   return 0;
 }
 
 // Step 5 completion point: the speculation's file changes are durable on disk
 // (its own log commit record has been written) and visible to every process.
-// Step 7 releases held console output here; Step 8 releases held external pipe output.
-// Called once per successful nonempty or empty commit, before the
-// private copies are freed and the owner is detached.
+// Called once per successful nonempty or empty commit. It only detaches the
+// held pipe and console output (Steps 7-8) from the context;
+// spec_release_held() delivers it after the owner has left the gate.
 static void
-spec_commit_durable(struct spec_context *sc)
+spec_commit_durable(struct spec_context *sc, struct held_output *h)
 {
-  spec_pipe_drain(sc);
-  spec_console_drain(sc);
+  spec_pipe_take(sc, &h->pipe, &h->pipelen);
+  spec_console_take(sc, &h->cons, &h->conslen);
+}
+
+// D37/D42/D48: pipe output first, then console output. Runs without any
+// filesystem gate, inode lock or spinlock held, as an ordinary process.
+static void
+spec_release_held(struct held_output *h)
+{
+  spec_pipe_deliver(h->pipe, h->pipelen);
+  spec_console_emit(h->cons, h->conslen);
 }
 
 // Like sleep(chan, resource_lock), but cancellation/killed checks and sleeping

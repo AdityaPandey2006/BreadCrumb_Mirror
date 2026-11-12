@@ -1,0 +1,5 @@
+current tree: root size=512 allocated_blocks=1 entries=32; adding 0 dummy programs
+stock mkfs: root size=1024 allocated_blocks=1 entries=32
+stock mkfs: lifecycle FAILED as expected: FAIL: speculative overwrite discarded by xabort (Step 4 isolation)
+fixed mkfs: root size=512 allocated_blocks=1 entries=32
+PASS: root-hole regression (fixed mkfs, root entries a multiple of 32)

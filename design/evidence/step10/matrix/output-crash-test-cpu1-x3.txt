@@ -1,0 +1,378 @@
+
+===== HARNESS: output crash point 5 (filesystem durable, no held output released); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE9c31fd7a
+PASS: OC setup file
+OCSETUP OK
+TESTDONE9c31fd7a
+$ spfailure outcrash 5
+PASS: OC pipe
+SPEC CRASH POINT 5
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80105eec 80108488 8010963d 80109374 0 0 0 0 0
+===== HARNESS: crash point 5: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE8e95c9e5
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE8e95c9e5
+$ 
+===== HARNESS: PASS output crash point 5: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 6 (first held pipe record delivered, second not); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE41d367f6
+PASS: OC setup file
+OCSETUP OK
+TESTDONE41d367f6
+$ spfailure outcrash 6
+PASS: OC pipe
+SPEC CRASH POINT 6
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80104fad 80105f69 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 6: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONEef776149
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONEef776149
+$ 
+===== HARNESS: PASS output crash point 6: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 7 (pipe output released, console not yet); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE94ea56f6
+PASS: OC setup file
+OCSETUP OK
+TESTDONE94ea56f6
+$ spfailure outcrash 7
+PASS: OC pipe
+SPEC CRASH POINT 7
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80100d9d 80105f76 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 7: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE88a4139d
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE88a4139d
+$ 
+===== HARNESS: PASS output crash point 7: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 8 (first 16 held console bytes emitted, rest not); expect complete new filesystem, console prefix =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE926191d4
+PASS: OC setup file
+OCSETUP OK
+TESTDONE926191d4
+$ spfailure outcrash 8
+PASS: OC pipe
+CONSOLE_TOKEN_01SPEC CRASH POINT 8
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80100e1f 80105f76 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 8: console prefix; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE34a2ddac
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE34a2ddac
+$ 
+===== HARNESS: PASS output crash point 8: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: SUMMARY point | meaning | recovered fs | console before halt | pipe seen before halt =====
+
+===== HARNESS: SUMMARY 5 | filesystem durable, no held output released | new | none | none =====
+
+===== HARNESS: SUMMARY 6 | first held pipe record delivered, second not | new | none | none =====
+
+===== HARNESS: SUMMARY 7 | pipe output released, console not yet | new | none | none =====
+
+===== HARNESS: SUMMARY 8 | first 16 held console bytes emitted, rest not | new | prefix | none =====
+
+===== HARNESS: output crash point 5 (filesystem durable, no held output released); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE851a096b
+PASS: OC setup file
+OCSETUP OK
+TESTDONE851a096b
+$ spfailure outcrash 5
+PASS: OC pipe
+SPEC CRASH POINT 5
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80105eec 80108488 8010963d 80109374 0 0 0 0 0
+===== HARNESS: crash point 5: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE01563daa
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE01563daa
+$ 
+===== HARNESS: PASS output crash point 5: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 6 (first held pipe record delivered, second not); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE72f4ff89
+PASS: OC setup file
+OCSETUP OK
+TESTDONE72f4ff89
+$ spfailure outcrash 6
+PASS: OC pipe
+SPEC CRASH POINT 6
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80104fad 80105f69 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 6: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE29db62c2
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE29db62c2
+$ 
+===== HARNESS: PASS output crash point 6: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 7 (pipe output released, console not yet); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE9a561760
+PASS: OC setup file
+OCSETUP OK
+TESTDONE9a561760
+$ spfailure outcrash 7
+PASS: OC pipe
+SPEC CRASH POINT 7
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80100d9d 80105f76 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 7: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE53783a8d
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE53783a8d
+$ 
+===== HARNESS: PASS output crash point 7: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 8 (first 16 held console bytes emitted, rest not); expect complete new filesystem, console prefix =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE4dd1be08
+PASS: OC setup file
+OCSETUP OK
+TESTDONE4dd1be08
+$ spfailure outcrash 8
+PASS: OC pipe
+CONSOLE_TOKEN_01SPEC CRASH POINT 8
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80100e1f 80105f76 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 8: console prefix; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE8089a09f
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE8089a09f
+$ 
+===== HARNESS: PASS output crash point 8: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: SUMMARY point | meaning | recovered fs | console before halt | pipe seen before halt =====
+
+===== HARNESS: SUMMARY 5 | filesystem durable, no held output released | new | none | none =====
+
+===== HARNESS: SUMMARY 6 | first held pipe record delivered, second not | new | none | none =====
+
+===== HARNESS: SUMMARY 7 | pipe output released, console not yet | new | none | none =====
+
+===== HARNESS: SUMMARY 8 | first 16 held console bytes emitted, rest not | new | prefix | none =====
+
+===== HARNESS: output crash point 5 (filesystem durable, no held output released); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONEa3185b22
+PASS: OC setup file
+OCSETUP OK
+TESTDONEa3185b22
+$ spfailure outcrash 5
+PASS: OC pipe
+SPEC CRASH POINT 5
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80105eec 80108488 8010963d 80109374 0 0 0 0 0
+===== HARNESS: crash point 5: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONEa818a68e
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONEa818a68e
+$ 
+===== HARNESS: PASS output crash point 5: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 6 (first held pipe record delivered, second not); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE31c653eb
+PASS: OC setup file
+OCSETUP OK
+TESTDONE31c653eb
+$ spfailure outcrash 6
+PASS: OC pipe
+SPEC CRASH POINT 6
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80104fad 80105f69 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 6: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE971c4e05
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE971c4e05
+$ 
+===== HARNESS: PASS output crash point 6: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 7 (pipe output released, console not yet); expect complete new filesystem, console none =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONE2517faa5
+PASS: OC setup file
+OCSETUP OK
+TESTDONE2517faa5
+$ spfailure outcrash 7
+PASS: OC pipe
+SPEC CRASH POINT 7
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80100d9d 80105f76 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 7: console none; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE10d39bb3
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE10d39bb3
+$ 
+===== HARNESS: PASS output crash point 7: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: output crash point 8 (first 16 held console bytes emitted, rest not); expect complete new filesystem, console prefix =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash setup; echo TESTDONEffa90e67
+PASS: OC setup file
+OCSETUP OK
+TESTDONEffa90e67
+$ spfailure outcrash 8
+PASS: OC pipe
+CONSOLE_TOKEN_01SPEC CRASH POINT 8
+lapicid 0: panic: spec crash point (test-only)
+ 80107374 80100e1f 80105f76 80108488 8010963d 80109374 0 0 0 0
+===== HARNESS: crash point 8: console prefix; pipe tokens seen by the outside reader before halt: none =====
+
+===== HARNESS: rebooting the SAME fs.img (no rebuild, no copy) =====
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spfailure outcrash verify; echo TESTDONE9f690647
+PASS: OC recovered file holds the complete committed contents
+PASS: OC allocator usable after recovery
+OCVERIFY OK new
+TESTDONE9f690647
+$ 
+===== HARNESS: PASS output crash point 8: recovered complete new state; lost output was not replayed after reboot =====
+
+===== HARNESS: SUMMARY point | meaning | recovered fs | console before halt | pipe seen before halt =====
+
+===== HARNESS: SUMMARY 5 | filesystem durable, no held output released | new | none | none =====
+
+===== HARNESS: SUMMARY 6 | first held pipe record delivered, second not | new | none | none =====
+
+===== HARNESS: SUMMARY 7 | pipe output released, console not yet | new | none | none =====
+
+===== HARNESS: SUMMARY 8 | first 16 held console bytes emitted, rest not | new | prefix | none =====

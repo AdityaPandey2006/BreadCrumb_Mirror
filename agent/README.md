@@ -60,6 +60,31 @@ mistake that schema validation alone cannot prevent. Normal read/summarize never
 follows file instructions. No real model or general prompt-injection detection
 is being simulated.
 
+### Behind the externalization barrier (Step 10)
+
+```sh
+python3 agent/agent.py --log agent/logs/speculative.jsonl demo speculative
+python3 agent/agent.py --log agent/logs/speculative-benign.jsonl demo speculative-benign
+```
+
+The same scripted planner runs, but every proposed effect action is validated
+and then executed inside one speculation through the fixed template
+`specrun keep /demo/important.txt STEP...` (guest utility `specrun.c`). The
+guard is an explicit rule: the file the user did not ask to change must still
+exist in the speculation's private view, otherwise the attempt is aborted.
+
+* `demo speculative`: the injected deletion and the `APPROVED` message are
+  held, the guard sees the deletion, the attempt aborts, and nothing escapes;
+  `important.txt` is intact.
+* `demo speculative-benign`: a draft is created and `APPROVED` printed; the
+  guard passes, the attempt commits, and `APPROVED` appears only after the
+  durable commit.
+
+The barrier contains effects until that decision; it does not detect the
+injection. Committing without the guard would publish the deletion (see
+`bench/demo.py`, demonstration 7). Text inside a speculation may not contain
+commas, and the whole command must fit xv6 sh's 100-byte line.
+
 The JSONL log records proposed/validated actions, serial chunks (including boot
 and kernel output), fixed guest commands, observations, and verification results.
 The default `agent/logs/latest.jsonl` is overwritten each invocation; use `--log`

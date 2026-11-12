@@ -1,0 +1,210 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spectest; echo TESTDONE00cddfdf
+PASS: completion outside speculation is rejected
+PASS: owner abort succeeds
+PASS: second completion is rejected
+PASS: a completed process can begin and commit again
+PASS: shared-membership owner begins
+PASS: inherited child rejects nested begin and completion
+PASS: owner abort is refused while child lives
+PASS: owner cannot complete while child lives
+PASS: fork inheritance shares one context until child detaches
+PASS: exec-membership owner begins
+PASS: exec preserves inherited non-owner membership
+PASS: exec'd member remains counted until exit
+PASS: owner completes after exec'd member detaches
+PASS: unreaped-zombie owner begins
+PASS: detached zombie no longer counts before wait reaps it
+PASS: unreaped zombie remains waitable
+PASS: member-kill owner begins
+PASS: ordinary member can be killed
+PASS: killed non-owner detaches without cancelling owner
+zombie!
+PASS: grandchild owner begins
+PASS: living grandchild still counts after its parent exits
+PASS: grandchild can be cancelled by pid
+PASS: owner completes after grandchild detaches
+zombie!
+PASS: owner exits voluntarily
+PASS: owner exit wakes and terminates sleeping member
+PASS: owner kill request succeeds
+zombie!
+PASS: killed owner exits
+PASS: owner kill wakes and terminates sleeping member
+PASS: all bounded context slots can be allocated
+PASS: begin fails cleanly when context table is full
+PASS: cancelled contexts are reclaimed and reusable
+PASS: fork-failure owner begins
+PASS: fork failure is reached under process/resource pressure
+PASS: failed fork and child exits leave no leaked membership references
+PASS: repeated begin/complete and process-slot reuse
+PASS: isolation example file prepared
+PASS: lifecycle abort succeeds
+PASS: speculative overwrite discarded by xabort (Step 4 isolation)
+PASS: rejected creation left no public file
+SPEC TESTS PASSED
+TESTDONE00cddfdf
+$ spfiletest; echo TESTDONE5635339e
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+-- outsider isolation and outside-writer refusal
+PASS: abort succeeds
+PASS: abort preserves the original public bytes
+PASS: outside write allowed again after abort
+PASS: outside unlink allowed again after abort
+-- parent and child share private updates
+PASS: abort succeeds
+PASS: abort discards both members' changes
+-- independent speculations do not see each other
+PASS: speculation A writes block 0 privately
+PASS: speculation B sees original bytes, then its own
+PASS: outsider still sees original bytes
+PASS: each speculation keeps only its own private bytes
+PASS: each speculation keeps only its own private bytes
+PASS: both aborts preserve the original
+-- reads without copies, cross-block, reuse, cap, partial write
+PASS: abort succeeds
+PASS: abort restores every original byte
+-- allocation failure (SHADOW_TEST build)
+PASS: abort succeeds
+PASS: public file unchanged after allocation failures
+PASS: no shadow pages leaked
+-- owner exit discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- owner kill discards private work
+PASS: owner and member write privately
+PASS: outsider sees original while owner lives
+PASS: outsider write refused while copies exist
+zombie!
+PASS: private copies discarded after owner death and member exit
+PASS: public file holds only original bytes
+-- Step 6 private creation and extension, discarded on abort
+PASS: abort succeeds
+PASS: aborted name absent publicly
+PASS: original file restored after abort
+-- descriptor rule: only files opened in the same speculation
+PASS: abort succeeds
+PASS: pre-xbegin descriptor usable again, offset untouched
+PASS: abort succeeds
+PASS: original preserved
+PASS: no log_write() (dirty public buffer) by any speculative process
+-- non-speculative behaviour unchanged
+PASS: ordinary create and write
+PASS: ordinary extending write
+PASS: ordinary link and unlink
+PASS: ordinary read
+PASS: ordinary unlink
+SPFILE TESTS PASSED
+TESTDONE5635339e
+$ spcommit; echo TESTDONE8a83c924
+-- abort restores the original view
+PASS: abort succeeds
+PASS: every original byte restored
+PASS: outside write allowed after abort
+-- commit publishes private changes durably
+PASS: speculation begins
+PASS: private writes to three blocks
+PASS: repeated write to an already-copied block
+PASS: nonempty commit returns 0
+PASS: all private bytes published
+PASS: untouched bytes unchanged
+PASS: size unchanged
+PASS: owner is no longer speculative after commit
+PASS: descriptor opened in the speculation usable after commit
+PASS: new outside process sees committed bytes
+PASS: outside write allowed after commit
+PASS: a new speculation can start afterwards
+-- shared child changes survive child exit and are committed
+PASS: speculation begins
+PASS: parent sees exited child's private bytes
+PASS: parent writes privately
+PASS: commit succeeds after child exit
+PASS: child's and parent's changes both published
+-- permission, live-member and repeated-completion checks
+PASS: speculation begins
+PASS: private write
+PASS: non-owner member cannot commit or abort
+PASS: owner cannot commit while a member lives
+PASS: refused commit keeps the private attempt
+PASS: owner commits after the member exits
+PASS: repeated completion fails
+PASS: commit published
+-- commit-time conflict between speculations (D24)
+PASS: both speculations copied block 0
+PASS: first committer (A) succeeds
+PASS: second committer (B) gets -1 twice (abort-only), view kept
+PASS: abort-only speculation can still abort
+PASS: A's changes published
+PASS: none of B's changes published (not even block 6)
+-- speculations on different blocks both commit
+PASS: disjoint speculation commits
+PASS: disjoint speculation commits
+PASS: both changes published
+-- empty commit, capacity and short write then commit (D25)
+PASS: read-only speculation commits (empty)
+PASS: empty commit changed nothing
+PASS: speculation begins
+PASS: eight distinct blocks copied
+PASS: ninth block refused
+PASS: short write returns 4 bytes
+PASS: commit after a refused block and a short write (D25)
+PASS: all eight blocks published in one transaction
+PASS: short write published exactly; ninth block untouched
+-- outside writer refused until commit (D20)
+PASS: speculation copies block 0
+PASS: outside write and unlink refused while copied
+PASS: commit succeeds
+PASS: outside write allowed after commit
+PASS: outsider wrote after the committed bytes
+-- 40 alternating commit/abort cycles reuse contexts and memory
+PASS: every cycle begins and completes
+PASS: public file holds exactly the committed cycles' bytes
+PASS: no shadow pages leaked
+-- commits interleaved with a busy ordinary writer
+PASS: 25 commits succeed while an ordinary writer runs
+PASS: 300 ordinary writes succeed concurrently
+PASS: final committed bytes and sizes correct
+-- live outside reader during publication (test build)
+PASS: reader opened the file before the commit
+PASS: owner wrote two private blocks
+PASS: committer paused after installing the first block
+PASS: commit completed after the pause
+PASS: reader saw all-new bytes, never a partial or undurable view
+PASS: both blocks published
+-- owner killed during commit at hold point 1 (D23)
+PASS: owner wrote two private blocks
+PASS: committer reached the hold point
+PASS: killed before the point of no return: no public change
+PASS: cancelled speculation's copies released after owner exit
+-- owner killed during commit at hold point 2 (D23)
+PASS: owner wrote two private blocks
+PASS: committer reached the hold point
+PASS: killed after the point of no return: commit completed and is visible
+PASS: copies released after the committed owner died
+PASS: no log_write() by a speculative process outside its own publication
+SPCOMMIT TESTS PASSED
+TESTDONE8a83c924
+$ addtest; echo TESTDONE005af884
+add(3, 4) = 7
+add(-3, 4) = 1
+TESTDONE005af884
+$ hello_test; echo TESTDONE5f3795e8
+surprise
+hello() returned 0
+TESTDONE5f3795e8
+$ mytest; echo TESTDONEde47e97c
+Hey, I am trying xv6
+TESTDONEde47e97c
+$ 

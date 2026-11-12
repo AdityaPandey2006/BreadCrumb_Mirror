@@ -1,0 +1,401 @@
+xv6...
+cpu0: starting 0
+sb: size 2000 nblocks 1941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ spconflict; echo TESTDONE85e45343
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONE85e45343
+$ spconflict; echo TESTDONEb32240da
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONEb32240da
+$ spconflict; echo TESTDONE2e591175
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONE2e591175
+$ spconflict; echo TESTDONEd55f99aa
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONEd55f99aa
+$ spconflict; echo TESTDONE0dd2acb6
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONE0dd2acb6
+$ spconflict; echo TESTDONE8062aca9
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONE8062aca9
+$ spconflict; echo TESTDONEd596ac47
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONEd596ac47
+$ spconflict; echo TESTDONE0cd2bf96
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONE0cd2bf96
+$ spconflict; echo TESTDONE58cf61ff
+SPCONFLICT TESTS STARTING
+-- 1. Data conflict between independent speculations
+PASS: first committer (A) succeeds
+PASS: second committer (B) rejected with -1 and abort-only
+PASS: public block contains A's changes, none of B
+-- 2. Metadata false conflict (directory / dinode sharing)
+PASS: spec A commits directory and inode block modifications
+PASS: spec B suffers metadata conflict, becomes abort-only
+PASS: file A published successfully
+PASS: conflicted file B was discarded cleanly
+-- 3. Outside writer and unlink refusal during active speculation
+PASS: outside process opened cf_race
+PASS: outside write to shadowed block refused (returned <= 0)
+PASS: outside unlink of shadowed file refused (-1)
+PASS: spec child committed successfully
+PASS: cf_race has committed spec data
+PASS: outside write succeeds after commit
+PASS: outside unlink succeeds after commit
+-- 4. Concurrent participants in shared speculation
+PASS: owner begins shared speculation
+PASS: create file inside speculation
+PASS: owner sees child 1 modification
+PASS: owner commits shared participants' work
+PASS: committed file retains shared changes
+-- 5. Commit and abort rejection while peers are live
+PASS: owner begins
+PASS: xcommit() returns -1 while peer child is alive
+PASS: xabort() returns -1 while peer child is alive
+PASS: xcommit() succeeds after child exits and is reaped
+-- 6. Owner kill and cancellation cleanup
+PASS: doomed file was discarded on owner kill
+PASS: new speculation can start after killed owner cleanup
+-- 7. Repeated context allocation, reuse and reclamation
+PASS: passed 30 consecutive commit/abort cycles without leaking contexts
+-- 8. Conflict with pending console and external pipe output
+PASS: spec B commits first
+PASS: spec A suffers conflict, aborts and discards held output
+PASS: external pipe reader received 0 bytes (EOF, zero leakage on conflict)
+PASS: file contains winning spec B's data
+-- 9. Multi-process concurrency stress
+PASS: at least one concurrent speculation committed successfully without deadlock
+SPCONFLICT: ALL TESTS PASSED
+TESTDONE58cf61ff
+$ 

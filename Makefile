@@ -202,6 +202,10 @@ UPROGS=\
 	_spfailure\
 	_spbench\
 	_specrun\
+	_speccopy\
+	_demoload\
+	_specedit\
+	_spconflictdemo\
 	_spasktest\
 	_spapproval\
 

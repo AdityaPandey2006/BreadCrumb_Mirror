@@ -346,6 +346,8 @@ def approval_suite(guest):
     report = out.split("Kernel change report",1)[-1].split("commit? [y/n]",1)[0]
     if "before" not in report or "OLD" not in report or "NEW" not in report:
         raise RuntimeError("same-size rewrite missing from kernel report")
+    if "Modified: /same" not in out:
+        raise RuntimeError("same-size rewrite missing from file summary")
     guest.run("cat same", "NEW")
     guest.run("rm same", "")
 

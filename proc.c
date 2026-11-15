@@ -87,6 +87,7 @@ static void
 spec_reclaim(struct spec_context *sc)
 {
   shadow_discard(sc);
+  shadow_review_free(sc);
   spec_console_discard(sc);
   spec_pipe_discard(sc);
   acquire(&ptable.lock);
@@ -146,6 +147,8 @@ spec_context_free_locked(struct spec_context *sc)
     panic("spec context still referenced");
   if(sc->resources != 0)
     panic("spec resources still attached");
+  if(sc->review_before != 0)
+    panic("spec review snapshot still attached");
   if(sc->console_buf != 0)
     panic("spec console buffer still attached");
   if(sc->pipe_buf != 0)
@@ -231,9 +234,11 @@ spec_begin(void)
   struct proc *p = myproc();
   struct spec_context *sc;
 
+  fs_enter();
   acquire(&ptable.lock);
   if(p->spec != 0 || p->killed){
     release(&ptable.lock);
+    fs_leave();
     return -1;
   }//does not allow the process to create a speculation if it has ended or is already part of a speculation
   for(sc = spectable; sc < &spectable[NSPEC]; sc++)
@@ -241,6 +246,7 @@ spec_begin(void)
       break;
   if(sc == &spectable[NSPEC] || (id = spec_new_id_locked()) == 0){
     release(&ptable.lock);
+    fs_leave();
     return -1;
   }
   sc->id = id;
@@ -249,6 +255,7 @@ spec_begin(void)
   sc->members = 1;
   sc->refs = 1;
   sc->resources = 0;
+  sc->review_before = 0;
   sc->abort_only = 0;
   sc->console_buf = 0;
   sc->console_len = 0;
@@ -261,6 +268,12 @@ spec_begin(void)
   p->spec = id;
   p->spec_frozen = 0;
   release(&ptable.lock);
+  if(shadow_review_begin(sc) < 0 || p->killed){
+    spec_abort();
+    fs_leave();
+    return -1;
+  }
+  fs_leave();
   return 0;
 }
 
@@ -462,7 +475,7 @@ spec_ask(char *msg)
   }
   release(&ptable.lock);
   // Sole participant and refs==1: no context operation can run concurrently.
-  // Build from existing original/private block images under the view gate.
+  // Compare current public/private images under the view gate.
   // Report/allocation failure leaves the attempt unchanged and unapproved.
   r = shadow_report(sc, report, PGSIZE);
   acquire(&ptable.lock);

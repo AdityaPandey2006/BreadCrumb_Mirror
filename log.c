@@ -295,6 +295,8 @@ log_write(struct buf *b)
     shadow_note_public_write();
 #endif
 
+  // Every public mutation changes its generation, even if bytes later match.
+  shadow_public_changed(b->dev, b->blockno);
   acquire(&log.lock);
   for (i = 0; i < log.lh.n; i++) {
     if (log.lh.block[i] == b->blockno)   // log absorbtion

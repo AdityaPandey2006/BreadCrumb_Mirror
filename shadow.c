@@ -26,9 +26,35 @@ struct shadow {
   uint inum;                    // owning inode, or 0 for raw test blocks
   enum shadowstate state;
   uchar data[BSIZE];            // private bytes
-  uchar orig[BSIZE];            // public bytes at first copy (D24 validation)
+  uint version;                // generation at first copy; no original bytes
 };
 typedef char shadow_fits_page[(sizeof(struct shadow) <= PGSIZE) ? 1 : -1];
+
+static uint public_versions[FSSIZE];
+static uint versions_exhausted;
+
+void
+shadow_public_changed(uint dev, uint block)
+{
+  if(dev == ROOTDEV && block < FSSIZE &&
+     __sync_add_and_fetch(&public_versions[block], 1) == 0)
+    __sync_lock_test_and_set(&versions_exhausted, 1);
+}
+
+#define REVIEW_NAMES 112
+#define REVIEW_INODES 256
+#define REVIEW_PATH 128
+struct review_entry {
+  uint parent, ino, size, block;
+  short type;
+  char name[DIRSIZ];
+};
+struct review_names {
+  uint n;
+  uchar types[REVIEW_INODES];
+  struct review_entry e[REVIEW_NAMES];
+};
+typedef char review_fits_page[(sizeof(struct review_names) <= PGSIZE) ? 1 : -1];
 
 // Global index of every linked entry (LOADING or READY) in every context, used
 // only for the Step-4 outside-writer refusal (decision D20). The lock is a
@@ -287,14 +313,8 @@ shadow_restore(struct shadow_save *save)
 int
 shadow_inode_new(struct spec_context *sc, uint inum)
 {
-  struct shadow *s;
-  int fresh = 0;
-  acquire(&sc->resource_lock);
-  s = find(sc, ROOTDEV, IBLOCK(inum, sb));
-  if(s && s->state == SH_READY)
-    fresh = ((struct dinode*)s->orig)[inum % IPB].type == 0;
-  release(&sc->resource_lock);
-  return fresh;
+  struct review_names *before = sc->review_before;
+  return before && inum < REVIEW_INODES && before->types[inum] == 0;
 }
 
 // Approval report: caller owns the filesystem gate and is the sole participant.
@@ -343,8 +363,8 @@ report_image(struct spec_context *sc, uint block, int after, uint off,
 {
   struct shadow *s = find(sc, ROOTDEV, block);
   struct buf *b;
-  if(s){
-    memmove(dst, (after ? s->data : s->orig)+off, n);
+  if(after && s){
+    memmove(dst, s->data+off, n);
     return;
   }
   b = bread_original(ROOTDEV, block);
@@ -379,9 +399,9 @@ report_owner(struct spec_context *sc, uint block, int after,
       if(d.addrs[NDIRECT] == block){
         *ino=i; *offset=NDIRECT*BSIZE; *indirect=1; return d.type;
       }
-      s = find(sc, ROOTDEV, d.addrs[NDIRECT]);
+      s = after ? find(sc, ROOTDEV, d.addrs[NDIRECT]) : 0;
       bp = s ? 0 : bread_original(ROOTDEV, d.addrs[NDIRECT]);
-      ptrs = (uint*)(s ? (after ? s->data : s->orig) : bp->data);
+      ptrs = (uint*)(s ? s->data : bp->data);
       for(j = 0; j < NINDIRECT; j++){
         addr = ptrs[j];
         if(addr && addr == block){
@@ -407,6 +427,192 @@ report_name(struct report_text *r, char *name)
   }
 }
 
+// Resolve direct/indirect addresses without bmap (which can allocate).
+static uint
+review_block(struct spec_context *sc, struct dinode *d, uint bn, int after)
+{
+  uint addr = 0;
+  if(bn < NDIRECT) return d->addrs[bn];
+  bn -= NDIRECT;
+  if(bn >= NINDIRECT || !d->addrs[NDIRECT]) return 0;
+  report_image(sc,d->addrs[NDIRECT],after,bn*sizeof(uint),&addr,sizeof(addr));
+  return addr;
+}
+
+static int
+review_capture(struct spec_context *sc, struct review_names *table, int after)
+{
+  struct dinode dir, file;
+  struct dirent de;
+  struct review_entry *e;
+  uint ino, off, block;
+  if(sb.ninodes > REVIEW_INODES) return -1;
+  memset(table,0,sizeof(*table));
+  for(ino=1; ino<sb.ninodes; ino++){
+    report_inode(sc,ino,after,&dir);
+    table->types[ino] = dir.type;
+    if(dir.type != T_DIR) continue;
+    if(dir.size % sizeof(de)) return -1;
+    for(off=0; off<dir.size; off+=sizeof(de)){
+      block=review_block(sc,&dir,off/BSIZE,after);
+      if(!block) return -1;
+      report_image(sc,block,after,off%BSIZE,&de,sizeof(de));
+      if(!de.inum || (de.name[0]=='.' && (de.name[1]==0 ||
+         (de.name[1]=='.' && de.name[2]==0)))) continue;
+      if(de.inum >= sb.ninodes || table->n == REVIEW_NAMES) return -1;
+      report_inode(sc,de.inum,after,&file);
+      e=&table->e[table->n++];
+      e->parent=ino; e->ino=de.inum; e->size=file.size;
+      e->block=block; e->type=file.type;
+      memmove(e->name,de.name,DIRSIZ);
+    }
+  }
+  return 0;
+}
+
+int
+shadow_review_begin(struct spec_context *sc)
+{
+  struct review_names *before=(struct review_names*)kalloc();
+  if(!before) return -1;
+  if(review_capture(sc,before,0) < 0){ kfree((char*)before); return -1; }
+  sc->review_before=before;
+  return 0;
+}
+
+void
+shadow_review_free(struct spec_context *sc)
+{
+  if(sc->review_before){
+    kfree((char*)sc->review_before);
+    sc->review_before=0;
+  }
+}
+
+static int
+review_path(struct review_names *t, uint index, char *path)
+{
+  struct review_entry *e=&t->e[index];
+  int pos=REVIEW_PATH-1, n, depth;
+  uint i, parent;
+  path[pos]=0;
+  for(depth=0; depth<REVIEW_NAMES; depth++){
+    for(n=0; n<DIRSIZ && e->name[n]; n++);
+    if(pos < n+1) return -1;
+    pos-=n; memmove(path+pos,e->name,n); path[--pos]='/';
+    parent=e->parent;
+    if(parent == ROOTINO){ memmove(path,path+pos,REVIEW_PATH-pos); return 0; }
+    for(i=0; i<t->n; i++)
+      if(t->e[i].ino==parent && t->e[i].type==T_DIR) break;
+    if(i==t->n) return -1;
+    e=&t->e[i];
+  }
+  return -1;
+}
+
+static int
+review_lookup(struct review_names *t, char *path)
+{
+  uint i;
+  char other[REVIEW_PATH];
+  for(i=0; i<t->n; i++){
+    if(review_path(t,i,other) < 0) return -2;
+    if(strncmp(path,other,REVIEW_PATH)==0) return i;
+  }
+  return -1;
+}
+
+static int
+review_relevant(struct spec_context *sc, struct review_entry *e)
+{
+  struct shadow *s;
+  for(s=sc->resources; s; s=s->next)
+    if(s->blockno==e->block || s->blockno==IBLOCK(e->ino,sb) || s->inum==e->ino)
+      return 1;
+  return 0;
+}
+
+// Compare actual file bytes with the CURRENT public view, including equal-size
+// edits. No original-content image or whole-file copy is retained.
+static int
+review_content_changed(struct spec_context *sc, uint ino)
+{
+  struct dinode a,b;
+  uchar public[64], private[64];
+  uint off,n,ab,bb;
+  report_inode(sc,ino,0,&a); report_inode(sc,ino,1,&b);
+  if(a.type!=b.type || a.size!=b.size) return 1;
+  if(b.type!=T_FILE) return 0;
+  for(off=0; off<b.size; off+=n){
+    n=b.size-off; if(n>sizeof(public)) n=sizeof(public);
+    if(n>BSIZE-off%BSIZE) n=BSIZE-off%BSIZE;
+    ab=review_block(sc,&a,off/BSIZE,0); bb=review_block(sc,&b,off/BSIZE,1);
+    if(!ab || !bb) return -1;
+    report_image(sc,ab,0,off%BSIZE,public,n);
+    report_image(sc,bb,1,off%BSIZE,private,n);
+    if(memcmp(public,private,n)) return 1;
+  }
+  return 0;
+}
+
+static void
+review_line(struct report_text *r, char *kind, char *path)
+{
+  uchar c;
+  char s[2];
+  rp(r,"  "); rp(r,kind); rp(r,": ");
+  while(*path){
+    c=*path++;
+    if(c>=33 && c<127 && c!='\\' && c!='"'){
+      s[0]=c; s[1]=0; rp(r,s);
+    } else rbytes(r,&c,1);
+  }
+  rp(r,"\n");
+}
+
+static int
+review_summary(struct spec_context *sc, struct report_text *r)
+{
+  struct review_names *before=sc->review_before, *after;
+  struct review_entry *a,*b;
+  char path[REVIEW_PATH];
+  uint i,count=0;
+  int j,changed;
+  if(!before || (after=(struct review_names*)kalloc())==0) return -1;
+  if(review_capture(sc,after,1)<0) goto bad;
+  rp(r,"File summary (names/inode/size captured at xbegin; content compared with current public blocks):\n");
+  for(i=0; i<before->n; i++){
+    a=&before->e[i];
+    if(review_path(before,i,path)<0) goto bad;
+    j=review_lookup(after,path);
+    if(j == -2) goto bad;
+    if(j<0){
+      if(review_relevant(sc,a)){ review_line(r,"Deleted",path); count++; }
+      continue;
+    }
+    b=&after->e[j];
+    if(!review_relevant(sc,a) && !review_relevant(sc,b)) continue;
+    changed=a->ino!=b->ino || a->size!=b->size || a->type!=b->type;
+    if(!changed){ changed=review_content_changed(sc,b->ino); if(changed<0) goto bad; }
+    if(changed){ review_line(r,"Modified",path); count++; }
+  }
+  for(i=0; i<after->n; i++){
+    b=&after->e[i];
+    if(!review_relevant(sc,b)) continue;
+    if(review_path(after,i,path)<0) goto bad;
+    j=review_lookup(before,path);
+    if(j == -2) goto bad;
+    if(j<0){ review_line(r,"Created",path); count++; }
+  }
+  if(!count) rp(r,"  No file-level changes detected.\n");
+  rp(r,"File summary entries: "); rn(r,count); rp(r,".\n");
+  kfree((char*)after);
+  return 0;
+bad:
+  kfree((char*)after);
+  return -1;
+}
+
 int
 shadow_report(struct spec_context *sc, char *dst, int cap)
 {
@@ -414,6 +620,8 @@ shadow_report(struct spec_context *sc, char *dst, int cap)
   struct shadow *s;
   struct dinode old, now;
   struct dirent a, b;
+  uchar public[BSIZE];
+  struct buf *disk;
   uint i, changed=0, count, first, last, ino, off, oldino, oldoff;
   int kind, ind, oldind, oldkind;
   if(cap < 1) return -1;
@@ -421,10 +629,14 @@ shadow_report(struct spec_context *sc, char *dst, int cap)
   // Refuse unsupported raw test blocks BEFORE freezing the owner.
   for(s=sc->resources; s; s=s->next)
     if(s->state != SH_READY || s->inum == 0 || s->dev != ROOTDEV) return -1;
-  rp(&r, "Kernel change report (saved original -> private):\n");
+  if(review_summary(sc,&r)<0) return -1;
+  rp(&r, "Kernel change report (current public -> private):\n");
   for(s=sc->resources; s; s=s->next){
+    disk=bread_original(s->dev,s->blockno);
+    memmove(public,disk->data,BSIZE);
+    brelse(disk);
     count=0; first=BSIZE; last=0;
-    for(i=0; i<BSIZE; i++) if(s->orig[i] != s->data[i]){
+    for(i=0; i<BSIZE; i++) if(public[i] != s->data[i]){
       if(!count) first=i;
       last=i; count++;
     }
@@ -434,7 +646,7 @@ shadow_report(struct spec_context *sc, char *dst, int cap)
     if(s->blockno >= sb.inodestart && s->blockno < sb.bmapstart){
       rp(&r,"inode metadata\n");
       for(i=0; i<IPB; i++){
-        memmove(&old,s->orig+i*sizeof(old),sizeof(old));
+        memmove(&old,public+i*sizeof(old),sizeof(old));
         memmove(&now,s->data+i*sizeof(now),sizeof(now));
         if(memcmp(&old,&now,sizeof(old)) == 0) continue;
         ino=(s->blockno-sb.inodestart)*IPB+i;
@@ -459,7 +671,7 @@ shadow_report(struct spec_context *sc, char *dst, int cap)
       if(kind == T_DIR && !ind){
         for(i=0; i<BSIZE; i+=sizeof(a)){
           memset(&a,0,sizeof(a));memmove(&b,s->data+i,sizeof(b));
-          if(oldkind == T_DIR && !oldind) memmove(&a,s->orig+i,sizeof(a));
+          if(oldkind == T_DIR && !oldind) memmove(&a,public+i,sizeof(a));
           if(a.inum==b.inum && memcmp(a.name,b.name,DIRSIZ)==0) continue;
           if(a.inum){rp(&r,"  delete ");report_name(&r,a.name);rp(&r,"\n");}
           if(b.inum){
@@ -471,7 +683,7 @@ shadow_report(struct spec_context *sc, char *dst, int cap)
     }
     rp(&r,"  ");rn(&r,count);rp(&r," changed bytes; offsets ");rn(&r,first);rp(&r,"..");rn(&r,last);
     rp(&r,"; preview at ");rn(&r,first);rp(&r,":\n    before ");
-    rbytes(&r,s->orig+first,(BSIZE-first < 24 ? BSIZE-first : 24));
+    rbytes(&r,public+first,(BSIZE-first < 24 ? BSIZE-first : 24));
     rp(&r,"\n    after  ");rbytes(&r,s->data+first,(BSIZE-first < 24 ? BSIZE-first : 24));rp(&r,"\n");
   }
   if(!changed) rp(&r,"No filesystem block changes.\n");
@@ -572,7 +784,7 @@ access(int id, uint dev, uint blockno, uint inum, uint off, void *data, uint n,
     // Never call while holding resource_lock or a source buffer lock.
     b = bread_original(dev, blockno);
     memmove(s->data, b->data, BSIZE);
-    memmove(s->orig, b->data, BSIZE);
+    s->version = blockno < FSSIZE ? public_versions[blockno] : 0;
     brelse(b);
     // A pin keeps memory alive but is not permission to admit work after abort.
     active = spec_pin(id);
@@ -614,7 +826,7 @@ out:
 //
 //   begin_op_exclusive()                 the transaction is alone in the log
 //   iget + ilock every affected inode    in inode-number order (all T_FILE)
-//   validate: each public block == the bytes it was copied from     (D24)
+//   validate: each public block generation == its first-copy generation
 //   last kill check                      (D23) -- point of no return after it
 //   install: bread_original, copy, log_write, brelse, per block
 //   end_op()                             runs commit(): durable at write_head
@@ -648,10 +860,9 @@ shadow_publish(struct spec_context *sc)
   // ordinary mutation cannot observe a partially published metadata/data view.
   begin_op_exclusive();
   for(i = 0; i < n && r == SP_OK; i++){
-    b = bread_original(e[i]->dev, e[i]->blockno);
-    if(memcmp(b->data, e[i]->orig, BSIZE) != 0)
+    if(versions_exhausted || e[i]->blockno >= FSSIZE ||
+       public_versions[e[i]->blockno] != e[i]->version)
       r = SP_CONFLICT;
-    brelse(b);
   }
 #ifdef SHADOW_TEST
   if(r == SP_OK) pub_hold_point(1);

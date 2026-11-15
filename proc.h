@@ -49,6 +49,7 @@ struct spec_context {
   uint refs;
   struct spinlock resource_lock;
   void *resources;              // linked shadow entries, owned by shadow.c
+  void *review_before;          // bounded names/inode/size snapshot, not file bytes
   int abort_only;               // D24: lost a commit-time conflict (ptable.lock)
   char *console_buf;            // dynamically allocated console buffer (resource_lock)
   uint console_len;             // bytes buffered so far (resource_lock)

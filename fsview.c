@@ -105,7 +105,7 @@ fs_log_write(struct buf *b)
   return 0;
 }
 
-// Identify newly allocated inode identities before discarding their orig images.
+// Identify newly allocated inode identities using the initial metadata snapshot.
 // Abort closes new-file descriptors; existing-file handles survive. A cwd made
 // inside an aborted attempt falls back to root. No private cache fields survive.
 void

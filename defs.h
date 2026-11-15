@@ -172,6 +172,9 @@ int             shadow_inode_busy(uint, uint);
 #define SP_KILLED      (-3) // D23: owner killed before the point of no return
 int             shadow_publish(struct spec_context*);
 int             shadow_report(struct spec_context*, char*, int);
+int             shadow_review_begin(struct spec_context*);
+void            shadow_review_free(struct spec_context*);
+void            shadow_public_changed(uint, uint);
 int             shadow_count(struct spec_context*);
 void            shadow_discard(struct spec_context*);
 #define SH_META 0xffffffffU
